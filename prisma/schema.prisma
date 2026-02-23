@@ -1,0 +1,598 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  admin
+  coach
+  client
+}
+
+enum CoachCertificationStatus {
+  none
+  pending
+  approved
+  rejected
+}
+
+enum CoachProfileStatus {
+  draft
+  pending_review
+  published
+  paused
+  archived
+}
+
+enum CoachVisibilityStatus {
+  active
+  inactive
+}
+
+enum SessionMode {
+  online
+  presencial
+}
+
+enum ReviewCoachDecision {
+  pending_coach_review
+  approved
+  rejected
+  flagged
+}
+
+enum ReviewAdminDecision {
+  none
+  approved
+  rejected
+  override
+}
+
+enum CertificationRequestStatus {
+  pending
+  approved
+  rejected
+}
+
+enum SubscriptionPlanCode {
+  monthly
+  annual
+}
+
+enum SubscriptionStatus {
+  trialing
+  active
+  past_due
+  canceled
+  unpaid
+  incomplete
+  incomplete_expired
+}
+
+enum CoachLinkType {
+  web
+  linkedin
+  instagram
+  facebook
+  whatsapp
+  phone
+  email
+}
+
+enum ClickTarget {
+  whatsapp
+  phone
+  email
+  web
+  linkedin
+  instagram
+  facebook
+  mensaje
+}
+
+enum ContactLeadStatus {
+  received
+  emailed
+  failed
+  spam
+}
+
+model User {
+  id                  String                   @id @default(cuid())
+  email               String                   @unique
+  passwordHash        String?
+  displayName         String?
+  role                UserRole                 @default(client)
+  isActive            Boolean                  @default(true)
+  mustResetPassword   Boolean                  @default(false)
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+  sessions            AuthSession[]
+  passwordResetTokens PasswordResetToken[]
+  emailTokens         EmailVerificationToken[]
+  coachProfiles       CoachProfile[]
+  reviewsWritten      Review[]                 @relation("UserWrittenReviews")
+  reviewAuditLogs     ReviewAuditLog[]
+  certificationRequests CertificationRequest[] @relation("CoachCertificationRequests")
+  certificationReviews CertificationRequest[]  @relation("CertificationReviewedBy")
+  certificationReviewLogs CertificationReviewLog[] @relation("CertificationLogReviewer")
+  stripeCustomer      StripeCustomer?
+  billingEvents       BillingEventLog[]
+}
+
+model AuthSession {
+  id           String   @id @default(cuid())
+  userId       String
+  tokenHash    String   @unique
+  expiresAt    DateTime
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PasswordResetToken {
+  id         String    @id @default(cuid())
+  userId     String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model EmailVerificationToken {
+  id         String    @id @default(cuid())
+  userId     String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model LegacyImportMap {
+  id          String   @id @default(cuid())
+  sourceSystem String
+  sourceType   String
+  sourceId     String
+  targetTable  String
+  targetId     String
+  payload      Json?
+  createdAt    DateTime @default(now())
+
+  @@unique([sourceSystem, sourceType, sourceId])
+}
+
+model CoachLocation {
+  id        String        @id @default(cuid())
+  city      String
+  province  String?
+  country   String        @default("España")
+  slug      String        @unique
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  coaches   CoachProfile[]
+}
+
+model CoachCategory {
+  id          String               @id @default(cuid())
+  slug         String               @unique
+  name         String
+  description  String?
+  isActive     Boolean              @default(true)
+  sortOrder    Int                  @default(0)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  coachLinks   CoachProfileCategory[]
+}
+
+model CoachLanguage {
+  id          String               @id @default(cuid())
+  slug         String               @unique
+  name         String
+  isActive     Boolean              @default(true)
+  sortOrder    Int                  @default(0)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  coachLinks   CoachProfileLanguage[]
+}
+
+model CoachProfile {
+  id                   String                    @id @default(cuid())
+  userId               String?
+  slug                 String                    @unique
+  name                 String
+  headline             String?
+  bio                  String?
+  aboutHtml            String?
+  gender               String?
+  locationId           String?
+  certifiedStatus      CoachCertificationStatus  @default(none)
+  profileStatus        CoachProfileStatus        @default(draft)
+  visibilityStatus     CoachVisibilityStatus     @default(inactive)
+  featured             Boolean                   @default(false)
+  heroImageUrl         String?
+  videoPresentationUrl String?
+  specialtiesText      String?
+  languagesText        String?
+  publishedAt          DateTime?
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
+  owner                User?                     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  location             CoachLocation?            @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  categories           CoachProfileCategory[]
+  languages            CoachProfileLanguage[]
+  sessionModes         CoachProfileSessionMode[]
+  galleryAssets        CoachGalleryAsset[]
+  links                CoachLink[]
+  pricing              CoachPricing?
+  subscriptions        CoachSubscription[]
+  reviews              Review[]
+  certificationRequests CertificationRequest[]
+  viewSessions         CoachProfileViewSession[]
+  viewAggregates       CoachProfileViewDailyAggregate[]
+  clickEvents          CoachProfileClickEvent[]
+  clickAggregates      CoachProfileClickDailyAggregate[]
+  contactLeads         CoachContactLead[]
+}
+
+model CoachProfileCategory {
+  coachProfileId String
+  categoryId     String
+  createdAt      DateTime      @default(now())
+  coachProfile   CoachProfile   @relation(fields: [coachProfileId], references: [id], onDelete: Cascade)
+  category       CoachCategory  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([coachProfileId, categoryId])
+}
+
+model CoachProfileLanguage {
+  coachProfileId String
+  languageId     String
+  createdAt      DateTime      @default(now())
+  coachProfile   CoachProfile   @relation(fields: [coachProfileId], references: [id], onDelete: Cascade)
+  language       CoachLanguage  @relation(fields: [languageId], references: [id], onDelete: Cascade)
+
+  @@id([coachProfileId, languageId])
+}
+
+model CoachProfileSessionMode {
+  coachProfileId String
+  mode           SessionMode
+  createdAt      DateTime     @default(now())
+  coachProfile   CoachProfile  @relation(fields: [coachProfileId], references: [id], onDelete: Cascade)
+
+  @@id([coachProfileId, mode])
+}
+
+model CoachGalleryAsset {
+  id            String      @id @default(cuid())
+  coachProfileId String
+  url           String
+  alt           String?
+  sortOrder     Int         @default(0)
+  sourceMediaId String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  coachProfile  CoachProfile @relation(fields: [coachProfileId], references: [id], onDelete: Cascade)
+}
+
+model CoachLink {
+  id            String       @id @default(cuid())
+  coachProfileId String
+  type          CoachLinkType
+  label         String?
+  value         String
+  isPrimary     Boolean      @default(false)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  coachProfile  CoachProfile @relation(fields: [coachProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([coachProfileId, type, value])
+}
+
+model CoachPricing {
+  id            String      @id @default(cuid())
+  coachProfileId String     @unique
+  basePriceEur  Int?
+  currency      String      @default("EUR")
+  detailsHtml   String?
+  notes         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  coachProfile  CoachProfile @relation(fields: [coachProfileId], references: [id], onDelete: Cascade)
+}
+
+model SubscriptionPlan {
+  id                 String               @id @default(cuid())
+  code               SubscriptionPlanCode @unique
+  name               String
+  intervalLabel      String
+  priceCents         Int
+  currency           String               @default("EUR")
+  stripePriceId      String?
+  isActive           Boolean              @default(true)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  coachSubscriptions CoachSubscription[]
+}
+
+model StripeCustomer {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  stripeCustomerId String   @unique
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CoachSubscription {
+  id                 String             @id @default(cuid())
+  coachProfileId      String
+  planId              String?
+  planCode            SubscriptionPlanCode
+  status              SubscriptionStatus
+  stripeSubscriptionId String?          @unique
+  currentPeriodStart  DateTime?
+  currentPeriodEnd    DateTime?
+  cancelAtPeriodEnd   Boolean           @default(false)
+  graceUntil          DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  coachProfile        CoachProfile      @relation(fields: [coachProfileId], references: [id], onDelete: Cascade)
+  plan                SubscriptionPlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
+  stripeSnapshots     StripeSubscriptionSnapshot[]
+  billingEvents       BillingEventLog[]
+}
+
+model StripeSubscriptionSnapshot {
+  id                  String            @id @default(cuid())
+  coachSubscriptionId String?
+  stripeSubscriptionId String
+  payload             Json
+  createdAt           DateTime          @default(now())
+  coachSubscription   CoachSubscription? @relation(fields: [coachSubscriptionId], references: [id], onDelete: SetNull)
+}
+
+model BillingEventLog {
+  id                  String             @id @default(cuid())
+  stripeEventId       String?            @unique
+  eventType           String
+  userId              String?
+  coachSubscriptionId String?
+  payload             Json?
+  processedAt         DateTime?
+  createdAt           DateTime           @default(now())
+  user                User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  coachSubscription   CoachSubscription? @relation(fields: [coachSubscriptionId], references: [id], onDelete: SetNull)
+}
+
+model Review {
+  id             String             @id @default(cuid())
+  coachProfileId  String
+  clientUserId    String
+  title          String?
+  body           String
+  coachDecision  ReviewCoachDecision @default(pending_coach_review)
+  adminDecision  ReviewAdminDecision @default(none)
+  isVisible      Boolean            @default(false)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  coachProfile   CoachProfile       @relation(fields: [coachProfileId], references: [id], onDelete: Cascade)
+  clientUser     User               @relation("UserWrittenReviews", fields: [clientUserId], references: [id], onDelete: Cascade)
+  rating         ReviewRating?
+  auditLogs      ReviewAuditLog[]
+
+  @@unique([coachProfileId, clientUserId])
+}
+
+model ReviewRating {
+  reviewId     String  @id
+  overall      Int
+  communication Int?
+  process      Int?
+  results      Int?
+  review       Review  @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+}
+
+model ReviewAuditLog {
+  id         String   @id @default(cuid())
+  reviewId    String
+  actorUserId String?
+  action     String
+  note       String?
+  payload    Json?
+  createdAt  DateTime @default(now())
+  review     Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  actorUser  User?    @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+}
+
+model CertificationRequest {
+  id             String                   @id @default(cuid())
+  coachProfileId  String
+  coachUserId     String
+  reviewerUserId  String?
+  status         CertificationRequestStatus @default(pending)
+  coachNotes     String?
+  reviewerNotes  String?
+  submittedAt    DateTime                 @default(now())
+  reviewedAt     DateTime?
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+  coachProfile   CoachProfile             @relation(fields: [coachProfileId], references: [id], onDelete: Cascade)
+  coachUser      User                     @relation("CoachCertificationRequests", fields: [coachUserId], references: [id], onDelete: Cascade)
+  reviewerUser   User?                    @relation("CertificationReviewedBy", fields: [reviewerUserId], references: [id], onDelete: SetNull)
+  documents      CertificationDocument[]
+  logs           CertificationReviewLog[]
+}
+
+model CertificationDocument {
+  id                    String               @id @default(cuid())
+  certificationRequestId String
+  storageKey            String
+  fileName              String
+  mimeType              String
+  sizeBytes             Int
+  createdAt             DateTime             @default(now())
+  certificationRequest  CertificationRequest @relation(fields: [certificationRequestId], references: [id], onDelete: Cascade)
+}
+
+model CertificationReviewLog {
+  id                    String               @id @default(cuid())
+  certificationRequestId String
+  reviewerUserId        String?
+  decision              CertificationRequestStatus
+  note                  String?
+  createdAt             DateTime             @default(now())
+  certificationRequest  CertificationRequest @relation(fields: [certificationRequestId], references: [id], onDelete: Cascade)
+  reviewerUser          User?                @relation("CertificationLogReviewer", fields: [reviewerUserId], references: [id], onDelete: SetNull)
+}
+
+model CoachProfileViewSession {
+  id            String      @id @default(cuid())
+  coachProfileId  String
+  sessionKey    String
+  startedAt     DateTime    @default(now())
+  endedAt       DateTime?
+  durationSeconds Int?
+  ipHash        String?
+  userAgent     String?
+  createdAt     DateTime    @default(now())
+  coachProfile  CoachProfile @relation(fields: [coachProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([coachProfileId, sessionKey])
+}
+
+model CoachProfileViewDailyAggregate {
+  id                String      @id @default(cuid())
+  coachProfileId      String
+  date              DateTime    @db.Date
+  totalViews        Int         @default(0)
+  totalDurationSeconds Int      @default(0)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  coachProfile      CoachProfile @relation(fields: [coachProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([coachProfileId, date])
+}
+
+model CoachProfileClickEvent {
+  id            String      @id @default(cuid())
+  coachProfileId  String
+  target        ClickTarget
+  ipHash        String?
+  userAgent     String?
+  createdAt     DateTime    @default(now())
+  coachProfile  CoachProfile @relation(fields: [coachProfileId], references: [id], onDelete: Cascade)
+}
+
+model CoachProfileClickDailyAggregate {
+  id            String      @id @default(cuid())
+  coachProfileId  String
+  target        ClickTarget
+  date          DateTime    @db.Date
+  count         Int         @default(0)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  coachProfile  CoachProfile @relation(fields: [coachProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([coachProfileId, target, date])
+}
+
+model BlogCategory {
+  id        String     @id @default(cuid())
+  slug      String     @unique
+  name      String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  posts     BlogPost[]
+}
+
+model BlogPost {
+  id              String      @id @default(cuid())
+  slug            String      @unique
+  title           String
+  excerpt         String?
+  contentHtml     String?
+  seoTitle        String?
+  seoDescription  String?
+  coverImageUrl   String?
+  isPublished     Boolean     @default(false)
+  publishedAt     DateTime?
+  categoryId      String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  category        BlogCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  tags            BlogPostTag[]
+}
+
+model BlogTag {
+  id        String      @id @default(cuid())
+  slug      String      @unique
+  name      String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  posts     BlogPostTag[]
+}
+
+model BlogPostTag {
+  blogPostId String
+  blogTagId  String
+  blogPost   BlogPost @relation(fields: [blogPostId], references: [id], onDelete: Cascade)
+  blogTag    BlogTag  @relation(fields: [blogTagId], references: [id], onDelete: Cascade)
+
+  @@id([blogPostId, blogTagId])
+}
+
+model FaqItem {
+  id          String   @id @default(cuid())
+  slug        String?  @unique
+  question    String
+  answerHtml  String
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SeoMetaOverride {
+  id              String   @id @default(cuid())
+  routePath       String   @unique
+  metaTitle       String?
+  metaDescription String?
+  canonicalUrl    String?
+  noindex         Boolean  @default(false)
+  schemaJson      Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model RedirectRule {
+  id          String   @id @default(cuid())
+  sourcePath  String   @unique
+  destinationPath String
+  statusCode  Int      @default(301)
+  isActive    Boolean  @default(true)
+  note        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CoachContactLead {
+  id            String           @id @default(cuid())
+  coachProfileId  String
+  name          String
+  email         String
+  message       String
+  status        ContactLeadStatus @default(received)
+  errorMessage  String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  coachProfile  CoachProfile     @relation(fields: [coachProfileId], references: [id], onDelete: Cascade)
+}
