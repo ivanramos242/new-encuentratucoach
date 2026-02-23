@@ -32,6 +32,10 @@ export const metadata: Metadata = {
     title: `${siteConfig.name} | Directorio de coaches en España`,
     description: siteConfig.description,
   },
+  icons: {
+    icon: [{ url: "/favicon-v2.svg?v=20260223", type: "image/svg+xml" }],
+    shortcut: ["/favicon-v2.svg?v=20260223"],
+  },
 };
 
 export default function RootLayout({
