@@ -8,7 +8,11 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: ["/admin", "/mi-cuenta", "/api"],
     },
-    sitemap: `${baseUrl}/sitemap.xml`,
+    sitemap: [
+      `${baseUrl}/sitemap.xml`,
+      `${baseUrl}/sitemap-qa-questions.xml`,
+      `${baseUrl}/sitemap-qa-topics.xml`,
+    ],
     host: baseUrl,
   };
 }

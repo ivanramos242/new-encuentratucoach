@@ -101,6 +101,119 @@ enum ContactLeadStatus {
   spam
 }
 
+enum ConversationThreadStatus {
+  open
+  closed_by_client
+  closed_by_coach
+  admin_locked
+}
+
+enum MessageSenderType {
+  client
+  coach
+  admin_system
+}
+
+enum AttachmentType {
+  image
+  pdf
+}
+
+enum AttachmentStatus {
+  uploaded
+  validated
+  rejected
+  deleted
+}
+
+enum QaQuestionStatus {
+  published
+  flagged
+  hidden
+  locked
+  deleted
+}
+
+enum QaAnswerStatus {
+  published
+  flagged
+  hidden
+  deleted
+}
+
+enum QaReportTargetType {
+  question
+  answer
+}
+
+enum QaVoteType {
+  up
+  down
+}
+
+enum NotificationType {
+  message_new
+  message_reply
+  message_thread_reported
+  qa_question_answered
+  qa_answer_accepted
+  qa_content_reported
+  qa_content_moderated
+  review_new_pending
+  review_coach_action_required
+  subscription_state_changed
+  system_announcement
+}
+
+enum NotificationChannel {
+  in_app
+  email
+}
+
+enum NotificationDeliveryStatus {
+  pending
+  sent
+  failed
+  skipped
+}
+
+enum JobType {
+  send_email_notification
+  retry_email_notification
+  recalc_funnel_aggregates
+  recalc_qa_counters
+  cleanup_orphan_attachments
+  expire_notifications
+}
+
+enum JobStatus {
+  queued
+  running
+  done
+  failed
+  dead_letter
+}
+
+enum JobPriority {
+  low
+  normal
+  high
+}
+
+enum FunnelEventType {
+  profile_view
+  profile_cta_click
+  chat_thread_started
+  chat_first_coach_reply
+  chat_client_followup
+  qa_question_view
+  qa_question_created
+  qa_answer_created
+  qa_answer_accepted
+  review_created
+  review_approved
+}
+
 model User {
   id                  String                   @id @default(cuid())
   email               String                   @unique
@@ -122,6 +235,23 @@ model User {
   certificationReviewLogs CertificationReviewLog[] @relation("CertificationLogReviewer")
   stripeCustomer      StripeCustomer?
   billingEvents       BillingEventLog[]
+  clientConversationThreads ConversationThread[]   @relation("ConversationThreadClient")
+  coachConversationThreads  ConversationThread[]   @relation("ConversationThreadCoachUser")
+  conversationParticipants  ConversationParticipant[]
+  sentConversationMessages  ConversationMessage[]  @relation("ConversationMessageSender")
+  conversationReadCursors   ConversationReadCursor[]
+  conversationReports       ConversationReport[]   @relation("ConversationReportReporter")
+  qaQuestions               QaQuestion[]           @relation("QaQuestionAuthor")
+  qaAnswers                 QaAnswer[]             @relation("QaAnswerAuthor")
+  qaAnswerVotes             QaAnswerVote[]
+  qaReports                 QaReport[]             @relation("QaReportReporter")
+  qaModerationLogs          QaModerationLog[]      @relation("QaModerationActor")
+  notifications             Notification[]
+  notificationPreferences   NotificationPreference[]
+  notificationDeliveryAttempts NotificationDeliveryAttempt[] @relation("NotificationDeliveryUser")
+  attributionSessions       AttributionSession[]
+  funnelEvents              FunnelEvent[]
+  jobRunLogs                JobRunLog[]            @relation("JobRunActor")
 }
 
 model AuthSession {
@@ -217,6 +347,11 @@ model CoachProfile {
   profileStatus        CoachProfileStatus        @default(draft)
   visibilityStatus     CoachVisibilityStatus     @default(inactive)
   featured             Boolean                   @default(false)
+  messagingEnabled     Boolean                   @default(true)
+  messagingAutoReply   String?
+  messagingReplySlaMinutes Int?
+  qaAnswersCount       Int                       @default(0)
+  qaAcceptedAnswersCount Int                     @default(0)
   heroImageUrl         String?
   videoPresentationUrl String?
   specialtiesText      String?
@@ -240,6 +375,10 @@ model CoachProfile {
   clickEvents          CoachProfileClickEvent[]
   clickAggregates      CoachProfileClickDailyAggregate[]
   contactLeads         CoachContactLead[]
+  conversationThreads  ConversationThread[]
+  qaAnswers            QaAnswer[]
+  funnelEvents         FunnelEvent[]
+  funnelAggregates     CoachFunnelDailyAggregate[]
 }
 
 model CoachProfileCategory {
@@ -595,4 +734,384 @@ model CoachContactLead {
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
   coachProfile  CoachProfile     @relation(fields: [coachProfileId], references: [id], onDelete: Cascade)
+}
+
+model ConversationThread {
+  id               String                   @id @default(cuid())
+  clientUserId     String
+  coachUserId      String
+  coachProfileId   String
+  status           ConversationThreadStatus @default(open)
+  subject          String?
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+  lastMessageAt    DateTime?
+  lockedReason     String?
+  clientUser       User                     @relation("ConversationThreadClient", fields: [clientUserId], references: [id], onDelete: Cascade)
+  coachUser        User                     @relation("ConversationThreadCoachUser", fields: [coachUserId], references: [id], onDelete: Cascade)
+  coachProfile     CoachProfile             @relation(fields: [coachProfileId], references: [id], onDelete: Cascade)
+  participants     ConversationParticipant[]
+  messages         ConversationMessage[]
+  attachments      ConversationMessageAttachment[]
+  readCursors      ConversationReadCursor[]
+  reports          ConversationReport[]
+
+  @@unique([clientUserId, coachProfileId])
+  @@index([coachUserId, lastMessageAt])
+  @@index([clientUserId, lastMessageAt])
+}
+
+model ConversationParticipant {
+  id                  String             @id @default(cuid())
+  threadId            String
+  userId              String
+  role                String
+  isActive            Boolean            @default(true)
+  joinedAt            DateTime           @default(now())
+  thread              ConversationThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([threadId, userId])
+}
+
+model ConversationMessage {
+  id                  String             @id @default(cuid())
+  threadId            String
+  senderUserId        String?
+  senderType          MessageSenderType
+  body                String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  deletedAt           DateTime?
+  thread              ConversationThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  senderUser          User?              @relation("ConversationMessageSender", fields: [senderUserId], references: [id], onDelete: SetNull)
+  attachment          ConversationMessageAttachment?
+  reports             ConversationReport[]
+
+  @@index([threadId, createdAt])
+}
+
+model ConversationMessageAttachment {
+  id                  String            @id @default(cuid())
+  messageId           String            @unique
+  threadId            String
+  type                AttachmentType
+  status              AttachmentStatus  @default(uploaded)
+  fileName            String
+  mimeType            String
+  sizeBytes           Int
+  storageKey          String
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  validatedAt         DateTime?
+  rejectedReason      String?
+  message             ConversationMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  thread              ConversationThread  @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([threadId, createdAt])
+  @@index([status])
+}
+
+model ConversationReadCursor {
+  threadId            String
+  userId              String
+  lastReadMessageId   String?
+  lastReadAt          DateTime?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  thread              ConversationThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([threadId, userId])
+}
+
+model ConversationReport {
+  id                  String              @id @default(cuid())
+  threadId            String
+  messageId           String?
+  reporterUserId      String
+  reason              String
+  details             String?
+  status              String              @default("open")
+  createdAt           DateTime            @default(now())
+  resolvedAt          DateTime?
+  resolverUserId      String?
+  thread              ConversationThread  @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  message             ConversationMessage? @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  reporterUser        User                @relation("ConversationReportReporter", fields: [reporterUserId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([threadId, createdAt])
+}
+
+model QaQuestion {
+  id                String            @id @default(cuid())
+  slug              String            @unique
+  title             String
+  body              String
+  authorUserId      String
+  authorDisplayName String?
+  isAnonymous       Boolean           @default(false)
+  status            QaQuestionStatus  @default(published)
+  topicSlug         String
+  topicName         String
+  categorySlug      String?
+  citySlug          String?
+  acceptedAnswerId  String?
+  viewsCount        Int               @default(0)
+  answersCount      Int               @default(0)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  publishedAt       DateTime          @default(now())
+  authorUser        User              @relation("QaQuestionAuthor", fields: [authorUserId], references: [id], onDelete: Cascade)
+  tags              QaQuestionTagLink[]
+  answers           QaAnswer[]        @relation("QaQuestionAnswers")
+  reports           QaReport[]
+  moderationLogs    QaModerationLog[]
+  acceptedAnswer    QaAnswer?         @relation("QaQuestionAcceptedAnswer", fields: [acceptedAnswerId], references: [id], onDelete: SetNull)
+
+  @@index([status, publishedAt])
+  @@index([topicSlug, publishedAt])
+  @@index([categorySlug, publishedAt])
+  @@index([citySlug, publishedAt])
+}
+
+model QaQuestionTag {
+  id        String             @id @default(cuid())
+  slug      String             @unique
+  name      String
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  links     QaQuestionTagLink[]
+}
+
+model QaQuestionTagLink {
+  questionId String
+  tagId      String
+  question   QaQuestion     @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  tag        QaQuestionTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([questionId, tagId])
+}
+
+model QaAnswer {
+  id                 String          @id @default(cuid())
+  questionId         String
+  authorUserId       String
+  coachProfileId     String
+  body               String
+  status             QaAnswerStatus  @default(published)
+  isAccepted         Boolean         @default(false)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  question           QaQuestion      @relation("QaQuestionAnswers", fields: [questionId], references: [id], onDelete: Cascade)
+  authorUser         User            @relation("QaAnswerAuthor", fields: [authorUserId], references: [id], onDelete: Cascade)
+  coachProfile       CoachProfile    @relation(fields: [coachProfileId], references: [id], onDelete: Cascade)
+  votes              QaAnswerVote[]
+  reports            QaReport[]
+  moderationLogs     QaModerationLog[]
+  acceptedForQuestion QaQuestion[]   @relation("QaQuestionAcceptedAnswer")
+
+  @@index([questionId, createdAt])
+  @@index([coachProfileId, createdAt])
+}
+
+model QaAnswerVote {
+  id         String      @id @default(cuid())
+  answerId    String
+  userId      String
+  voteType    QaVoteType
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  answer      QaAnswer   @relation(fields: [answerId], references: [id], onDelete: Cascade)
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([answerId, userId])
+  @@index([answerId, voteType])
+}
+
+model QaReport {
+  id             String             @id @default(cuid())
+  targetType      QaReportTargetType
+  questionId      String?
+  answerId        String?
+  reporterUserId  String
+  reason          String
+  details         String?
+  status          String             @default("open")
+  createdAt       DateTime           @default(now())
+  resolvedAt      DateTime?
+  question        QaQuestion?        @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answer          QaAnswer?          @relation(fields: [answerId], references: [id], onDelete: Cascade)
+  reporterUser    User               @relation("QaReportReporter", fields: [reporterUserId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([targetType, createdAt])
+}
+
+model QaModerationLog {
+  id            String      @id @default(cuid())
+  questionId     String?
+  answerId       String?
+  actorUserId    String?
+  action         String
+  note           String?
+  payload        Json?
+  createdAt      DateTime   @default(now())
+  question       QaQuestion? @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answer         QaAnswer?   @relation(fields: [answerId], references: [id], onDelete: Cascade)
+  actorUser      User?       @relation("QaModerationActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+}
+
+model Notification {
+  id          String                   @id @default(cuid())
+  userId      String
+  type        NotificationType
+  title       String
+  body        String
+  data        Json?
+  isRead      Boolean                  @default(false)
+  readAt      DateTime?
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+  user        User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries  NotificationDeliveryAttempt[]
+
+  @@index([userId, isRead, createdAt])
+  @@index([type, createdAt])
+}
+
+model NotificationPreference {
+  id         String              @id @default(cuid())
+  userId     String
+  type       NotificationType
+  channel    NotificationChannel
+  enabled    Boolean             @default(true)
+  digestMode String              @default("instant")
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+  user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, channel])
+}
+
+model NotificationDeliveryAttempt {
+  id             String                     @id @default(cuid())
+  notificationId String
+  userId         String?
+  channel        NotificationChannel
+  status         NotificationDeliveryStatus @default(pending)
+  provider       String?
+  providerMessageId String?
+  errorMessage   String?
+  attemptedAt    DateTime?
+  createdAt      DateTime                   @default(now())
+  notification   Notification               @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  user           User?                      @relation("NotificationDeliveryUser", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([notificationId, channel])
+}
+
+model JobQueue {
+  id           String     @id @default(cuid())
+  type         JobType
+  status       JobStatus  @default(queued)
+  priority     JobPriority @default(normal)
+  payload      Json?
+  dedupeKey    String?
+  scheduledAt  DateTime   @default(now())
+  startedAt    DateTime?
+  finishedAt   DateTime?
+  lockedAt     DateTime?
+  lockedBy     String?
+  attempts     Int        @default(0)
+  maxAttempts  Int        @default(5)
+  lastError    String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  runLogs      JobRunLog[]
+
+  @@index([status, scheduledAt, priority])
+  @@index([type, status])
+}
+
+model JobRunLog {
+  id          String    @id @default(cuid())
+  jobId       String
+  actorUserId String?
+  status      JobStatus
+  note        String?
+  errorMessage String?
+  durationMs  Int?
+  createdAt   DateTime  @default(now())
+  job         JobQueue  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  actorUser   User?     @relation("JobRunActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([jobId, createdAt])
+}
+
+model AttributionSession {
+  id             String      @id @default(cuid())
+  sessionKey      String      @unique
+  userId          String?
+  firstLandingPath String?
+  lastLandingPath String?
+  referrerUrl     String?
+  utmSource       String?
+  utmMedium       String?
+  utmCampaign     String?
+  utmTerm         String?
+  utmContent      String?
+  ipHash          String?
+  userAgentHash   String?
+  firstTouchAt    DateTime    @default(now())
+  lastTouchAt     DateTime    @default(now())
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  user            User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  funnelEvents    FunnelEvent[]
+
+  @@index([userId, updatedAt])
+}
+
+model FunnelEvent {
+  id                  String           @id @default(cuid())
+  attributionSessionId String?
+  userId              String?
+  coachProfileId      String?
+  eventType           FunnelEventType
+  sourcePath          String?
+  metadata            Json?
+  createdAt           DateTime         @default(now())
+  attributionSession  AttributionSession? @relation(fields: [attributionSessionId], references: [id], onDelete: SetNull)
+  user                User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  coachProfile        CoachProfile?    @relation(fields: [coachProfileId], references: [id], onDelete: SetNull)
+
+  @@index([eventType, createdAt])
+  @@index([coachProfileId, eventType, createdAt])
+}
+
+model CoachFunnelDailyAggregate {
+  id             String     @id @default(cuid())
+  coachProfileId  String
+  date           DateTime   @db.Date
+  counts         Json
+  conversionRates Json?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  coachProfile   CoachProfile @relation(fields: [coachProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([coachProfileId, date])
+}
+
+model PlatformFunnelDailyAggregate {
+  id             String     @id @default(cuid())
+  date           DateTime   @unique @db.Date
+  counts         Json
+  conversionRates Json?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
 }

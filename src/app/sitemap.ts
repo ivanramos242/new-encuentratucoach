@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { blogPosts, coachCategories, coaches, cities } from "@/lib/mock-data";
+import { qaQuestions, qaTopics } from "@/lib/v2-mock";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -13,6 +14,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/contacto",
     "/blog",
     "/faqs",
+    "/pregunta-a-un-coach",
   ].map((url) => ({ url: `${base}${url}`, lastModified: now }));
 
   const coachRoutes = coaches.map((coach) => ({
@@ -35,5 +37,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
     lastModified: new Date(post.publishedAt),
   }));
 
-  return [...staticRoutes, ...coachRoutes, ...categoryRoutes, ...cityRoutes, ...blogRoutes];
+  const qaQuestionRoutes = qaQuestions
+    .filter((question) => question.status === "published")
+    .map((question) => ({
+      url: `${base}/pregunta-a-un-coach/${question.slug}`,
+      lastModified: new Date(question.updatedAt),
+    }));
+
+  const qaTopicRoutes = qaTopics
+    .filter((topic) => topic.curated)
+    .map((topic) => ({
+      url: `${base}/pregunta-a-un-coach/tema/${topic.slug}`,
+      lastModified: now,
+    }));
+
+  return [...staticRoutes, ...coachRoutes, ...categoryRoutes, ...cityRoutes, ...blogRoutes, ...qaQuestionRoutes, ...qaTopicRoutes];
 }
