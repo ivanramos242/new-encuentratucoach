@@ -3,6 +3,8 @@ import { PageShell } from "@/components/layout/page-shell";
 import { getInflatedRegisteredUsersCount } from "@/lib/platform-stats";
 import { buildMetadata } from "@/lib/seo";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = buildMetadata({
   title: "Iniciar sesion",
   description: "Accede como coach o cliente a tu cuenta en la plataforma.",
