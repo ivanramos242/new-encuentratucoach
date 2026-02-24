@@ -61,6 +61,10 @@ async function uploadViaPresign(input: { file: File; scope: UploadScope }) {
   return { url: finalUrl, storageKey: presign.storageKey || null };
 }
 
+async function deleteUploadedObject(url: string) {
+  await postJson("/api/uploads/delete", { url });
+}
+
 function fieldInputClass(invalid = false) {
   return `rounded-xl border px-3 py-2 ${invalid ? "border-red-300 bg-red-50/40" : "border-black/10"}`;
 }
@@ -437,6 +441,63 @@ export function CoachProfileEditor({
     setGalleryPreviewSrcs((prev) => prev.filter((_, i) => i !== index));
   }
 
+  function removeHero() {
+    const url = form.heroImageUrl.trim();
+    if (!url) return;
+    startTransition(async () => {
+      try {
+        await deleteUploadedObject(url);
+      } catch (error) {
+        setStatus({
+          type: "error",
+          text: error instanceof Error ? `No se pudo eliminar en storage: ${error.message}` : "No se pudo eliminar la imagen",
+        });
+        return;
+      }
+      setField("heroImageUrl", "");
+      setHeroPreviewSrc(null);
+      setStatus({ type: "ok", text: "Imagen principal eliminada. Guarda el perfil para persistir el cambio." });
+    });
+  }
+
+  function removeVideo() {
+    const url = form.videoPresentationUrl.trim();
+    if (!url) return;
+    startTransition(async () => {
+      try {
+        await deleteUploadedObject(url);
+      } catch (error) {
+        setStatus({
+          type: "error",
+          text: error instanceof Error ? `No se pudo eliminar en storage: ${error.message}` : "No se pudo eliminar el video",
+        });
+        return;
+      }
+      setField("videoPresentationUrl", "");
+      setVideoPreviewSrc(null);
+      setStatus({ type: "ok", text: "Video eliminado. Guarda el perfil para persistir el cambio." });
+    });
+  }
+
+  function removeGalleryAtWithStorage(index: number) {
+    const url = galleryUrlsList[index];
+    if (!url) return;
+    startTransition(async () => {
+      try {
+        await deleteUploadedObject(url);
+      } catch (error) {
+        setStatus({
+          type: "error",
+          text:
+            error instanceof Error ? `No se pudo eliminar en storage: ${error.message}` : "No se pudo eliminar la imagen de galeria",
+        });
+        return;
+      }
+      removeGalleryAt(index);
+      setStatus({ type: "ok", text: "Imagen de galeria eliminada. Guarda el perfil para persistir el cambio." });
+    });
+  }
+
   return (
     <div className="grid gap-6">
       {wizardMode ? (
@@ -646,7 +707,17 @@ export function CoachProfileEditor({
             />
             {(heroPreviewSrc || form.heroImageUrl) ? (
               <div className="rounded-2xl border border-black/10 bg-zinc-50 p-3">
-                <p className="mb-2 text-sm font-semibold text-zinc-900">Preview imagen principal</p>
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-zinc-900">Preview imagen principal</p>
+                  <button
+                    type="button"
+                    onClick={removeHero}
+                    disabled={pending}
+                    className="rounded-lg border border-red-200 bg-white px-2 py-1 text-xs font-semibold text-red-700"
+                  >
+                    Eliminar
+                  </button>
+                </div>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={heroPreviewSrc || form.heroImageUrl || ""}
@@ -665,7 +736,17 @@ export function CoachProfileEditor({
             />
             {(videoPreviewSrc || form.videoPresentationUrl) ? (
               <div className="rounded-2xl border border-black/10 bg-zinc-50 p-3">
-                <p className="mb-2 text-sm font-semibold text-zinc-900">Preview video</p>
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-zinc-900">Preview video</p>
+                  <button
+                    type="button"
+                    onClick={removeVideo}
+                    disabled={pending}
+                    className="rounded-lg border border-red-200 bg-white px-2 py-1 text-xs font-semibold text-red-700"
+                  >
+                    Eliminar
+                  </button>
+                </div>
                 <video src={videoPreviewSrc || form.videoPresentationUrl || ""} controls className="max-h-64 w-full rounded-xl bg-black" />
               </div>
             ) : null}
@@ -692,7 +773,7 @@ export function CoachProfileEditor({
                       />
                       <button
                         type="button"
-                        onClick={() => removeGalleryAt(index)}
+                        onClick={() => removeGalleryAtWithStorage(index)}
                         className="absolute right-1 top-1 rounded-md bg-black/75 px-2 py-1 text-xs font-semibold text-white"
                         aria-label={`Eliminar imagen ${index + 1}`}
                       >
