@@ -141,6 +141,7 @@ async function listDbPublicCoaches(): Promise<PublicCoachProfile[]> {
 }
 
 function mergePublicCoachLists(dbCoaches: PublicCoachProfile[]) {
+  if (dbCoaches.length > 0) return dbCoaches;
   const bySlug = new Map<string, PublicCoachProfile>();
   for (const coach of mockCoaches) bySlug.set(coach.slug, coach);
   for (const coach of dbCoaches) bySlug.set(coach.slug, coach);
