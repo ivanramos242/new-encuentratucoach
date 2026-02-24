@@ -86,6 +86,22 @@ export function MembershipCheckoutCard({
     });
   }
 
+  function cancelNow() {
+    const ok = window.confirm(
+      "Vas a cancelar la membresia inmediatamente. Tu perfil dejara de estar activo en el directorio. ¿Continuar?",
+    );
+    if (!ok) return;
+    startTransition(async () => {
+      setStatus({ type: "idle", text: "" });
+      try {
+        await postAction("/api/stripe/subscription/cancel-now");
+        window.location.reload();
+      } catch (error) {
+        setStatus({ type: "error", text: error instanceof Error ? error.message : "No se pudo cancelar la suscripcion." });
+      }
+    });
+  }
+
   return (
     <div className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
       <h2 className="text-xl font-black tracking-tight text-zinc-950">Membresía de coach</h2>
@@ -182,6 +198,16 @@ export function MembershipCheckoutCard({
               Cancelar al final del periodo
             </button>
           )}
+          {!cancelAtPeriodEnd ? (
+            <button
+              type="button"
+              disabled={pending}
+              onClick={cancelNow}
+              className="sm:col-span-2 rounded-xl border border-red-300 bg-white px-4 py-3 text-sm font-semibold text-red-700 disabled:opacity-60"
+            >
+              Cancelar ahora (inmediato)
+            </button>
+          ) : null}
         </div>
       ) : null}
 
