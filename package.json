@@ -13,7 +13,8 @@
     "db:studio": "prisma studio",
     "user:make-admin": "node scripts/make-admin.mjs",
     "user:make-admin:ts": "tsx scripts/make-admin.ts",
-    "wp:users:import": "node scripts/wp-migration/import-users.mjs"
+    "wp:users:import": "node scripts/wp-migration/import-users.mjs",
+    "wp:coaches:import": "node scripts/wp-migration/import-coaches.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.995.0",
