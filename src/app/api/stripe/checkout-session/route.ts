@@ -1,8 +1,9 @@
+import type Stripe from "stripe";
 import { z } from "zod";
 import { jsonError, jsonOk } from "@/lib/api-handlers";
 import { requireApiRole } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
-import { getStripePriceIdForPlan, getStripeServer } from "@/lib/stripe-server";
+import { getStripeServer, resolveStripePlanPriceConfig } from "@/lib/stripe-server";
 import { absoluteUrl } from "@/lib/utils";
 
 const schema = z.object({
@@ -40,8 +41,13 @@ export async function POST(request: Request) {
     const parsed = schema.safeParse(body);
     if (!parsed.success) return jsonError("Payload invalido", 400, { issues: parsed.error.flatten() });
 
-    const stripePriceId = getStripePriceIdForPlan(parsed.data.planCode);
-    if (!stripePriceId) return jsonError(`Falta STRIPE_PRICE_${parsed.data.planCode.toUpperCase()} en entorno`, 500);
+    const priceConfig = resolveStripePlanPriceConfig(parsed.data.planCode);
+    if (!priceConfig) {
+      return jsonError(
+        `STRIPE_PRICE_${parsed.data.planCode.toUpperCase()} debe ser un 'price_xxx' o una cantidad en euros (ej: 29 o 29.00)`,
+        500,
+      );
+    }
 
     const user = await prisma.user.findUnique({
       where: { id: auth.user.id },
@@ -68,13 +74,14 @@ export async function POST(request: Request) {
         code: parsed.data.planCode,
         name: parsed.data.planCode === "monthly" ? "Plan mensual" : "Plan anual",
         intervalLabel: parsed.data.planCode === "monthly" ? "mensual" : "anual",
-        priceCents: 0,
+        priceCents: priceConfig.unitAmountCents ?? 0,
         currency: "EUR",
-        stripePriceId,
+        stripePriceId: priceConfig.stripePriceId,
         isActive: true,
       },
       update: {
-        stripePriceId,
+        priceCents: priceConfig.unitAmountCents ?? undefined,
+        stripePriceId: priceConfig.stripePriceId,
         isActive: true,
       },
     });
@@ -83,10 +90,28 @@ export async function POST(request: Request) {
     const successUrl = absoluteUrl(parsed.data.successPath || "/mi-cuenta/coach/membresia?checkout=success");
     const cancelUrl = absoluteUrl(parsed.data.cancelPath || "/mi-cuenta/coach/membresia?checkout=cancel");
 
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] =
+      priceConfig.mode === "price_id"
+        ? [{ price: priceConfig.stripePriceId, quantity: 1 }]
+        : [
+            {
+              quantity: 1,
+              price_data: {
+                currency: "eur",
+                unit_amount: priceConfig.unitAmountCents,
+                recurring: { interval: parsed.data.planCode === "monthly" ? "month" : "year" },
+                product_data: {
+                  name: parsed.data.planCode === "monthly" ? "Membresía coach mensual" : "Membresía coach anual",
+                  description: "Perfil activo en el directorio de coaches de EncuentraTuCoach",
+                },
+              },
+            },
+          ];
+
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer: stripeCustomer.stripeCustomerId,
-      line_items: [{ price: stripePriceId, quantity: 1 }],
+      line_items: lineItems,
       success_url: successUrl,
       cancel_url: cancelUrl,
       client_reference_id: user.id,
@@ -125,7 +150,7 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("[stripe/checkout-session] error", error);
-    return jsonError("No se pudo crear la sesion de pago", 500);
+    return jsonError(error instanceof Error ? `No se pudo crear la sesion de pago: ${error.message}` : "No se pudo crear la sesion de pago", 500);
   }
 }
 
