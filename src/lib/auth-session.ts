@@ -86,36 +86,42 @@ function parseCookieHeader(header: string | null) {
 
 async function getSessionUserByRawToken(rawToken: string | null | undefined): Promise<SessionUser | null> {
   if (!rawToken) return null;
-  const tokenHash = sha256Hex(rawToken);
-  const session = await prisma.authSession.findUnique({
-    where: { tokenHash },
-    include: {
-      user: {
-        include: {
-          coachProfiles: {
-            where: { profileStatus: { in: ["draft", "pending_review", "published", "paused"] } },
-            orderBy: { createdAt: "asc" },
-            take: 1,
+  try {
+    const tokenHash = sha256Hex(rawToken);
+    const session = await prisma.authSession.findUnique({
+      where: { tokenHash },
+      include: {
+        user: {
+          include: {
+            coachProfiles: {
+              // Keep the query lightweight and schema-tolerant while V3 migration is in progress.
+              orderBy: { createdAt: "asc" },
+              take: 1,
+              select: { id: true },
+            },
           },
         },
       },
-    },
-  });
+    });
 
-  if (!session) return null;
-  if (session.expiresAt.getTime() <= Date.now()) {
-    await prisma.authSession.delete({ where: { id: session.id } }).catch(() => undefined);
+    if (!session) return null;
+    if (session.expiresAt.getTime() <= Date.now()) {
+      await prisma.authSession.delete({ where: { id: session.id } }).catch(() => undefined);
+      return null;
+    }
+    if (!session.user.isActive) return null;
+
+    return {
+      id: session.user.id,
+      email: session.user.email,
+      role: session.user.role,
+      displayName: session.user.displayName,
+      coachProfileId: session.user.coachProfiles[0]?.id,
+    };
+  } catch (error) {
+    console.error("[auth-session] Failed to resolve session user", error);
     return null;
   }
-  if (!session.user.isActive) return null;
-
-  return {
-    id: session.user.id,
-    email: session.user.email,
-    role: session.user.role,
-    displayName: session.user.displayName,
-    coachProfileId: session.user.coachProfiles[0]?.id,
-  };
 }
 
 export async function getSessionUserFromRequest(request: Request) {
@@ -144,4 +150,3 @@ export async function deleteSessionByRawToken(rawToken: string) {
 export function hashOpaqueToken(token: string) {
   return sha256Hex(token);
 }
-

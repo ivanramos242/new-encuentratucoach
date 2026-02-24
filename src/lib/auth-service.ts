@@ -68,7 +68,6 @@ export async function registerUser(input: RegisterInput) {
           profileStatus: "draft",
           visibilityStatus: "inactive",
           certifiedStatus: "none",
-          messagingEnabled: true,
         },
         select: { id: true },
       });

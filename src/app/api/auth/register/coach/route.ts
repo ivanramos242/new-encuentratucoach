@@ -34,8 +34,9 @@ export async function POST(request: Request) {
     });
     applySessionCookie(response, login.session.rawToken, login.session.expiresAt);
     return response;
-  } catch {
-    return jsonError("No se pudo crear la cuenta", 400);
+  } catch (error) {
+    console.error("[auth/register/coach] unexpected error", error);
+    return jsonError("No se pudo crear la cuenta. Revisa los logs del servidor.", 400);
   }
 }
 
