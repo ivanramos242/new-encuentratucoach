@@ -455,6 +455,9 @@ model SubscriptionPlan {
   intervalLabel      String
   priceCents         Int
   currency           String               @default("EUR")
+  discountPercent    Int?
+  discountLabel      String?
+  discountEndsAt     DateTime?
   stripePriceId      String?
   isActive           Boolean              @default(true)
   createdAt          DateTime             @default(now())
