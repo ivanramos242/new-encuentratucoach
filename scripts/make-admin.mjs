@@ -59,10 +59,25 @@ async function main() {
   });
 
   if (existing) {
+    const data = {
+      role: "admin",
+      isActive: true,
+    };
+    if (args.password) {
+      if (String(args.password).length < 8) {
+        console.error("Si indicas --password para un usuario existente, debe tener minimo 8 caracteres.");
+        process.exit(1);
+      }
+      data.passwordHash = await hash(String(args.password), ARGON_OPTIONS);
+      data.mustResetPassword = false;
+    }
+    if (args.name && String(args.name).trim()) {
+      data.displayName = String(args.name).trim();
+    }
     const updated = await prisma.user.update({
       where: { id: existing.id },
-      data: { role: "admin", isActive: true },
-      select: { id: true, email: true, role: true, isActive: true },
+      data,
+      select: { id: true, email: true, role: true, isActive: true, displayName: true },
     });
     console.log("Usuario promocionado a admin:", updated);
     return;

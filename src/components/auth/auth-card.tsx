@@ -30,8 +30,54 @@ function CardShell({
 
 function StatusLine({ type, text }: { type: "idle" | "ok" | "error"; text: string }) {
   if (!text) return null;
+  return <p className={`mt-3 text-sm ${type === "error" ? "text-red-600" : "text-emerald-700"}`}>{text}</p>;
+}
+
+function InputWithIcon({
+  iconClass,
+  className,
+  ...props
+}: React.InputHTMLAttributes<HTMLInputElement> & { iconClass: string }) {
   return (
-    <p className={`mt-3 text-sm ${type === "error" ? "text-red-600" : "text-emerald-700"}`}>{text}</p>
+    <div className="relative">
+      <i className={`${iconClass} pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400`} aria-hidden="true" />
+      <input
+        {...props}
+        className={`w-full rounded-xl border border-black/10 py-2 pl-10 pr-3 outline-none focus:border-cyan-400 ${className || ""}`}
+      />
+    </div>
+  );
+}
+
+function PasswordInput({
+  name,
+  required = true,
+  minLength = 8,
+}: {
+  name: string;
+  required?: boolean;
+  minLength?: number;
+}) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative">
+      <i className="fa-solid fa-lock pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" aria-hidden="true" />
+      <input
+        type={show ? "text" : "password"}
+        name={name}
+        required={required}
+        minLength={minLength}
+        className="w-full rounded-xl border border-black/10 py-2 pl-10 pr-12 outline-none focus:border-cyan-400"
+      />
+      <button
+        type="button"
+        onClick={() => setShow((v) => !v)}
+        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg px-2 py-1 text-zinc-500 hover:bg-zinc-100"
+        aria-label={show ? "Ocultar contraseña" : "Mostrar contraseña"}
+      >
+        <i className={`fa-solid ${show ? "fa-eye-slash" : "fa-eye"}`} aria-hidden="true" />
+      </button>
+    </div>
   );
 }
 
@@ -66,11 +112,11 @@ export function LoginCard({ returnTo = "/mi-cuenta" }: { returnTo?: string }) {
       setStatus({ type: "idle", text: "" });
       try {
         const json = await postJson("/api/auth/login", { email, password });
-        setStatus({ type: "ok", text: "Sesión iniciada. Redirigiendo..." });
+        setStatus({ type: "ok", text: "Sesion iniciada. Redirigiendo..." });
         router.push(returnTo || (json.user?.role === "admin" ? "/admin" : "/mi-cuenta"));
         router.refresh();
       } catch (error) {
-        setStatus({ type: "error", text: error instanceof Error ? error.message : "No se pudo iniciar sesión" });
+        setStatus({ type: "error", text: error instanceof Error ? error.message : "No se pudo iniciar sesion" });
       }
     });
   }
@@ -80,22 +126,11 @@ export function LoginCard({ returnTo = "/mi-cuenta" }: { returnTo?: string }) {
       <form onSubmit={onSubmit} className="grid gap-4">
         <label className="grid gap-1 text-sm font-medium text-zinc-800">
           Email
-          <input
-            type="email"
-            name="email"
-            required
-            className="rounded-xl border border-black/10 px-3 py-2 outline-none focus:border-cyan-400"
-          />
+          <InputWithIcon iconClass="fa-solid fa-envelope" type="email" name="email" required />
         </label>
         <label className="grid gap-1 text-sm font-medium text-zinc-800">
           Contraseña
-          <input
-            type="password"
-            name="password"
-            required
-            minLength={8}
-            className="rounded-xl border border-black/10 px-3 py-2 outline-none focus:border-cyan-400"
-          />
+          <PasswordInput name="password" />
         </label>
         <button
           type="submit"
@@ -149,32 +184,15 @@ export function RegisterCard({ role }: { role: "coach" | "client" }) {
       <form onSubmit={onSubmit} className="grid gap-4">
         <label className="grid gap-1 text-sm font-medium text-zinc-800">
           Nombre visible
-          <input
-            type="text"
-            name="displayName"
-            required
-            minLength={2}
-            className="rounded-xl border border-black/10 px-3 py-2 outline-none focus:border-cyan-400"
-          />
+          <InputWithIcon iconClass="fa-solid fa-user" type="text" name="displayName" required minLength={2} />
         </label>
         <label className="grid gap-1 text-sm font-medium text-zinc-800">
           Email
-          <input
-            type="email"
-            name="email"
-            required
-            className="rounded-xl border border-black/10 px-3 py-2 outline-none focus:border-cyan-400"
-          />
+          <InputWithIcon iconClass="fa-solid fa-envelope" type="email" name="email" required />
         </label>
         <label className="grid gap-1 text-sm font-medium text-zinc-800">
           Contraseña
-          <input
-            type="password"
-            name="password"
-            required
-            minLength={8}
-            className="rounded-xl border border-black/10 px-3 py-2 outline-none focus:border-cyan-400"
-          />
+          <PasswordInput name="password" />
         </label>
         <button
           type="submit"
@@ -217,12 +235,7 @@ export function ForgotPasswordCard() {
       <form onSubmit={onSubmit} className="grid gap-4">
         <label className="grid gap-1 text-sm font-medium text-zinc-800">
           Email
-          <input
-            type="email"
-            name="email"
-            required
-            className="rounded-xl border border-black/10 px-3 py-2 outline-none focus:border-cyan-400"
-          />
+          <InputWithIcon iconClass="fa-solid fa-envelope" type="email" name="email" required />
         </label>
         <button
           type="submit"
@@ -281,23 +294,11 @@ export function ResetPasswordCard({ token }: { token: string }) {
       <form onSubmit={onSubmit} className="grid gap-4">
         <label className="grid gap-1 text-sm font-medium text-zinc-800">
           Nueva contraseña
-          <input
-            type="password"
-            name="password"
-            required
-            minLength={8}
-            className="rounded-xl border border-black/10 px-3 py-2 outline-none focus:border-cyan-400"
-          />
+          <PasswordInput name="password" />
         </label>
         <label className="grid gap-1 text-sm font-medium text-zinc-800">
           Repite la contraseña
-          <input
-            type="password"
-            name="passwordConfirm"
-            required
-            minLength={8}
-            className="rounded-xl border border-black/10 px-3 py-2 outline-none focus:border-cyan-400"
-          />
+          <PasswordInput name="passwordConfirm" />
         </label>
         <button
           type="submit"

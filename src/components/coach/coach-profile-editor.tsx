@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 type EditorProfile = {
   id?: string;
@@ -160,6 +160,11 @@ export function CoachProfileEditor({
   const [wizardStep, setWizardStep] = useState(0);
   const [showValidation, setShowValidation] = useState(false);
   const [autoSavingStep, setAutoSavingStep] = useState<number | null>(null);
+  const [isDirty, setIsDirty] = useState(false);
+  const [heroPreviewSrc, setHeroPreviewSrc] = useState<string | null>(initialProfile?.heroImageUrl || null);
+  const [videoPreviewSrc, setVideoPreviewSrc] = useState<string | null>(initialProfile?.videoPresentationUrl || null);
+  const [galleryPreviewSrcs, setGalleryPreviewSrcs] = useState<string[]>([]);
+  const autoSaveInFlightRef = useRef(false);
   const [form, setForm] = useState({
     name: initialProfile?.name || "",
     headline: initialProfile?.headline || "",
@@ -184,6 +189,7 @@ export function CoachProfileEditor({
 
   function setField<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
+    setIsDirty(true);
   }
 
   const steps = useMemo(
@@ -229,8 +235,11 @@ export function CoachProfileEditor({
 
   const currentStepErrors = getStepErrors(Math.max(0, currentStep));
   async function saveDraftSilent(reason?: string) {
+    if (autoSaveInFlightRef.current) return false;
+    autoSaveInFlightRef.current = true;
     try {
       await postJson("/api/coach-profile/save", buildPayload());
+      setIsDirty(false);
       setStatus({
         type: "ok",
         text: reason ? `Autoguardado correcto (${reason}).` : "Autoguardado correcto.",
@@ -242,8 +251,23 @@ export function CoachProfileEditor({
         text: error instanceof Error ? error.message : "No se pudo autoguardar el perfil.",
       });
       return false;
+    } finally {
+      autoSaveInFlightRef.current = false;
     }
   }
+
+  useEffect(() => {
+    if (!wizardMode) return;
+    if (!isDirty) return;
+    if (pending || uploading !== null) return;
+
+    const timer = window.setTimeout(() => {
+      void saveDraftSilent("temporizador");
+    }, 5000);
+
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wizardMode, isDirty, pending, uploading, form]); // form included so debounce restarts on changes
 
   async function goToWizardStep(nextStep: number) {
     if (!wizardMode) {
@@ -308,6 +332,7 @@ export function CoachProfileEditor({
       setStatus({ type: "idle", text: "" });
       try {
         await postJson("/api/coach-profile/save", buildPayload());
+        setIsDirty(false);
         setStatus({ type: "ok", text: "Perfil guardado correctamente." });
       } catch (error) {
         setStatus({ type: "error", text: error instanceof Error ? error.message : "No se pudo guardar el perfil." });
@@ -325,6 +350,7 @@ export function CoachProfileEditor({
           return;
         }
         await postJson("/api/coach-profile/save", buildPayload());
+        setIsDirty(false);
         await postJson("/api/coach-profile/publish", {});
         setStatus({ type: "ok", text: "Perfil publicado correctamente." });
       } catch (error) {
@@ -341,6 +367,7 @@ export function CoachProfileEditor({
     try {
       const uploaded = await uploadViaPresign({ file, scope: "coach_hero" });
       setField("heroImageUrl", uploaded.url);
+      setHeroPreviewSrc(URL.createObjectURL(file));
       setStatus({ type: "ok", text: "Imagen principal subida. Guarda el perfil para persistirla." });
     } catch (error) {
       setStatus({ type: "error", text: error instanceof Error ? error.message : "No se pudo subir la imagen." });
@@ -357,6 +384,7 @@ export function CoachProfileEditor({
     try {
       const uploaded = await uploadViaPresign({ file, scope: "coach_video" });
       setField("videoPresentationUrl", uploaded.url);
+      setVideoPreviewSrc(URL.createObjectURL(file));
       setStatus({ type: "ok", text: "Video subido. Guarda el perfil para persistirlo." });
     } catch (error) {
       setStatus({ type: "error", text: error instanceof Error ? error.message : "No se pudo subir el video." });
@@ -372,9 +400,11 @@ export function CoachProfileEditor({
     setStatus({ type: "idle", text: "" });
     try {
       const urls: string[] = [];
+      const localPreviews: string[] = [];
       for (const file of validFiles.slice(0, 8)) {
         const uploaded = await uploadViaPresign({ file, scope: "coach_gallery" });
         urls.push(uploaded.url);
+        localPreviews.push(URL.createObjectURL(file));
       }
       const existing = form.galleryUrls
         .split(/\r?\n/)
@@ -382,6 +412,7 @@ export function CoachProfileEditor({
         .filter(Boolean);
       const merged = [...existing, ...urls].slice(0, 8);
       setField("galleryUrls", merged.join("\n"));
+      setGalleryPreviewSrcs((prev) => [...prev, ...localPreviews].slice(0, 8));
       setStatus({ type: "ok", text: "Galeria subida. Guarda el perfil para persistirla." });
     } catch (error) {
       setStatus({ type: "error", text: error instanceof Error ? error.message : "No se pudo subir la galeria." });
@@ -392,6 +423,18 @@ export function CoachProfileEditor({
 
   function showStep(idx: number) {
     return !wizardMode || currentStep === idx;
+  }
+
+  const galleryUrlsList = form.galleryUrls
+    .split(/\r?\n/)
+    .map((v) => v.trim())
+    .filter(Boolean)
+    .slice(0, 8);
+
+  function removeGalleryAt(index: number) {
+    const next = galleryUrlsList.filter((_, i) => i !== index);
+    setField("galleryUrls", next.join("\n"));
+    setGalleryPreviewSrcs((prev) => prev.filter((_, i) => i !== index));
   }
 
   return (
@@ -601,15 +644,15 @@ export function CoachProfileEditor({
               onFilesSelected={handleHeroUpload}
               uploading={uploading === "hero"}
             />
-            <label className="grid gap-1 text-sm font-medium text-zinc-800">
-              URL imagen principal
-              <input value={form.heroImageUrl} onChange={(e) => setField("heroImageUrl", e.target.value)} className={fieldInputClass()} />
-            </label>
-            {form.heroImageUrl ? (
+            {(heroPreviewSrc || form.heroImageUrl) ? (
               <div className="rounded-2xl border border-black/10 bg-zinc-50 p-3">
                 <p className="mb-2 text-sm font-semibold text-zinc-900">Preview imagen principal</p>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={form.heroImageUrl} alt="Preview imagen principal" className="max-h-52 w-full rounded-xl object-cover" />
+                <img
+                  src={heroPreviewSrc || form.heroImageUrl || ""}
+                  alt="Preview imagen principal"
+                  className="max-h-52 w-full rounded-xl object-cover"
+                />
               </div>
             ) : null}
 
@@ -620,18 +663,10 @@ export function CoachProfileEditor({
               onFilesSelected={handleVideoUpload}
               uploading={uploading === "video"}
             />
-            <label className="grid gap-1 text-sm font-medium text-zinc-800">
-              URL video presentacion
-              <input
-                value={form.videoPresentationUrl}
-                onChange={(e) => setField("videoPresentationUrl", e.target.value)}
-                className={fieldInputClass()}
-              />
-            </label>
-            {form.videoPresentationUrl ? (
+            {(videoPreviewSrc || form.videoPresentationUrl) ? (
               <div className="rounded-2xl border border-black/10 bg-zinc-50 p-3">
                 <p className="mb-2 text-sm font-semibold text-zinc-900">Preview video</p>
-                <video src={form.videoPresentationUrl} controls className="max-h-64 w-full rounded-xl bg-black" />
+                <video src={videoPreviewSrc || form.videoPresentationUrl || ""} controls className="max-h-64 w-full rounded-xl bg-black" />
               </div>
             ) : null}
 
@@ -643,23 +678,28 @@ export function CoachProfileEditor({
               onFilesSelected={handleGalleryUpload}
               uploading={uploading === "gallery"}
             />
-            <label className="grid gap-1 text-sm font-medium text-zinc-800">
-              Galeria (1 URL por linea)
-              <textarea value={form.galleryUrls} onChange={(e) => setField("galleryUrls", e.target.value)} rows={5} className={fieldInputClass()} />
-            </label>
-            {form.galleryUrls.trim() ? (
+            {galleryUrlsList.length ? (
               <div className="rounded-2xl border border-black/10 bg-zinc-50 p-3">
                 <p className="mb-2 text-sm font-semibold text-zinc-900">Preview galeria</p>
                 <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-                  {form.galleryUrls
-                    .split(/\r?\n/)
-                    .map((v) => v.trim())
-                    .filter(Boolean)
-                    .slice(0, 8)
-                    .map((url) => (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img key={url} src={url} alt="Preview galeria" className="h-24 w-full rounded-lg object-cover" />
-                    ))}
+                  {galleryUrlsList.map((url, index) => (
+                    <div key={`${url}-${index}`} className="relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={galleryPreviewSrcs[index] || url}
+                        alt="Preview galeria"
+                        className="h-24 w-full rounded-lg object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeGalleryAt(index)}
+                        className="absolute right-1 top-1 rounded-md bg-black/75 px-2 py-1 text-xs font-semibold text-white"
+                        aria-label={`Eliminar imagen ${index + 1}`}
+                      >
+                        X
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
             ) : null}
