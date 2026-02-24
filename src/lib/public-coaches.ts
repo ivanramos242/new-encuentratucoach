@@ -129,6 +129,19 @@ async function listDbPublicCoachesRaw() {
   });
 }
 
+async function listWpImportedCoachIds(coachIds: string[]) {
+  if (!coachIds.length) return new Set<string>();
+  const rows = await prisma.legacyImportMap.findMany({
+    where: {
+      targetTable: "CoachProfile",
+      sourceType: "coach_post",
+      targetId: { in: coachIds },
+    },
+    select: { targetId: true },
+  });
+  return new Set(rows.map((row) => row.targetId));
+}
+
 async function listDbPublicCoaches(): Promise<PublicCoachProfile[]> {
   if (!process.env.DATABASE_URL) return [];
   try {
@@ -138,6 +151,44 @@ async function listDbPublicCoaches(): Promise<PublicCoachProfile[]> {
     console.warn("[public-coaches] falling back to mock data (DB query failed)", error);
     return [];
   }
+}
+
+function sortByCreatedAtDesc(list: PublicCoachProfile[]) {
+  return [...list].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
+}
+
+export async function listHomeLatestCoaches(limit = 6) {
+  if (!process.env.DATABASE_URL) {
+    return sortByCreatedAtDesc(mockCoaches)
+      .filter((coach) => coach.visibilityActive && coach.profileStatus === "published")
+      .slice(0, limit);
+  }
+
+  try {
+    const rows = await listDbPublicCoachesRaw();
+    if (rows.length > 0) {
+      const importedIds = await listWpImportedCoachIds(rows.map((row) => row.id));
+      const mapped = rows.map(mapDbCoachToPublic);
+
+      const prioritized =
+        importedIds.size > 0
+          ? [...mapped].sort((a, b) => {
+              const aImported = importedIds.has(a.id) ? 1 : 0;
+              const bImported = importedIds.has(b.id) ? 1 : 0;
+              if (aImported !== bImported) return bImported - aImported;
+              return +new Date(b.createdAt) - +new Date(a.createdAt);
+            })
+          : sortByCreatedAtDesc(mapped);
+
+      return prioritized.slice(0, limit);
+    }
+  } catch (error) {
+    console.warn("[public-coaches] home latest fallback (DB query failed)", error);
+  }
+
+  return sortByCreatedAtDesc(mockCoaches)
+    .filter((coach) => coach.visibilityActive && coach.profileStatus === "published")
+    .slice(0, limit);
 }
 
 function mergePublicCoachLists(dbCoaches: PublicCoachProfile[]) {
