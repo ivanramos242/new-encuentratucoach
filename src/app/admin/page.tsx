@@ -28,6 +28,11 @@ const cards = [
     title: "Jobs",
     desc: "Ejecución y diagnóstico de jobs internos por cron.",
   },
+  {
+    href: "/admin/importaciones",
+    title: "Importaciones",
+    desc: "Sube un JSON de WordPress y ejecuta dry-run o importaciÃ³n de coaches desde la web.",
+  },
 ] as const;
 
 export default function AdminPage() {
@@ -56,4 +61,3 @@ export default function AdminPage() {
     </>
   );
 }
-
