@@ -41,7 +41,12 @@ async function postJson<T extends Record<string, unknown>>(url: string, payload:
     headers: { "content-type": "application/json" },
     body: JSON.stringify(payload),
   });
-  const json = (await res.json()) as ApiResponse;
+  let json: ApiResponse | null = null;
+  try {
+    json = (await res.json()) as ApiResponse;
+  } catch {
+    throw new Error(`Error del servidor (${res.status}). Revisa los logs.`);
+  }
   if (!res.ok || !json.ok) throw new Error(json.message || "Error inesperado");
   return json;
 }
@@ -306,4 +311,3 @@ export function ResetPasswordCard({ token }: { token: string }) {
     </CardShell>
   );
 }
-
