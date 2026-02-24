@@ -1,26 +1,20 @@
 import { RegisterCard } from "@/components/auth/auth-card";
-import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
+import { getInflatedRegisteredUsersCount } from "@/lib/platform-stats";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
   title: "Registro de coach",
-  description: "Crea una cuenta de coach para activar tu membresía y gestionar tu perfil.",
+  description: "Crea una cuenta de coach para activar tu membresia y gestionar tu perfil.",
   path: "/registro/coach",
 });
 
-export default function CoachRegisterPage() {
+export default async function CoachRegisterPage() {
+  const userCount = await getInflatedRegisteredUsersCount();
+
   return (
-    <>
-      <PageHero
-        badge="Auth V3.0.1"
-        title="Crear cuenta de coach"
-        description="Registro real de coach con creación de usuario y perfil inicial en borrador."
-      />
-      <PageShell className="pt-8">
-        <RegisterCard role="coach" />
-      </PageShell>
-    </>
+    <PageShell className="pt-8">
+      <RegisterCard role="coach" userCount={userCount} />
+    </PageShell>
   );
 }
-
