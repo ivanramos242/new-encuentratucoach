@@ -18,7 +18,8 @@ export async function POST(request: Request) {
       delivered: result.delivered,
       debugResetUrl: result.debugResetUrl,
     });
-  } catch {
+  } catch (error) {
+    console.error("[auth/password/forgot] error", error);
     return jsonError("No se pudo procesar la solicitud", 400);
   }
 }
