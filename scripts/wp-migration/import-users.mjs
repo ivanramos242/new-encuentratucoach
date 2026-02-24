@@ -19,6 +19,7 @@ function parseArgs(argv) {
     file: "wp_users.json",
     commit: false,
     forceResetExisting: false,
+    clientsOnly: false,
     adminEmails: [],
     verbose: false,
   };
@@ -35,6 +36,10 @@ function parseArgs(argv) {
     }
     if (token === "--force-reset-existing") {
       out.forceResetExisting = true;
+      continue;
+    }
+    if (token === "--clients-only") {
+      out.clientsOnly = true;
       continue;
     }
     if (token === "--verbose") {
@@ -80,8 +85,9 @@ function parsePhpMyAdminExport(json) {
   };
 }
 
-function inferRoleFromUserMeta(userId, userMetaRows, adminEmails, email, coachEmails) {
+function inferRoleFromUserMeta(userId, userMetaRows, adminEmails, email, coachEmails, options = {}) {
   if (adminEmails.has(email)) return "admin";
+  if (options.clientsOnly) return "client";
   if (coachEmails.has(email)) return "coach";
 
   const metas = userMetaRows.filter((row) => String(row.user_id || "") === String(userId));
@@ -201,7 +207,9 @@ async function main() {
   const collisions = [];
 
   for (const wpUser of sanitized.users) {
-    const role = inferRoleFromUserMeta(wpUser.wpId, wpUserMetaRows, adminEmails, wpUser.email, coachEmails);
+    const role = inferRoleFromUserMeta(wpUser.wpId, wpUserMetaRows, adminEmails, wpUser.email, coachEmails, {
+      clientsOnly: args.clientsOnly,
+    });
     roleCounts[role] += 1;
 
     const existingMap = canUseDb
@@ -324,6 +332,7 @@ async function main() {
     adminWhitelistCount: adminEmails.size,
     inferredCoachEmailsFromPlatform: coachEmails.size,
     forceResetExisting: args.forceResetExisting,
+    clientsOnly: args.clientsOnly,
   };
 
   console.log(JSON.stringify(summary, null, 2));
