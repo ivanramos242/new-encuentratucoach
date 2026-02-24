@@ -176,7 +176,18 @@ async function main() {
   }
 
   const adminEmails = new Set(args.adminEmails.map(normalizeEmail).filter(Boolean));
-  const coachEmails = await getCoachInferenceEmailSet();
+  const canUseDb = Boolean(process.env.DATABASE_URL);
+  if (args.commit && !canUseDb) {
+    console.error("Falta DATABASE_URL. Para --commit necesitas conexión a la base de datos.");
+    process.exit(1);
+  }
+
+  let coachEmails = new Set();
+  if (canUseDb) {
+    coachEmails = await getCoachInferenceEmailSet();
+  } else if (!args.commit) {
+    console.warn("[wp-users-import] DATABASE_URL no configurada: dry-run sin inferencia de coaches desde la plataforma (todos salvo adminWhitelist => client).");
+  }
   const sanitized = sanitizeWpUsers(wpUsersRows);
 
   const importedPasswordSeed = randomBytes(32).toString("hex");
@@ -193,20 +204,24 @@ async function main() {
     const role = inferRoleFromUserMeta(wpUser.wpId, wpUserMetaRows, adminEmails, wpUser.email, coachEmails);
     roleCounts[role] += 1;
 
-    const existingMap = await prisma.legacyImportMap.findUnique({
-      where: {
-        sourceSystem_sourceType_sourceId: {
-          sourceSystem: "wordpress",
-          sourceType: "user",
-          sourceId: wpUser.wpId,
-        },
-      },
-    });
+    const existingMap = canUseDb
+      ? await prisma.legacyImportMap.findUnique({
+          where: {
+            sourceSystem_sourceType_sourceId: {
+              sourceSystem: "wordpress",
+              sourceType: "user",
+              sourceId: wpUser.wpId,
+            },
+          },
+        })
+      : null;
 
-    const existingByEmail = await prisma.user.findUnique({
-      where: { email: wpUser.email },
-      select: { id: true, email: true, role: true, mustResetPassword: true },
-    });
+    const existingByEmail = canUseDb
+      ? await prisma.user.findUnique({
+          where: { email: wpUser.email },
+          select: { id: true, email: true, role: true, mustResetPassword: true },
+        })
+      : null;
 
     const payload = {
       wpId: wpUser.wpId,
@@ -343,4 +358,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect().catch(() => undefined);
   });
-
