@@ -31,7 +31,13 @@ async function postJson(url: string, payload: unknown) {
   return json;
 }
 
-export function CoachProfileEditor({ initialProfile }: { initialProfile: EditorProfile | null }) {
+export function CoachProfileEditor({
+  initialProfile,
+  wizardMode = false,
+}: {
+  initialProfile: EditorProfile | null;
+  wizardMode?: boolean;
+}) {
   const [pending, startTransition] = useTransition();
   const [status, setStatus] = useState<{ type: "idle" | "ok" | "error"; text: string }>({ type: "idle", text: "" });
   const [form, setForm] = useState({
@@ -118,8 +124,51 @@ export function CoachProfileEditor({ initialProfile }: { initialProfile: EditorP
     });
   }
 
+  const wizardSteps = [
+    { id: "name", label: "Datos basicos", done: Boolean(form.name.trim() && form.bio.trim()) },
+    { id: "location", label: "Ciudad y modalidad", done: Boolean(form.city.trim() && (form.modeOnline || form.modePresencial)) },
+    { id: "pricing", label: "Precio", done: Boolean(form.basePriceEur && Number(form.basePriceEur) > 0) },
+    { id: "contact", label: "Contacto", done: Boolean(form.whatsapp.trim() || form.email.trim() || form.web.trim()) },
+  ];
+  const wizardDone = wizardSteps.filter((s) => s.done).length;
+  const wizardCanPublish = wizardDone === wizardSteps.length;
+
   return (
     <div className="grid gap-6">
+      {wizardMode ? (
+        <section className="rounded-3xl border border-cyan-200 bg-gradient-to-br from-cyan-50 to-white p-5 shadow-sm sm:p-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-700">Wizard de onboarding</p>
+              <h2 className="mt-1 text-xl font-black tracking-tight text-zinc-950">Crea tu perfil coach paso a paso</h2>
+              <p className="mt-1 text-sm text-zinc-700">
+                Completa los pasos y luego pulsa <strong>Guardar y publicar</strong>.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-cyan-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-900">
+              Progreso: {wizardDone}/{wizardSteps.length}
+            </div>
+          </div>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            {wizardSteps.map((step) => (
+              <div
+                key={step.id}
+                className={`rounded-xl border px-3 py-2 text-sm ${
+                  step.done ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-black/10 bg-white text-zinc-700"
+                }`}
+              >
+                {step.done ? "✓" : "•"} {step.label}
+              </div>
+            ))}
+          </div>
+          {!wizardCanPublish ? (
+            <p className="mt-3 text-sm text-zinc-700">
+              Cuando completes los 4 pasos podr&aacute;s publicar el perfil (si la membres&iacute;a est&aacute; activa).
+            </p>
+          ) : null}
+        </section>
+      ) : null}
+
       <section className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -258,4 +307,3 @@ export function CoachProfileEditor({ initialProfile }: { initialProfile: EditorP
     </div>
   );
 }
-

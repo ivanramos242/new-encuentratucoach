@@ -12,6 +12,10 @@ const schema = z.object({
   cancelPath: z.string().optional(),
 });
 
+function isActiveishSubscription(status?: string | null) {
+  return status === "active" || status === "trialing";
+}
+
 async function ensureStripeCustomer(input: { userId: string; email: string; name?: string | null }) {
   const existing = await prisma.stripeCustomer.findUnique({ where: { userId: input.userId } });
   if (existing) return existing;
@@ -56,6 +60,27 @@ export async function POST(request: Request) {
     if (!user) return jsonError("Usuario no encontrado", 404);
     const coachProfile = user.coachProfiles.find((p) => p.id === auth.user.coachProfileId) || user.coachProfiles[0];
     if (!coachProfile) return jsonError("Perfil de coach no encontrado", 404);
+
+    const latestSubscription = await prisma.coachSubscription.findFirst({
+      where: { coachProfileId: coachProfile.id },
+      orderBy: [{ updatedAt: "desc" }],
+      select: {
+        id: true,
+        status: true,
+        planCode: true,
+        currentPeriodEnd: true,
+        cancelAtPeriodEnd: true,
+      },
+    });
+    if (latestSubscription && isActiveishSubscription(latestSubscription.status)) {
+      return jsonError(
+        `Ya tienes una suscripcion ${latestSubscription.status} (${latestSubscription.planCode}). No puedes crear otra hasta cancelarla o que termine.`,
+        409,
+        {
+          subscription: latestSubscription,
+        },
+      );
+    }
 
     const stripeCustomer = await ensureStripeCustomer({
       userId: user.id,
