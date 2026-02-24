@@ -4,6 +4,13 @@ function hasSmtpConfig() {
   return Boolean(process.env.SMTP_HOST && process.env.SMTP_PORT);
 }
 
+function parseSmtpSecure() {
+  const raw = (process.env.SMTP_SECURE || "").trim().toLowerCase();
+  if (raw === "true" || raw === "1" || raw === "yes") return true;
+  if (raw === "false" || raw === "0" || raw === "no") return false;
+  return Number(process.env.SMTP_PORT ?? 587) === 465;
+}
+
 export async function sendMail(input: {
   to: string;
   subject: string;
@@ -22,17 +29,17 @@ export async function sendMail(input: {
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT ?? 587),
-      secure: Number(process.env.SMTP_PORT ?? 587) === 465,
+      secure: parseSmtpSecure(),
       auth: process.env.SMTP_USER
         ? {
-            user: process.env.SMTP_USER,
+          user: process.env.SMTP_USER,
             pass: process.env.SMTP_PASS,
           }
         : undefined,
     });
 
     const info = await transporter.sendMail({
-      from: process.env.SMTP_FROM || "EncuentraTuCoach <no-reply@example.com>",
+      from: process.env.SMTP_FROM || process.env.EMAIL_FROM || "EncuentraTuCoach <no-reply@example.com>",
       to: input.to,
       subject: input.subject,
       html: input.html,
