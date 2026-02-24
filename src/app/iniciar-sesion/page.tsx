@@ -1,10 +1,10 @@
 import { LoginCard } from "@/components/auth/auth-card";
-import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
+import { getInflatedRegisteredUsersCount } from "@/lib/platform-stats";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
-  title: "Iniciar sesión",
+  title: "Iniciar sesion",
   description: "Accede como coach o cliente a tu cuenta en la plataforma.",
   path: "/iniciar-sesion",
 });
@@ -15,18 +15,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
   const params = await searchParams;
   const returnToRaw = Array.isArray(params.returnTo) ? params.returnTo[0] : params.returnTo;
   const returnTo = typeof returnToRaw === "string" && returnToRaw.startsWith("/") ? returnToRaw : "/mi-cuenta";
+  const userCount = await getInflatedRegisteredUsersCount();
 
   return (
-    <>
-      <PageHero
-        badge="Auth V3.0.1"
-        title="Iniciar sesión"
-        description="Accede a tu cuenta con sesión real (Prisma + cookies seguras) para coaches, clientes y admin."
-      />
-      <PageShell className="pt-8">
-        <LoginCard returnTo={returnTo} />
-      </PageShell>
-    </>
+    <PageShell className="pt-8">
+      <LoginCard returnTo={returnTo} userCount={userCount} />
+    </PageShell>
   );
 }
-
