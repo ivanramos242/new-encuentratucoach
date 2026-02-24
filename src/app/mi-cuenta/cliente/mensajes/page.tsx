@@ -1,11 +1,12 @@
 import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
 import { MessageInboxView } from "@/components/v2/message-inbox-view";
-import { v2ClientActor } from "@/lib/v2-page-actors";
+import { getV2ClientPageActor } from "@/lib/v2-page-actors";
 import { listThreadsForActor } from "@/lib/v2-service";
 
-export default function ClientMessagesInboxPage() {
-  const threads = listThreadsForActor(v2ClientActor);
+export default async function ClientMessagesInboxPage() {
+  const actor = await getV2ClientPageActor();
+  const threads = listThreadsForActor(actor);
 
   return (
     <>
@@ -20,4 +21,3 @@ export default function ClientMessagesInboxPage() {
     </>
   );
 }
-

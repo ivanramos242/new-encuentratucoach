@@ -2,11 +2,12 @@ import Link from "next/link";
 import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
 import { NotificationCenterView } from "@/components/v2/notification-center-view";
-import { v2ClientActor } from "@/lib/v2-page-actors";
+import { getV2ClientPageActor } from "@/lib/v2-page-actors";
 import { listNotifications } from "@/lib/v2-service";
 
-export default function ClientNotificationsPage() {
-  const notifications = listNotifications(v2ClientActor);
+export default async function ClientNotificationsPage() {
+  const actor = await getV2ClientPageActor();
+  const notifications = listNotifications(actor);
 
   return (
     <>
@@ -29,4 +30,3 @@ export default function ClientNotificationsPage() {
     </>
   );
 }
-

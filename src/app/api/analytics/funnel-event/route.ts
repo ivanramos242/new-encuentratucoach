@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { jsonError, jsonOk } from "@/lib/api-handlers";
-import { getMockActorFromRequest } from "@/lib/mock-auth-context";
+import { resolveApiActorFromRequest } from "@/lib/mock-auth-context";
 import { recordFunnelEvent } from "@/lib/v2-service";
 
 const schema = z.object({
@@ -24,7 +24,9 @@ const schema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const actor = getMockActorFromRequest(request, "client");
+    const actorResolved = await resolveApiActorFromRequest(request, "client");
+  if (!actorResolved.ok) return actorResolved.response;
+  const actor = actorResolved.actor;
     const body = await request.json();
     const parsed = schema.safeParse(body);
     if (!parsed.success) return jsonError("Payload invalido", 400, { issues: parsed.error.flatten() });
@@ -42,4 +44,5 @@ export async function POST(request: Request) {
     return jsonError("No se pudo registrar el funnel event", 400);
   }
 }
+
 

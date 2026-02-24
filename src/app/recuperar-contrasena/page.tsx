@@ -1,4 +1,6 @@
-import { PlaceholderPage } from "@/components/layout/placeholder-page";
+import { ForgotPasswordCard, ResetPasswordCard } from "@/components/auth/auth-card";
+import { PageHero } from "@/components/layout/page-hero";
+import { PageShell } from "@/components/layout/page-shell";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
@@ -7,13 +9,22 @@ export const metadata = buildMetadata({
   path: "/recuperar-contrasena",
 });
 
-export default function ForgotPasswordPage() {
+type SearchParamsInput = Promise<Record<string, string | string[] | undefined>>;
+
+export default async function ForgotPasswordPage({ searchParams }: { searchParams: SearchParamsInput }) {
+  const params = await searchParams;
+  const tokenRaw = Array.isArray(params.token) ? params.token[0] : params.token;
+  const token = typeof tokenRaw === "string" ? tokenRaw : "";
+
   return (
-    <PlaceholderPage
-      badge="Auth V1"
-      title="Recuperar contraseña"
-      description="Flujo preparado para solicitar reset de contraseña por email transaccional."
-      routeType="Autenticación"
-    />
+    <>
+      <PageHero
+        badge="Auth V3.0.1"
+        title={token ? "Restablecer contraseña" : "Recuperar contraseña"}
+        description={token ? "Completa el cambio de contraseña con tu token de recuperación." : "Solicita un enlace de recuperación por email."}
+      />
+      <PageShell className="pt-8">{token ? <ResetPasswordCard token={token} /> : <ForgotPasswordCard />}</PageShell>
+    </>
   );
 }
+

@@ -1,11 +1,13 @@
 import { jsonError, jsonOk } from "@/lib/api-handlers";
-import { getMockActorFromRequest } from "@/lib/mock-auth-context";
+import { resolveApiActorFromRequest } from "@/lib/mock-auth-context";
 import { pollThreadMessages } from "@/lib/v2-service";
 
 type ParamsInput = Promise<{ threadId: string }>;
 
 export async function GET(request: Request, { params }: { params: ParamsInput }) {
-  const actor = getMockActorFromRequest(request, "client");
+  const actorResolved = await resolveApiActorFromRequest(request, "client");
+  if (!actorResolved.ok) return actorResolved.response;
+  const actor = actorResolved.actor;
   const { threadId } = await params;
   const url = new URL(request.url);
   const since = url.searchParams.get("since");

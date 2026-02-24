@@ -1,11 +1,12 @@
 import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
 import { NotificationCenterView } from "@/components/v2/notification-center-view";
-import { v2AdminActor } from "@/lib/v2-page-actors";
+import { getV2AdminPageActor } from "@/lib/v2-page-actors";
 import { getJobsSnapshot, getJobRunLogs, listNotifications } from "@/lib/v2-service";
 
-export default function AdminNotificationsPage() {
-  const notifications = listNotifications(v2AdminActor);
+export default async function AdminNotificationsPage() {
+  const actor = await getV2AdminPageActor();
+  const notifications = listNotifications(actor);
   const jobs = getJobsSnapshot();
   const runLogs = getJobRunLogs().slice(0, 8);
 
@@ -55,4 +56,3 @@ export default function AdminNotificationsPage() {
     </>
   );
 }
-

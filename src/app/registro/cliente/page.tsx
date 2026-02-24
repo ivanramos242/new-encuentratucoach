@@ -1,19 +1,26 @@
-import { PlaceholderPage } from "@/components/layout/placeholder-page";
+import { RegisterCard } from "@/components/auth/auth-card";
+import { PageHero } from "@/components/layout/page-hero";
+import { PageShell } from "@/components/layout/page-shell";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
   title: "Registro de cliente",
-  description: "Crea una cuenta de cliente para reseñar coaches y usar futuras funciones de cuenta.",
+  description: "Crea una cuenta de cliente para reseñar coaches y usar funciones de cuenta.",
   path: "/registro/cliente",
 });
 
 export default function ClientRegisterPage() {
   return (
-    <PlaceholderPage
-      badge="Auth V1"
-      title="Crear cuenta de cliente"
-      description="Flujo de registro de cliente preparado para reseñas, historial y futuras funciones de mensajería."
-      routeType="Autenticación"
-    />
+    <>
+      <PageHero
+        badge="Auth V3.0.1"
+        title="Crear cuenta de cliente"
+        description="Registro real para reseñas, Q&A y mensajería interna."
+      />
+      <PageShell className="pt-8">
+        <RegisterCard role="client" />
+      </PageShell>
+    </>
   );
 }
+
