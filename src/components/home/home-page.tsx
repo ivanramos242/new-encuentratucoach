@@ -2,8 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { CoachCard } from "@/components/directory/coach-card";
 import { PageShell } from "@/components/layout/page-shell";
-import { getLatestCoachesFrom } from "@/lib/directory";
-import { listPublicCoachesMerged } from "@/lib/public-coaches";
+import { listHomeLatestCoaches } from "@/lib/public-coaches";
 import { coachCategories, cities } from "@/lib/mock-data";
 
 const quickSearches = [
@@ -16,7 +15,7 @@ const quickSearches = [
 ];
 
 export async function HomePage() {
-  const latest = getLatestCoachesFrom(await listPublicCoachesMerged(), 6);
+  const latest = await listHomeLatestCoaches(6);
 
   return (
     <PageShell className="pt-6">

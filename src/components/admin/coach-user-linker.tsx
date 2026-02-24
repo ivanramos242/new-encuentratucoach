@@ -54,6 +54,7 @@ type LinkApiErr = {
 };
 
 type LinkApiResponse = LinkApiOk | LinkApiErr;
+type CoachMutationResponse = LinkApiResponse;
 
 function fmtDate(iso: string) {
   try {
@@ -130,7 +131,7 @@ export function CoachUserLinker({
           userId: nextUserId,
         }),
       });
-      const data = (await response.json()) as LinkApiResponse;
+      const data = (await response.json()) as CoachMutationResponse;
       if (!response.ok || !data.ok) {
         setFeedbackByCoachId((prev) => ({
           ...prev,
@@ -157,6 +158,57 @@ export function CoachUserLinker({
         [coachId]: {
           kind: "error",
           text: error instanceof Error ? error.message : "Error de red al guardar el vínculo.",
+        },
+      }));
+    } finally {
+      setBusyCoachId(null);
+    }
+  }
+
+  async function setDraft(coachId: string) {
+    setBusyCoachId(coachId);
+    setFeedbackByCoachId((prev) => {
+      const next = { ...prev };
+      delete next[coachId];
+      return next;
+    });
+
+    try {
+      const response = await fetch("/api/admin/coaches/status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          coachProfileId: coachId,
+          action: "draft",
+        }),
+      });
+      const data = (await response.json()) as CoachMutationResponse;
+      if (!response.ok || !data.ok) {
+        setFeedbackByCoachId((prev) => ({
+          ...prev,
+          [coachId]: {
+            kind: "error",
+            text: data.message || "No se pudo cambiar el estado.",
+          },
+        }));
+        return;
+      }
+
+      setCoaches((prev) => prev.map((coach) => (coach.id === coachId ? data.coach : coach)));
+      setDraftUserIdByCoachId((prev) => ({ ...prev, [coachId]: data.coach.owner?.id ?? "" }));
+      setFeedbackByCoachId((prev) => ({
+        ...prev,
+        [coachId]: {
+          kind: "ok",
+          text: data.message,
+        },
+      }));
+    } catch (error) {
+      setFeedbackByCoachId((prev) => ({
+        ...prev,
+        [coachId]: {
+          kind: "error",
+          text: error instanceof Error ? error.message : "Error de red al cambiar estado.",
         },
       }));
     } finally {
@@ -352,6 +404,19 @@ export function CoachUserLinker({
                         className="rounded-xl border border-black px-4 py-2 text-sm font-bold text-black disabled:opacity-50"
                       >
                         Desvincular
+                      </button>
+                    ) : null}
+                    {!(coach.profileStatus === "draft" && coach.visibilityStatus === "inactive") ? (
+                      <button
+                        type="button"
+                        disabled={isBusy}
+                        onClick={() => {
+                          if (!window.confirm(`¿Pasar "${coach.name}" a draft y ocultarlo del directorio?`)) return;
+                          void setDraft(coach.id);
+                        }}
+                        className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-bold text-amber-900 disabled:opacity-50"
+                      >
+                        Pasar a draft
                       </button>
                     ) : null}
                   </div>
