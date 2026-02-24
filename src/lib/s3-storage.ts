@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 let s3ClientSingleton: S3Client | null = null;
@@ -101,9 +101,38 @@ export async function createPresignedPutUrl(input: {
   return uploadUrl;
 }
 
+export async function deleteObjectFromStorage(input: { bucket: string; key: string }) {
+  const client = getS3Client();
+  const command = new DeleteObjectCommand({
+    Bucket: input.bucket,
+    Key: input.key,
+  });
+  await client.send(command);
+}
+
 export function buildPublicObjectUrl(bucket: string, key: string) {
   const explicitBase = process.env.S3_PUBLIC_BASE_URL || process.env.S3_PUBLIC_URL;
   if (!explicitBase) return null;
   const base = explicitBase.replace(/\/+$/, "");
   return `${base}/${bucket}/${encodeURI(key).replace(/#/g, "%23")}`;
+}
+
+export function parsePublicObjectUrl(inputUrl: string) {
+  const explicitBase = process.env.S3_PUBLIC_BASE_URL || process.env.S3_PUBLIC_URL;
+  if (!explicitBase) throw new Error("S3_PUBLIC_BASE_URL no configurado");
+
+  const base = explicitBase.replace(/\/+$/, "");
+  if (!inputUrl.startsWith(base + "/")) {
+    throw new Error("La URL no pertenece al storage publico configurado");
+  }
+
+  const rest = inputUrl.slice(base.length + 1);
+  const slashIdx = rest.indexOf("/");
+  if (slashIdx <= 0) throw new Error("URL de archivo invalida");
+
+  const bucket = rest.slice(0, slashIdx);
+  const key = decodeURIComponent(rest.slice(slashIdx + 1));
+  if (!bucket || !key) throw new Error("URL de archivo invalida");
+
+  return { bucket, key };
 }

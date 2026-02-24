@@ -34,7 +34,7 @@ const schema = z.object({
   sessionModes: z.array(z.nativeEnum(SessionMode)).max(2).optional(),
   pricing: z
     .object({
-      basePriceEur: z.number().int().min(0).max(5000).optional().nullable(),
+      basePriceEur: z.number().min(0).max(5000).optional().nullable().transform((v) => (typeof v === "number" ? Math.round(v) : v)),
       detailsHtml: z.string().max(15000).optional().nullable(),
       notes: z.string().max(2000).optional().nullable(),
     })
@@ -69,7 +69,12 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const parsed = schema.safeParse(body);
-    if (!parsed.success) return jsonError("Payload invalido", 400, { issues: parsed.error.flatten() });
+    if (!parsed.success) {
+      const firstIssue = parsed.error.issues[0]?.message;
+      return jsonError(firstIssue ? `Payload invalido: ${firstIssue}` : "Payload invalido", 400, {
+        issues: parsed.error.flatten(),
+      });
+    }
 
     const profile = await saveCoachProfile(auth.user, parsed.data);
     return jsonOk({ profile, message: "Perfil guardado correctamente" });
