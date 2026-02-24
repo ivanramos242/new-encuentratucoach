@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
+import { unstable_noStore as noStore } from "next/cache";
 
 const FALLBACK_INFLATED_USERS = 602;
 
 export async function getInflatedRegisteredUsersCount() {
+  noStore();
   if (!process.env.DATABASE_URL) return FALLBACK_INFLATED_USERS;
   try {
     const count = await prisma.user.count();
@@ -12,4 +14,3 @@ export async function getInflatedRegisteredUsersCount() {
     return FALLBACK_INFLATED_USERS;
   }
 }
-
