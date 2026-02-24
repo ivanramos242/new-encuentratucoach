@@ -8,6 +8,6 @@ export const metadata = buildMetadata({
   path: "/",
 });
 
-export default function HomePageRoute() {
+export default async function HomePageRoute() {
   return <HomePage />;
 }

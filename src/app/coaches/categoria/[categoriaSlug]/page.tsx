@@ -4,7 +4,8 @@ import { CoachCard } from "@/components/directory/coach-card";
 import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
 import { JsonLd } from "@/components/seo/json-ld";
-import { filterAndSortCoaches, getCategoryBySlug } from "@/lib/directory";
+import { filterAndSortCoachesFrom, getCategoryBySlug } from "@/lib/directory";
+import { listPublicCoachesMerged } from "@/lib/public-coaches";
 import { buildMetadata } from "@/lib/seo";
 
 type ParamsInput = Promise<{ categoriaSlug: string }>;
@@ -28,7 +29,7 @@ export default async function CategoryLandingPage({ params }: { params: ParamsIn
   const category = getCategoryBySlug(categoriaSlug);
   if (!category) notFound();
 
-  const items = filterAndSortCoaches({ cat: category.slug, sort: "recent", page: 1 });
+  const items = filterAndSortCoachesFrom(await listPublicCoachesMerged(), { cat: category.slug, sort: "recent", page: 1 });
 
   return (
     <>

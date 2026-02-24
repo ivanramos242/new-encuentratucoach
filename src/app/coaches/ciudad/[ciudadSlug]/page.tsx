@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { CoachCard } from "@/components/directory/coach-card";
 import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
-import { filterAndSortCoaches, getCityBySlug } from "@/lib/directory";
+import { filterAndSortCoachesFrom, getCityBySlug } from "@/lib/directory";
+import { listPublicCoachesMerged } from "@/lib/public-coaches";
 import { buildMetadata } from "@/lib/seo";
 
 type ParamsInput = Promise<{ ciudadSlug: string }>;
@@ -24,7 +25,7 @@ export default async function CityLandingPage({ params }: { params: ParamsInput 
   const city = getCityBySlug(ciudadSlug);
   if (!city) notFound();
 
-  const items = filterAndSortCoaches({ location: city.slug, sort: "recent", page: 1 });
+  const items = filterAndSortCoachesFrom(await listPublicCoachesMerged(), { location: city.slug, sort: "recent", page: 1 });
 
   return (
     <>

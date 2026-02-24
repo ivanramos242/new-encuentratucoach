@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { COACH_CATEGORY_CATALOG } from "@/lib/coach-category-catalog";
 
 type EditorProfile = {
   id?: string;
@@ -14,6 +15,7 @@ type EditorProfile = {
   location?: { city?: string | null; province?: string | null; country?: string | null } | null;
   pricing?: { basePriceEur?: number | null; detailsHtml?: string | null } | null;
   links?: Array<{ type: string; value: string }>;
+  categories?: Array<{ category?: { slug?: string | null; name?: string | null } | null }>;
   galleryAssets?: Array<{ url: string }>;
   sessionModes?: Array<{ mode: "online" | "presencial" }>;
   profileStatus?: string;
@@ -167,7 +169,9 @@ export function CoachProfileEditor({
   const [isDirty, setIsDirty] = useState(false);
   const [heroPreviewSrc, setHeroPreviewSrc] = useState<string | null>(initialProfile?.heroImageUrl || null);
   const [videoPreviewSrc, setVideoPreviewSrc] = useState<string | null>(initialProfile?.videoPresentationUrl || null);
-  const [galleryPreviewSrcs, setGalleryPreviewSrcs] = useState<string[]>([]);
+  const [galleryPreviewSrcs, setGalleryPreviewSrcs] = useState<string[]>(
+    (initialProfile?.galleryAssets || []).map((a) => a.url).slice(0, 8),
+  );
   const autoSaveInFlightRef = useRef(false);
   const [form, setForm] = useState({
     name: initialProfile?.name || "",
@@ -187,6 +191,10 @@ export function CoachProfileEditor({
     email: initialProfile?.links?.find((l) => l.type === "email")?.value || "",
     phone: initialProfile?.links?.find((l) => l.type === "phone")?.value || "",
     galleryUrls: (initialProfile?.galleryAssets || []).map((a) => a.url).join("\n"),
+    categorySlugs: (initialProfile?.categories || [])
+      .map((item) => item.category?.slug || "")
+      .filter(Boolean)
+      .slice(0, 12),
     modeOnline: (initialProfile?.sessionModes || []).some((m) => m.mode === "online"),
     modePresencial: (initialProfile?.sessionModes || []).some((m) => m.mode === "presencial"),
   });
@@ -198,7 +206,7 @@ export function CoachProfileEditor({
 
   const steps = useMemo(
     () => [
-      { label: "Datos basicos", done: Boolean(form.name.trim() && form.bio.trim()) },
+      { label: "Datos basicos", done: Boolean(form.name.trim() && form.bio.trim() && form.categorySlugs.length) },
       { label: "Ciudad y modalidad", done: Boolean(form.city.trim() && (form.modeOnline || form.modePresencial)) },
       { label: "Precio y condiciones", done: Boolean(form.basePriceEur && Number(form.basePriceEur) > 0) },
       { label: "Contacto y media", done: Boolean(form.whatsapp.trim() || form.email.trim() || form.web.trim()) },
@@ -214,6 +222,7 @@ export function CoachProfileEditor({
       return {
         name: !form.name.trim() ? "El nombre visible es obligatorio." : "",
         bio: !form.bio.trim() ? "La bio es obligatoria." : "",
+        categories: !form.categorySlugs.length ? "Selecciona al menos una categoria." : "",
       };
     }
     if (stepIndex === 1) {
@@ -238,6 +247,12 @@ export function CoachProfileEditor({
   }
 
   const currentStepErrors = getStepErrors(Math.max(0, currentStep));
+  const galleryUrlsList = form.galleryUrls
+    .split(/\r?\n/)
+    .map((v) => v.trim())
+    .filter(Boolean)
+    .slice(0, 8);
+
   async function saveDraftSilent(reason?: string) {
     if (autoSaveInFlightRef.current) return false;
     autoSaveInFlightRef.current = true;
@@ -272,6 +287,24 @@ export function CoachProfileEditor({
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wizardMode, isDirty, pending, uploading, form]); // form included so debounce restarts on changes
+
+  useEffect(() => {
+    if (form.heroImageUrl && !heroPreviewSrc) setHeroPreviewSrc(form.heroImageUrl);
+  }, [form.heroImageUrl, heroPreviewSrc]);
+
+  useEffect(() => {
+    if (form.videoPresentationUrl && !videoPreviewSrc) setVideoPreviewSrc(form.videoPresentationUrl);
+  }, [form.videoPresentationUrl, videoPreviewSrc]);
+
+  useEffect(() => {
+    if (!galleryUrlsList.length) {
+      if (galleryPreviewSrcs.length) setGalleryPreviewSrcs([]);
+      return;
+    }
+    if (galleryPreviewSrcs.length === galleryUrlsList.length) return;
+    setGalleryPreviewSrcs(galleryUrlsList);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.galleryUrls]);
 
   async function goToWizardStep(nextStep: number) {
     if (!wizardMode) {
@@ -324,6 +357,7 @@ export function CoachProfileEditor({
         email: form.email || null,
         phone: form.phone || null,
       },
+      categorySlugs: form.categorySlugs,
       galleryUrls: form.galleryUrls
         .split(/\r?\n/)
         .map((v) => v.trim())
@@ -429,16 +463,17 @@ export function CoachProfileEditor({
     return !wizardMode || currentStep === idx;
   }
 
-  const galleryUrlsList = form.galleryUrls
-    .split(/\r?\n/)
-    .map((v) => v.trim())
-    .filter(Boolean)
-    .slice(0, 8);
-
   function removeGalleryAt(index: number) {
     const next = galleryUrlsList.filter((_, i) => i !== index);
     setField("galleryUrls", next.join("\n"));
     setGalleryPreviewSrcs((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function toggleCategorySlug(slug: string, checked: boolean) {
+    const current = new Set(form.categorySlugs);
+    if (checked) current.add(slug);
+    else current.delete(slug);
+    setField("categorySlugs", Array.from(current).slice(0, 12));
   }
 
   function removeHero() {
@@ -489,7 +524,9 @@ export function CoachProfileEditor({
         setStatus({
           type: "error",
           text:
-            error instanceof Error ? `No se pudo eliminar en storage: ${error.message}` : "No se pudo eliminar la imagen de galeria",
+            error instanceof Error
+              ? `No se pudo eliminar en storage: ${error.message}`
+              : "No se pudo eliminar la imagen de galeria",
         });
         return;
       }
@@ -603,6 +640,37 @@ export function CoachProfileEditor({
                 className={fieldInputClass()}
               />
             </label>
+            <div className="grid gap-2 text-sm font-medium text-zinc-800 md:col-span-2">
+              <span>Categorias del coach (SEO estructurado)</span>
+              <div className="grid max-h-64 gap-2 overflow-auto rounded-xl border border-black/10 bg-zinc-50 p-3 md:grid-cols-2">
+                {COACH_CATEGORY_CATALOG.map((category) => {
+                  const checked = form.categorySlugs.includes(category.slug);
+                  return (
+                    <label
+                      key={category.slug}
+                      className="inline-flex items-center gap-2 rounded-lg bg-white px-2 py-2 text-sm text-zinc-800"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => toggleCategorySlug(category.slug, e.target.checked)}
+                        disabled={!checked && form.categorySlugs.length >= 12}
+                      />
+                      <span>{category.name}</span>
+                    </label>
+                  );
+                })}
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-normal text-zinc-500">Hasta 12 categorias por perfil.</span>
+                <span className="text-xs font-semibold text-zinc-700">{form.categorySlugs.length}/12</span>
+              </div>
+              {showValidation && (currentStepErrors as { categories?: string }).categories ? (
+                <span className="text-xs font-normal text-red-600">
+                  {(currentStepErrors as { categories?: string }).categories}
+                </span>
+              ) : null}
+            </div>
           </div>
         </section>
       ) : null}

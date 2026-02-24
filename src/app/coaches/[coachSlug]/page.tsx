@@ -7,8 +7,9 @@ import { CoachCard } from "@/components/directory/coach-card";
 import { ContactCoachForm } from "@/components/forms/contact-coach-form";
 import { PageShell } from "@/components/layout/page-shell";
 import { JsonLd } from "@/components/seo/json-ld";
-import { getCoachAverageRating, getCoachBySlug, getRelatedCoaches } from "@/lib/directory";
-import { coachCategories } from "@/lib/mock-data";
+import { getCoachAverageRating, getRelatedCoachesFrom } from "@/lib/directory";
+import { getCoachCategoryLabel } from "@/lib/coach-category-catalog";
+import { getPublicCoachBySlugMerged, listPublicCoachesMerged } from "@/lib/public-coaches";
 import { buildMetadata } from "@/lib/seo";
 import { formatEuro } from "@/lib/utils";
 
@@ -16,7 +17,7 @@ type ParamsInput = Promise<{ coachSlug: string }>;
 
 export async function generateMetadata({ params }: { params: ParamsInput }): Promise<Metadata> {
   const { coachSlug } = await params;
-  const coach = getCoachBySlug(coachSlug);
+  const coach = await getPublicCoachBySlugMerged(coachSlug);
   if (!coach) return buildMetadata({ title: "Coach no encontrado", description: "Perfil no encontrado", noindex: true });
 
   return buildMetadata({
@@ -28,13 +29,13 @@ export async function generateMetadata({ params }: { params: ParamsInput }): Pro
 
 export default async function CoachProfilePage({ params }: { params: ParamsInput }) {
   const { coachSlug } = await params;
-  const coach = getCoachBySlug(coachSlug);
+  const coach = await getPublicCoachBySlugMerged(coachSlug);
   if (!coach) notFound();
 
   const rating = getCoachAverageRating(coach);
-  const related = getRelatedCoaches(coach, 3);
+  const related = getRelatedCoachesFrom(await listPublicCoachesMerged(), coach, 3);
   const categoryNames = coach.categories
-    .map((slug) => coachCategories.find((category) => category.slug === slug)?.name ?? slug)
+    .map((slug) => getCoachCategoryLabel(slug) ?? slug)
     .join(", ");
 
   const jsonLd = {
@@ -86,7 +87,7 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
                         key={slug}
                         className="rounded-full border border-white/20 bg-white/15 px-3 py-1 text-xs font-semibold text-white backdrop-blur"
                       >
-                        {coachCategories.find((c) => c.slug === slug)?.name ?? slug}
+                        {getCoachCategoryLabel(slug) ?? slug}
                       </span>
                     ))}
                     {coach.certifiedStatus === "approved" ? (

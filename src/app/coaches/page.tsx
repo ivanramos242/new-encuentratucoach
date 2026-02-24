@@ -4,8 +4,10 @@ import { CoachCard } from "@/components/directory/coach-card";
 import { JsonLd } from "@/components/seo/json-ld";
 import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
-import { PAGE_SIZE, filterAndSortCoaches, paginateCoaches, parseDirectoryFilters } from "@/lib/directory";
-import { coachCategories, cities } from "@/lib/mock-data";
+import { COACH_CATEGORY_CATALOG } from "@/lib/coach-category-catalog";
+import { PAGE_SIZE, filterAndSortCoachesFrom, getCategoryBySlug, paginateCoaches, parseDirectoryFilters } from "@/lib/directory";
+import { cities } from "@/lib/mock-data";
+import { listPublicCoachesMerged } from "@/lib/public-coaches";
 import { buildMetadata, shouldNoIndexDirectoryFilters } from "@/lib/seo";
 import { formatEuro } from "@/lib/utils";
 
@@ -34,7 +36,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const raw = await searchParams;
   const filters = parseDirectoryFilters(raw);
-  const category = filters.cat ? coachCategories.find((item) => item.slug === filters.cat) : null;
+  const category = filters.cat ? getCategoryBySlug(filters.cat) : null;
   const locationSlug = filters.location?.toLowerCase();
   const city = locationSlug ? cities.find((item) => item.slug === locationSlug) : null;
   const title =
@@ -63,7 +65,7 @@ export default async function CoachesDirectoryPage({
 }) {
   const raw = await searchParams;
   const filters = parseDirectoryFilters(raw);
-  const allResults = filterAndSortCoaches(filters);
+  const allResults = filterAndSortCoachesFrom(await listPublicCoachesMerged(), filters);
   const paginated = paginateCoaches(allResults, filters.page ?? 1, PAGE_SIZE);
   const indexableFacet = !shouldNoIndexDirectoryFilters(filters);
 
@@ -106,7 +108,7 @@ export default async function CoachesDirectoryPage({
                   className="rounded-xl border border-black/10 px-3 py-2 outline-none focus:border-cyan-400"
                 >
                   <option value="">Todas</option>
-                  {coachCategories.map((category) => (
+                  {COACH_CATEGORY_CATALOG.map((category) => (
                     <option key={category.slug} value={category.slug}>
                       {category.name}
                     </option>
@@ -246,7 +248,7 @@ export default async function CoachesDirectoryPage({
                   {filters.q ? <span className="rounded-full bg-zinc-100 px-3 py-1 text-sm">q: {filters.q}</span> : null}
                   {filters.cat ? (
                     <span className="rounded-full bg-zinc-100 px-3 py-1 text-sm">
-                      categoría: {coachCategories.find((c) => c.slug === filters.cat)?.name ?? filters.cat}
+                      categoría: {getCategoryBySlug(filters.cat)?.name ?? filters.cat}
                     </span>
                   ) : null}
                   {filters.location ? (
