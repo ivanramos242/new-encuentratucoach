@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
+import { getOptionalSessionUser } from "@/lib/auth-server";
 import { listMembershipPlansForPublic } from "@/lib/membership-plan-service";
 import { buildMetadata } from "@/lib/seo";
 import { formatEuro } from "@/lib/utils";
@@ -25,7 +26,35 @@ function planFeatures(code: "monthly" | "annual") {
   return ["Perfil público activo", "SEO en directorio", "Reseñas y certificación", "Métricas básicas V1"];
 }
 
+function getPlanAction(sessionUser: Awaited<ReturnType<typeof getOptionalSessionUser>>, planCode: "monthly" | "annual") {
+  if (!sessionUser) {
+    return {
+      primaryHref: "/registro/coach",
+      primaryLabel: "Crear cuenta de coach",
+      secondaryHref: "/iniciar-sesion",
+      secondaryLabel: "Ya tengo cuenta",
+    };
+  }
+
+  if (sessionUser.role === "coach" || sessionUser.role === "admin") {
+    return {
+      primaryHref: `/mi-cuenta/coach/membresia?plan=${planCode}`,
+      primaryLabel: "Pagar membresía",
+      secondaryHref: "/mi-cuenta/coach/perfil",
+      secondaryLabel: "Editar mi perfil",
+    };
+  }
+
+  return {
+    primaryHref: "/registro/coach",
+    primaryLabel: "Crear cuenta de coach",
+    secondaryHref: "/mi-cuenta/cliente",
+    secondaryLabel: "Ir a mi cuenta",
+  };
+}
+
 export default async function MembershipPage() {
+  const sessionUser = await getOptionalSessionUser();
   const plans = await listMembershipPlansForPublic();
 
   return (
@@ -38,6 +67,7 @@ export default async function MembershipPage() {
       <PageShell className="pt-8">
         <div className="grid gap-6 lg:grid-cols-2">
           {plans.map((plan) => {
+            const cta = getPlanAction(sessionUser, plan.code);
             const highlighted = plan.code === "annual";
             const hasDiscount = plan.discountActive && plan.effectivePriceCents < plan.priceCents;
             const original = formatEuro(plan.priceCents / 100);
@@ -91,16 +121,16 @@ export default async function MembershipPage() {
                 </ul>
                 <div className="mt-6 flex flex-wrap gap-3">
                   <Link
-                    href="/registro/coach"
+                    href={cta.primaryHref}
                     className="rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800"
                   >
-                    Crear cuenta de coach
+                    {cta.primaryLabel}
                   </Link>
                   <Link
-                    href="/iniciar-sesion"
+                    href={cta.secondaryHref}
                     className="rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
                   >
-                    Ya tengo cuenta
+                    {cta.secondaryLabel}
                   </Link>
                 </div>
               </section>
@@ -111,4 +141,3 @@ export default async function MembershipPage() {
     </>
   );
 }
-
