@@ -43,6 +43,10 @@ function extFromMime(contentType: string) {
       return "webp";
     case "application/pdf":
       return "pdf";
+    case "video/mp4":
+      return "mp4";
+    case "video/webm":
+      return "webm";
     default:
       return "bin";
   }
