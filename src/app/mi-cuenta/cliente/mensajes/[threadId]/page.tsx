@@ -2,14 +2,15 @@ import { notFound } from "next/navigation";
 import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
 import { MessageThreadView } from "@/components/v2/message-thread-view";
-import { v2ClientActor } from "@/lib/v2-page-actors";
+import { getV2ClientPageActor } from "@/lib/v2-page-actors";
 import { getThreadForActor } from "@/lib/v2-service";
 
 type ParamsInput = Promise<{ threadId: string }>;
 
 export default async function ClientMessageThreadPage({ params }: { params: ParamsInput }) {
   const { threadId } = await params;
-  const result = getThreadForActor(threadId, v2ClientActor);
+  const actor = await getV2ClientPageActor();
+  const result = getThreadForActor(threadId, actor);
   if ("error" in result) notFound();
 
   return (
@@ -25,4 +26,3 @@ export default async function ClientMessageThreadPage({ params }: { params: Para
     </>
   );
 }
-

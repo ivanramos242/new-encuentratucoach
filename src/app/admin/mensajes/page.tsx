@@ -1,10 +1,11 @@
 import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
 import { getConversationReports, listThreadsForActor } from "@/lib/v2-service";
-import { v2AdminActor } from "@/lib/v2-page-actors";
+import { getV2AdminPageActor } from "@/lib/v2-page-actors";
 
-export default function AdminMessagesPage() {
-  const threads = listThreadsForActor(v2AdminActor);
+export default async function AdminMessagesPage() {
+  const actor = await getV2AdminPageActor();
+  const threads = listThreadsForActor(actor);
   const reports = getConversationReports();
 
   return (
@@ -57,4 +58,3 @@ export default function AdminMessagesPage() {
     </>
   );
 }
-

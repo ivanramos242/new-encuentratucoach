@@ -2,11 +2,12 @@ import Link from "next/link";
 import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
 import { NotificationCenterView } from "@/components/v2/notification-center-view";
-import { v2CoachActor } from "@/lib/v2-page-actors";
+import { getV2CoachPageActor } from "@/lib/v2-page-actors";
 import { listNotifications } from "@/lib/v2-service";
 
-export default function CoachNotificationsPage() {
-  const notifications = listNotifications(v2CoachActor);
+export default async function CoachNotificationsPage() {
+  const actor = await getV2CoachPageActor();
+  const notifications = listNotifications(actor);
 
   return (
     <>
@@ -29,4 +30,3 @@ export default function CoachNotificationsPage() {
     </>
   );
 }
-

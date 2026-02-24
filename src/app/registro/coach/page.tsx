@@ -1,4 +1,6 @@
-import { PlaceholderPage } from "@/components/layout/placeholder-page";
+import { RegisterCard } from "@/components/auth/auth-card";
+import { PageHero } from "@/components/layout/page-hero";
+import { PageShell } from "@/components/layout/page-shell";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
@@ -9,11 +11,16 @@ export const metadata = buildMetadata({
 
 export default function CoachRegisterPage() {
   return (
-    <PlaceholderPage
-      badge="Auth V1"
-      title="Crear cuenta de coach"
-      description="Flujo de registro de coach con onboarding, membresía Stripe y perfil editable."
-      routeType="Autenticación"
-    />
+    <>
+      <PageHero
+        badge="Auth V3.0.1"
+        title="Crear cuenta de coach"
+        description="Registro real de coach con creación de usuario y perfil inicial en borrador."
+      />
+      <PageShell className="pt-8">
+        <RegisterCard role="coach" />
+      </PageShell>
+    </>
   );
 }
+

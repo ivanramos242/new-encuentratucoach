@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { jsonError, jsonOk } from "@/lib/api-handlers";
-import { getMockActorFromRequest } from "@/lib/mock-auth-context";
+import { resolveApiActorFromRequest } from "@/lib/mock-auth-context";
 import { createQaQuestion, listQaQuestions } from "@/lib/v2-service";
 
 const createSchema = z.object({
@@ -33,7 +33,9 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const actor = getMockActorFromRequest(request, "client");
+    const actorResolved = await resolveApiActorFromRequest(request, "client");
+  if (!actorResolved.ok) return actorResolved.response;
+  const actor = actorResolved.actor;
     const body = await request.json();
     const parsed = createSchema.safeParse(body);
     if (!parsed.success) return jsonError("Payload invalido", 400, { issues: parsed.error.flatten() });
@@ -60,3 +62,4 @@ export async function POST(request: Request) {
     return jsonError("No se pudo crear la pregunta", 400);
   }
 }
+
