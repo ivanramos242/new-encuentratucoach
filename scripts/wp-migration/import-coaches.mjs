@@ -307,6 +307,49 @@ function parseExport(json) {
   };
 }
 
+function sanitizeBrokenJsonText(raw) {
+  if (typeof raw !== "string") return { text: raw, removed: 0 };
+  // Strip control chars that are invalid inside JSON string literals and commonly appear after terminal paste.
+  const invalidControlChars = /[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g;
+  let removed = 0;
+  const text = raw.replace(invalidControlChars, () => {
+    removed += 1;
+    return "";
+  });
+  return { text, removed };
+}
+
+function parseJsonWithPasteRecovery(raw, filePath) {
+  try {
+    return { data: JSON.parse(raw), sanitized: false, removedControlChars: 0 };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!/Bad control character in string literal/i.test(message)) {
+      throw error;
+    }
+
+    const sanitized = sanitizeBrokenJsonText(raw);
+    if (!sanitized.removed) {
+      throw error;
+    }
+
+    try {
+      const data = JSON.parse(sanitized.text);
+      console.warn(
+        `[wp-coaches-import] Aviso: se detectaron ${sanitized.removed} caracteres de control invalidos en ${filePath}. ` +
+          "Se han eliminado automaticamente (posible corrupcion al pegar el JSON en la terminal).",
+      );
+      return { data, sanitized: true, removedControlChars: sanitized.removed };
+    } catch (sanitizedError) {
+      const sanitizedMessage = sanitizedError instanceof Error ? sanitizedError.message : String(sanitizedError);
+      throw new Error(
+        `No se pudo parsear el JSON (${filePath}) ni tras sanitizar caracteres de control. ` +
+          `Error original: ${message}. Error tras sanitizar: ${sanitizedMessage}`,
+      );
+    }
+  }
+}
+
 async function loadExistingLegacyMap() {
   return prisma.legacyImportMap.findMany({
     where: { sourceSystem: "wordpress", sourceType: "coach_post" },
@@ -318,7 +361,8 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   const filePath = path.resolve(process.cwd(), args.file);
   const raw = await fs.readFile(filePath, "utf8");
-  const exportJson = parseExport(JSON.parse(raw));
+  const parsedJson = parseJsonWithPasteRecovery(raw, filePath);
+  const exportJson = parseExport(parsedJson.data);
 
   if (exportJson.postType && exportJson.postType !== "coaches") {
     throw new Error(`El export no parece de coaches (post_type=${exportJson.postType}).`);
@@ -343,6 +387,8 @@ async function main() {
     platformStatusCounts: { published_active: 0, draft_inactive: 0 },
     categoryUpserts: 0,
     warnings: 0,
+    jsonSanitized: parsedJson.sanitized,
+    jsonControlCharsRemoved: parsedJson.removedControlChars,
   };
 
   const warnings = [];
