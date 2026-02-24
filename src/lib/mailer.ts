@@ -18,26 +18,34 @@ export async function sendMail(input: {
     return { delivered: false as const, reason: "smtp_not_configured" as const };
   }
 
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT ?? 587),
-    secure: Number(process.env.SMTP_PORT ?? 587) === 465,
-    auth: process.env.SMTP_USER
-      ? {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS,
-        }
-      : undefined,
-  });
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT ?? 587),
+      secure: Number(process.env.SMTP_PORT ?? 587) === 465,
+      auth: process.env.SMTP_USER
+        ? {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS,
+          }
+        : undefined,
+    });
 
-  const info = await transporter.sendMail({
-    from: process.env.SMTP_FROM || "EncuentraTuCoach <no-reply@example.com>",
-    to: input.to,
-    subject: input.subject,
-    html: input.html,
-    text: input.text,
-  });
+    const info = await transporter.sendMail({
+      from: process.env.SMTP_FROM || "EncuentraTuCoach <no-reply@example.com>",
+      to: input.to,
+      subject: input.subject,
+      html: input.html,
+      text: input.text,
+    });
 
-  return { delivered: true as const, messageId: info.messageId };
+    return { delivered: true as const, messageId: info.messageId };
+  } catch (error) {
+    console.error("[mailer] Error enviando email", {
+      to: input.to,
+      subject: input.subject,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return { delivered: false as const, reason: "smtp_send_failed" as const };
+  }
 }
-
