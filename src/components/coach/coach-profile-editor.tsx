@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 
 type EditorProfile = {
   id?: string;
@@ -20,6 +20,8 @@ type EditorProfile = {
   visibilityStatus?: string;
 };
 
+type UploadScope = "coach_gallery" | "coach_hero" | "coach_video";
+
 async function postJson(url: string, payload: unknown) {
   const res = await fetch(url, {
     method: "POST",
@@ -31,6 +33,120 @@ async function postJson(url: string, payload: unknown) {
   return json;
 }
 
+async function uploadViaPresign(input: { file: File; scope: UploadScope }) {
+  const presign = (await postJson("/api/uploads/presign", {
+    scope: input.scope,
+    fileName: input.file.name,
+    contentType: input.file.type,
+    sizeBytes: input.file.size,
+  })) as {
+    uploadUrl?: string;
+    publicObjectUrl?: string | null;
+    storageKey?: string;
+  };
+
+  if (!presign.uploadUrl) throw new Error("No se recibio URL de subida");
+
+  const put = await fetch(presign.uploadUrl, {
+    method: "PUT",
+    headers: {
+      "content-type": input.file.type || "application/octet-stream",
+    },
+    body: input.file,
+  });
+  if (!put.ok) throw new Error(`La subida ha fallado (HTTP ${put.status})`);
+
+  const finalUrl = presign.publicObjectUrl || presign.uploadUrl.split("?")[0];
+  if (!finalUrl) throw new Error("No se pudo resolver la URL final del archivo subido");
+  return { url: finalUrl, storageKey: presign.storageKey || null };
+}
+
+function fieldInputClass() {
+  return "rounded-xl border border-black/10 px-3 py-2";
+}
+
+function StepBadge({ done, label, current }: { done: boolean; label: string; current: boolean }) {
+  return (
+    <div
+      className={`rounded-xl border px-3 py-2 text-sm ${
+        current
+          ? "border-cyan-300 bg-cyan-50 text-cyan-900"
+          : done
+            ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+            : "border-black/10 bg-white text-zinc-700"
+      }`}
+    >
+      {done ? "✓" : current ? ">" : "•"} {label}
+    </div>
+  );
+}
+
+function UploadDropzone({
+  label,
+  hint,
+  accept,
+  multiple = false,
+  onFilesSelected,
+  uploading,
+}: {
+  label: string;
+  hint: string;
+  accept: string;
+  multiple?: boolean;
+  onFilesSelected: (files: File[]) => void;
+  uploading: boolean;
+}) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+
+  return (
+    <div
+      onDragOver={(e) => {
+        e.preventDefault();
+        setDragOver(true);
+      }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setDragOver(false);
+        const files = Array.from(e.dataTransfer.files || []);
+        if (!files.length) return;
+        onFilesSelected(files);
+      }}
+      className={`rounded-2xl border-2 border-dashed p-4 text-sm ${
+        dragOver ? "border-cyan-400 bg-cyan-50" : "border-black/15 bg-zinc-50"
+      }`}
+    >
+      <p className="font-semibold text-zinc-900">{label}</p>
+      <p className="mt-1 text-zinc-600">{hint}</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button
+          type="button"
+          disabled={uploading}
+          onClick={() => inputRef.current?.click()}
+          className="rounded-xl border border-black/10 bg-white px-3 py-2 font-semibold text-zinc-900 disabled:opacity-60"
+        >
+          {uploading ? "Subiendo..." : multiple ? "Seleccionar archivos" : "Seleccionar archivo"}
+        </button>
+        <span className="self-center text-xs text-zinc-500">Arrastra y suelta aqui</span>
+      </div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept={accept}
+        multiple={multiple}
+        className="hidden"
+        onChange={(e) => {
+          const files = Array.from(e.target.files || []);
+          if (!files.length) return;
+          onFilesSelected(files);
+          e.currentTarget.value = "";
+        }}
+      />
+    </div>
+  );
+}
+
 export function CoachProfileEditor({
   initialProfile,
   wizardMode = false,
@@ -39,7 +155,9 @@ export function CoachProfileEditor({
   wizardMode?: boolean;
 }) {
   const [pending, startTransition] = useTransition();
+  const [uploading, setUploading] = useState<null | "hero" | "video" | "gallery">(null);
   const [status, setStatus] = useState<{ type: "idle" | "ok" | "error"; text: string }>({ type: "idle", text: "" });
+  const [wizardStep, setWizardStep] = useState(0);
   const [form, setForm] = useState({
     name: initialProfile?.name || "",
     headline: initialProfile?.headline || "",
@@ -66,6 +184,19 @@ export function CoachProfileEditor({
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
+  const steps = useMemo(
+    () => [
+      { label: "Datos basicos", done: Boolean(form.name.trim() && form.bio.trim()) },
+      { label: "Ciudad y modalidad", done: Boolean(form.city.trim() && (form.modeOnline || form.modePresencial)) },
+      { label: "Precio y condiciones", done: Boolean(form.basePriceEur && Number(form.basePriceEur) > 0) },
+      { label: "Contacto y media", done: Boolean(form.whatsapp.trim() || form.email.trim() || form.web.trim()) },
+    ],
+    [form],
+  );
+  const doneCount = steps.filter((s) => s.done).length;
+  const allDone = doneCount === steps.length;
+  const currentStep = wizardMode ? wizardStep : -1;
+
   function buildPayload() {
     const sessionModes = [
       ...(form.modeOnline ? (["online"] as const) : []),
@@ -79,7 +210,7 @@ export function CoachProfileEditor({
       languagesText: form.languagesText || null,
       heroImageUrl: form.heroImageUrl || null,
       videoPresentationUrl: form.videoPresentationUrl || null,
-      location: form.city ? { city: form.city, province: form.province || null, country: "España" } : null,
+      location: form.city ? { city: form.city, province: form.province || null, country: "Espana" } : null,
       sessionModes,
       pricing: {
         basePriceEur: form.basePriceEur ? Number(form.basePriceEur) : null,
@@ -124,14 +255,66 @@ export function CoachProfileEditor({
     });
   }
 
-  const wizardSteps = [
-    { id: "name", label: "Datos basicos", done: Boolean(form.name.trim() && form.bio.trim()) },
-    { id: "location", label: "Ciudad y modalidad", done: Boolean(form.city.trim() && (form.modeOnline || form.modePresencial)) },
-    { id: "pricing", label: "Precio", done: Boolean(form.basePriceEur && Number(form.basePriceEur) > 0) },
-    { id: "contact", label: "Contacto", done: Boolean(form.whatsapp.trim() || form.email.trim() || form.web.trim()) },
-  ];
-  const wizardDone = wizardSteps.filter((s) => s.done).length;
-  const wizardCanPublish = wizardDone === wizardSteps.length;
+  async function handleHeroUpload(files: File[]) {
+    const file = files[0];
+    if (!file) return;
+    setUploading("hero");
+    setStatus({ type: "idle", text: "" });
+    try {
+      const uploaded = await uploadViaPresign({ file, scope: "coach_hero" });
+      setField("heroImageUrl", uploaded.url);
+      setStatus({ type: "ok", text: "Imagen principal subida. Guarda el perfil para persistirla." });
+    } catch (error) {
+      setStatus({ type: "error", text: error instanceof Error ? error.message : "No se pudo subir la imagen." });
+    } finally {
+      setUploading(null);
+    }
+  }
+
+  async function handleVideoUpload(files: File[]) {
+    const file = files[0];
+    if (!file) return;
+    setUploading("video");
+    setStatus({ type: "idle", text: "" });
+    try {
+      const uploaded = await uploadViaPresign({ file, scope: "coach_video" });
+      setField("videoPresentationUrl", uploaded.url);
+      setStatus({ type: "ok", text: "Video subido. Guarda el perfil para persistirlo." });
+    } catch (error) {
+      setStatus({ type: "error", text: error instanceof Error ? error.message : "No se pudo subir el video." });
+    } finally {
+      setUploading(null);
+    }
+  }
+
+  async function handleGalleryUpload(files: File[]) {
+    const validFiles = files.filter((f) => f.type.startsWith("image/"));
+    if (!validFiles.length) return;
+    setUploading("gallery");
+    setStatus({ type: "idle", text: "" });
+    try {
+      const urls: string[] = [];
+      for (const file of validFiles.slice(0, 8)) {
+        const uploaded = await uploadViaPresign({ file, scope: "coach_gallery" });
+        urls.push(uploaded.url);
+      }
+      const existing = form.galleryUrls
+        .split(/\r?\n/)
+        .map((v) => v.trim())
+        .filter(Boolean);
+      const merged = [...existing, ...urls].slice(0, 8);
+      setField("galleryUrls", merged.join("\n"));
+      setStatus({ type: "ok", text: "Galeria subida. Guarda el perfil para persistirla." });
+    } catch (error) {
+      setStatus({ type: "error", text: error instanceof Error ? error.message : "No se pudo subir la galeria." });
+    } finally {
+      setUploading(null);
+    }
+  }
+
+  function showStep(idx: number) {
+    return !wizardMode || currentStep === idx;
+  }
 
   return (
     <div className="grid gap-6">
@@ -141,31 +324,42 @@ export function CoachProfileEditor({
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-700">Wizard de onboarding</p>
               <h2 className="mt-1 text-xl font-black tracking-tight text-zinc-950">Crea tu perfil coach paso a paso</h2>
-              <p className="mt-1 text-sm text-zinc-700">
-                Completa los pasos y luego pulsa <strong>Guardar y publicar</strong>.
-              </p>
+              <p className="mt-1 text-sm text-zinc-700">Completa los pasos y luego publica tu perfil.</p>
             </div>
             <div className="rounded-2xl border border-cyan-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-900">
-              Progreso: {wizardDone}/{wizardSteps.length}
+              Progreso: {doneCount}/{steps.length}
             </div>
           </div>
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
-            {wizardSteps.map((step) => (
-              <div
-                key={step.id}
-                className={`rounded-xl border px-3 py-2 text-sm ${
-                  step.done ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-black/10 bg-white text-zinc-700"
-                }`}
+            {steps.map((step, idx) => (
+              <button
+                key={step.label}
+                type="button"
+                onClick={() => setWizardStep(idx)}
+                className="text-left"
               >
-                {step.done ? "✓" : "•"} {step.label}
-              </div>
+                <StepBadge done={step.done} label={step.label} current={wizardStep === idx} />
+              </button>
             ))}
           </div>
-          {!wizardCanPublish ? (
-            <p className="mt-3 text-sm text-zinc-700">
-              Cuando completes los 4 pasos podr&aacute;s publicar el perfil (si la membres&iacute;a est&aacute; activa).
-            </p>
-          ) : null}
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={wizardStep <= 0}
+              onClick={() => setWizardStep((v) => Math.max(0, v - 1))}
+              className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm font-semibold text-zinc-900 disabled:opacity-50"
+            >
+              Paso anterior
+            </button>
+            <button
+              type="button"
+              disabled={wizardStep >= steps.length - 1}
+              onClick={() => setWizardStep((v) => Math.min(steps.length - 1, v + 1))}
+              className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm font-semibold text-zinc-900 disabled:opacity-50"
+            >
+              Siguiente paso
+            </button>
+          </div>
         </section>
       ) : null}
 
@@ -173,9 +367,7 @@ export function CoachProfileEditor({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-xl font-black tracking-tight text-zinc-950">Editor de perfil coach</h2>
-            <p className="mt-1 text-sm text-zinc-600">
-              Guarda los datos principales y publica cuando tengas membresía activa.
-            </p>
+            <p className="mt-1 text-sm text-zinc-600">Guarda tus datos y publica cuando tengas membresia activa.</p>
           </div>
           <div className="flex gap-2 text-xs">
             <span className="rounded-full border border-black/10 bg-zinc-50 px-3 py-1">
@@ -188,104 +380,167 @@ export function CoachProfileEditor({
         </div>
       </section>
 
-      <section className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
-        <div className="grid gap-4 md:grid-cols-2">
-          <label className="grid gap-1 text-sm font-medium text-zinc-800">
-            Nombre visible
-            <input value={form.name} onChange={(e) => setField("name", e.target.value)} className="rounded-xl border border-black/10 px-3 py-2" />
-          </label>
-          <label className="grid gap-1 text-sm font-medium text-zinc-800">
-            Titular / headline
-            <input value={form.headline} onChange={(e) => setField("headline", e.target.value)} className="rounded-xl border border-black/10 px-3 py-2" />
-          </label>
-          <label className="grid gap-1 text-sm font-medium text-zinc-800 md:col-span-2">
-            Sobre mí (bio)
-            <textarea value={form.bio} onChange={(e) => setField("bio", e.target.value)} rows={5} className="rounded-xl border border-black/10 px-3 py-2" />
-          </label>
-          <label className="grid gap-1 text-sm font-medium text-zinc-800">
-            Especialidades (texto)
-            <input value={form.specialtiesText} onChange={(e) => setField("specialtiesText", e.target.value)} className="rounded-xl border border-black/10 px-3 py-2" />
-          </label>
-          <label className="grid gap-1 text-sm font-medium text-zinc-800">
-            Idiomas (texto)
-            <input value={form.languagesText} onChange={(e) => setField("languagesText", e.target.value)} className="rounded-xl border border-black/10 px-3 py-2" />
-          </label>
-          <label className="grid gap-1 text-sm font-medium text-zinc-800">
-            Ciudad
-            <input value={form.city} onChange={(e) => setField("city", e.target.value)} className="rounded-xl border border-black/10 px-3 py-2" />
-          </label>
-          <label className="grid gap-1 text-sm font-medium text-zinc-800">
-            Provincia
-            <input value={form.province} onChange={(e) => setField("province", e.target.value)} className="rounded-xl border border-black/10 px-3 py-2" />
-          </label>
-          <label className="grid gap-1 text-sm font-medium text-zinc-800">
-            Precio base (€)
-            <input type="number" value={form.basePriceEur} onChange={(e) => setField("basePriceEur", e.target.value)} className="rounded-xl border border-black/10 px-3 py-2" />
-          </label>
-          <label className="grid gap-1 text-sm font-medium text-zinc-800 md:col-span-2">
-            Detalle de precios / condiciones
-            <textarea value={form.pricingDetailsHtml} onChange={(e) => setField("pricingDetailsHtml", e.target.value)} rows={4} className="rounded-xl border border-black/10 px-3 py-2" />
-          </label>
-        </div>
-
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <label className="grid gap-1 text-sm font-medium text-zinc-800">
-            URL imagen principal (hero)
-            <input value={form.heroImageUrl} onChange={(e) => setField("heroImageUrl", e.target.value)} className="rounded-xl border border-black/10 px-3 py-2" />
-          </label>
-          <label className="grid gap-1 text-sm font-medium text-zinc-800">
-            URL vídeo presentación
-            <input value={form.videoPresentationUrl} onChange={(e) => setField("videoPresentationUrl", e.target.value)} className="rounded-xl border border-black/10 px-3 py-2" />
-          </label>
-          <label className="grid gap-1 text-sm font-medium text-zinc-800">
-            Web
-            <input value={form.web} onChange={(e) => setField("web", e.target.value)} className="rounded-xl border border-black/10 px-3 py-2" />
-          </label>
-          <label className="grid gap-1 text-sm font-medium text-zinc-800">
-            LinkedIn
-            <input value={form.linkedin} onChange={(e) => setField("linkedin", e.target.value)} className="rounded-xl border border-black/10 px-3 py-2" />
-          </label>
-          <label className="grid gap-1 text-sm font-medium text-zinc-800">
-            WhatsApp
-            <input value={form.whatsapp} onChange={(e) => setField("whatsapp", e.target.value)} className="rounded-xl border border-black/10 px-3 py-2" />
-          </label>
-          <label className="grid gap-1 text-sm font-medium text-zinc-800">
-            Email de contacto
-            <input value={form.email} onChange={(e) => setField("email", e.target.value)} className="rounded-xl border border-black/10 px-3 py-2" />
-          </label>
-          <label className="grid gap-1 text-sm font-medium text-zinc-800">
-            Teléfono
-            <input value={form.phone} onChange={(e) => setField("phone", e.target.value)} className="rounded-xl border border-black/10 px-3 py-2" />
-          </label>
-          <div className="grid gap-2 text-sm font-medium text-zinc-800">
-            Modalidad
-            <label className="inline-flex items-center gap-2">
-              <input type="checkbox" checked={form.modeOnline} onChange={(e) => setField("modeOnline", e.target.checked)} />
-              Online
+      {showStep(0) ? (
+        <section className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
+          <h3 className="text-lg font-black tracking-tight text-zinc-950">Paso 1 · Datos basicos</h3>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <label className="grid gap-1 text-sm font-medium text-zinc-800">
+              Nombre visible
+              <input value={form.name} onChange={(e) => setField("name", e.target.value)} className={fieldInputClass()} />
             </label>
-            <label className="inline-flex items-center gap-2">
-              <input type="checkbox" checked={form.modePresencial} onChange={(e) => setField("modePresencial", e.target.checked)} />
-              Presencial
+            <label className="grid gap-1 text-sm font-medium text-zinc-800">
+              Titular / headline
+              <input value={form.headline} onChange={(e) => setField("headline", e.target.value)} className={fieldInputClass()} />
+            </label>
+            <label className="grid gap-1 text-sm font-medium text-zinc-800 md:col-span-2">
+              Sobre mi (bio)
+              <textarea value={form.bio} onChange={(e) => setField("bio", e.target.value)} rows={5} className={fieldInputClass()} />
+            </label>
+            <label className="grid gap-1 text-sm font-medium text-zinc-800">
+              Especialidades (texto)
+              <input
+                value={form.specialtiesText}
+                onChange={(e) => setField("specialtiesText", e.target.value)}
+                className={fieldInputClass()}
+              />
+            </label>
+            <label className="grid gap-1 text-sm font-medium text-zinc-800">
+              Idiomas (texto)
+              <input
+                value={form.languagesText}
+                onChange={(e) => setField("languagesText", e.target.value)}
+                className={fieldInputClass()}
+              />
             </label>
           </div>
-          <label className="grid gap-1 text-sm font-medium text-zinc-800 md:col-span-2">
-            Galería (1 URL por línea)
-            <textarea value={form.galleryUrls} onChange={(e) => setField("galleryUrls", e.target.value)} rows={5} className="rounded-xl border border-black/10 px-3 py-2" />
-          </label>
-        </div>
+        </section>
+      ) : null}
 
-        <div className="mt-6 rounded-2xl border border-dashed border-cyan-300 bg-cyan-50 p-4 text-sm text-cyan-950">
-          <p className="font-semibold">Subidas (MinIO / S3) preparadas</p>
-          <p className="mt-1">
-            Puedes usar <code>/api/uploads/presign</code> para obtener una URL firmada y pegar la URL resultante en los
-            campos de imagen/galería. (Integración drag&drop se añade en el siguiente sprint.)
-          </p>
-        </div>
+      {showStep(1) ? (
+        <section className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
+          <h3 className="text-lg font-black tracking-tight text-zinc-950">Paso 2 · Ciudad y modalidad</h3>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <label className="grid gap-1 text-sm font-medium text-zinc-800">
+              Ciudad
+              <input value={form.city} onChange={(e) => setField("city", e.target.value)} className={fieldInputClass()} />
+            </label>
+            <label className="grid gap-1 text-sm font-medium text-zinc-800">
+              Provincia
+              <input value={form.province} onChange={(e) => setField("province", e.target.value)} className={fieldInputClass()} />
+            </label>
+            <div className="grid gap-2 text-sm font-medium text-zinc-800 md:col-span-2">
+              Modalidad
+              <label className="inline-flex items-center gap-2">
+                <input type="checkbox" checked={form.modeOnline} onChange={(e) => setField("modeOnline", e.target.checked)} />
+                Online
+              </label>
+              <label className="inline-flex items-center gap-2">
+                <input type="checkbox" checked={form.modePresencial} onChange={(e) => setField("modePresencial", e.target.checked)} />
+                Presencial
+              </label>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
-        <div className="mt-6 flex flex-wrap gap-3">
+      {showStep(2) ? (
+        <section className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
+          <h3 className="text-lg font-black tracking-tight text-zinc-950">Paso 3 · Precio y condiciones</h3>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <label className="grid gap-1 text-sm font-medium text-zinc-800">
+              Precio base (EUR)
+              <input type="number" value={form.basePriceEur} onChange={(e) => setField("basePriceEur", e.target.value)} className={fieldInputClass()} />
+            </label>
+            <div />
+            <label className="grid gap-1 text-sm font-medium text-zinc-800 md:col-span-2">
+              Detalle de precios / condiciones
+              <textarea
+                value={form.pricingDetailsHtml}
+                onChange={(e) => setField("pricingDetailsHtml", e.target.value)}
+                rows={4}
+                className={fieldInputClass()}
+              />
+            </label>
+          </div>
+        </section>
+      ) : null}
+
+      {showStep(3) ? (
+        <section className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
+          <h3 className="text-lg font-black tracking-tight text-zinc-950">Paso 4 · Contacto y media</h3>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <label className="grid gap-1 text-sm font-medium text-zinc-800">
+              Web
+              <input value={form.web} onChange={(e) => setField("web", e.target.value)} className={fieldInputClass()} />
+            </label>
+            <label className="grid gap-1 text-sm font-medium text-zinc-800">
+              LinkedIn
+              <input value={form.linkedin} onChange={(e) => setField("linkedin", e.target.value)} className={fieldInputClass()} />
+            </label>
+            <label className="grid gap-1 text-sm font-medium text-zinc-800">
+              WhatsApp
+              <input value={form.whatsapp} onChange={(e) => setField("whatsapp", e.target.value)} className={fieldInputClass()} />
+            </label>
+            <label className="grid gap-1 text-sm font-medium text-zinc-800">
+              Email de contacto
+              <input value={form.email} onChange={(e) => setField("email", e.target.value)} className={fieldInputClass()} />
+            </label>
+            <label className="grid gap-1 text-sm font-medium text-zinc-800">
+              Telefono
+              <input value={form.phone} onChange={(e) => setField("phone", e.target.value)} className={fieldInputClass()} />
+            </label>
+          </div>
+
+          <div className="mt-5 grid gap-4">
+            <UploadDropzone
+              label="Imagen principal (hero)"
+              hint="Imagen JPG, PNG o WEBP. Se sube a tu bucket publico."
+              accept="image/jpeg,image/png,image/webp"
+              onFilesSelected={handleHeroUpload}
+              uploading={uploading === "hero"}
+            />
+            <label className="grid gap-1 text-sm font-medium text-zinc-800">
+              URL imagen principal
+              <input value={form.heroImageUrl} onChange={(e) => setField("heroImageUrl", e.target.value)} className={fieldInputClass()} />
+            </label>
+
+            <UploadDropzone
+              label="Video de presentacion"
+              hint="MP4 o WEBM. El endpoint permite videos de coach."
+              accept="video/mp4,video/webm"
+              onFilesSelected={handleVideoUpload}
+              uploading={uploading === "video"}
+            />
+            <label className="grid gap-1 text-sm font-medium text-zinc-800">
+              URL video presentacion
+              <input
+                value={form.videoPresentationUrl}
+                onChange={(e) => setField("videoPresentationUrl", e.target.value)}
+                className={fieldInputClass()}
+              />
+            </label>
+
+            <UploadDropzone
+              label="Galeria de imagenes"
+              hint="Puedes arrastrar varias imagenes. Maximo 8 elementos."
+              accept="image/jpeg,image/png,image/webp"
+              multiple
+              onFilesSelected={handleGalleryUpload}
+              uploading={uploading === "gallery"}
+            />
+            <label className="grid gap-1 text-sm font-medium text-zinc-800">
+              Galeria (1 URL por linea)
+              <textarea value={form.galleryUrls} onChange={(e) => setField("galleryUrls", e.target.value)} rows={5} className={fieldInputClass()} />
+            </label>
+          </div>
+        </section>
+      ) : null}
+
+      <section className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex flex-wrap gap-3">
           <button
             type="button"
-            disabled={pending}
+            disabled={pending || uploading !== null}
             onClick={onSave}
             className="rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
           >
@@ -293,12 +548,17 @@ export function CoachProfileEditor({
           </button>
           <button
             type="button"
-            disabled={pending}
+            disabled={pending || uploading !== null || (wizardMode && !allDone)}
             onClick={onPublish}
             className="rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-900 disabled:opacity-60"
           >
             Guardar y publicar
           </button>
+          {wizardMode && !allDone ? (
+            <span className="self-center text-sm text-zinc-600">
+              Completa todos los pasos del wizard para habilitar la publicacion.
+            </span>
+          ) : null}
         </div>
         {status.text ? (
           <p className={`mt-4 text-sm ${status.type === "error" ? "text-red-600" : "text-emerald-700"}`}>{status.text}</p>

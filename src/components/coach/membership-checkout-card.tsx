@@ -14,13 +14,25 @@ async function createCheckout(planCode: "monthly" | "annual") {
   return json as { checkoutUrl?: string };
 }
 
+async function postAction(url: string) {
+  const res = await fetch(url, { method: "POST" });
+  const json = await res.json().catch(() => ({ ok: false, message: `Error ${res.status}` }));
+  if (!res.ok || !json.ok) throw new Error(json.message || "No se pudo completar la accion");
+  return json;
+}
+
 export function MembershipCheckoutCard({
   currentStatus,
   profileHref = "/mi-cuenta/coach/perfil",
   showOnboardingCta = false,
   onboardingStepSummary,
 }: {
-  currentStatus?: { status?: string | null; planCode?: string | null; currentPeriodEnd?: string | null } | null;
+  currentStatus?: {
+    status?: string | null;
+    planCode?: string | null;
+    currentPeriodEnd?: string | null;
+    cancelAtPeriodEnd?: boolean | null;
+  } | null;
   profileHref?: string;
   showOnboardingCta?: boolean;
   onboardingStepSummary?: string;
@@ -28,6 +40,7 @@ export function MembershipCheckoutCard({
   const [pending, startTransition] = useTransition();
   const [status, setStatus] = useState<{ type: "idle" | "error"; text: string }>({ type: "idle", text: "" });
   const hasActiveSubscription = currentStatus?.status === "active" || currentStatus?.status === "trialing";
+  const cancelAtPeriodEnd = Boolean(currentStatus?.cancelAtPeriodEnd);
 
   function startCheckout(planCode: "monthly" | "annual") {
     startTransition(async () => {
@@ -41,6 +54,34 @@ export function MembershipCheckoutCard({
         setStatus({ type: "error", text: "Stripe no devolvió URL de checkout." });
       } catch (error) {
         setStatus({ type: "error", text: error instanceof Error ? error.message : "No se pudo iniciar el pago." });
+      }
+    });
+  }
+
+  function openBillingPortal() {
+    startTransition(async () => {
+      setStatus({ type: "idle", text: "" });
+      try {
+        const json = (await postAction("/api/stripe/billing-portal")) as { url?: string };
+        if (json.url) {
+          window.location.href = json.url;
+          return;
+        }
+        setStatus({ type: "error", text: "Stripe no devolvio URL del portal." });
+      } catch (error) {
+        setStatus({ type: "error", text: error instanceof Error ? error.message : "No se pudo abrir el portal." });
+      }
+    });
+  }
+
+  function setCancellation(cancel: boolean) {
+    startTransition(async () => {
+      setStatus({ type: "idle", text: "" });
+      try {
+        await postAction(cancel ? "/api/stripe/subscription/cancel" : "/api/stripe/subscription/resume");
+        window.location.reload();
+      } catch (error) {
+        setStatus({ type: "error", text: error instanceof Error ? error.message : "No se pudo actualizar la suscripcion." });
       }
     });
   }
@@ -61,6 +102,9 @@ export function MembershipCheckoutCard({
           <p className="mt-1 text-xs text-zinc-600">
             Periodo actual hasta: {new Date(currentStatus.currentPeriodEnd).toLocaleString("es-ES")}
           </p>
+        ) : null}
+        {hasActiveSubscription && cancelAtPeriodEnd ? (
+          <p className="mt-1 text-xs font-semibold text-amber-700">La suscripcion se cancelara al final del periodo actual.</p>
         ) : null}
       </div>
 
@@ -106,6 +150,38 @@ export function MembershipCheckoutCard({
         <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
           <p className="font-semibold">Pago confirmado. Siguiente paso: completar tu perfil coach.</p>
           {onboardingStepSummary ? <p className="mt-1">{onboardingStepSummary}</p> : null}
+        </div>
+      ) : null}
+
+      {hasActiveSubscription ? (
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          <button
+            type="button"
+            disabled={pending}
+            onClick={openBillingPortal}
+            className="rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-zinc-900 disabled:opacity-60"
+          >
+            Gestionar facturacion (Stripe)
+          </button>
+          {cancelAtPeriodEnd ? (
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => setCancellation(false)}
+              className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-900 disabled:opacity-60"
+            >
+              Reactivar renovacion
+            </button>
+          ) : (
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => setCancellation(true)}
+              className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 disabled:opacity-60"
+            >
+              Cancelar al final del periodo
+            </button>
+          )}
         </div>
       ) : null}
 

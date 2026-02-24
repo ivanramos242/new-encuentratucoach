@@ -60,6 +60,7 @@ export default async function CoachMembershipPage({
                   status: sub.status,
                   planCode: sub.planCode,
                   currentPeriodEnd: sub.currentPeriodEnd?.toISOString() || null,
+                  cancelAtPeriodEnd: sub.cancelAtPeriodEnd,
                 }
               : null
           }
