@@ -1,5 +1,6 @@
 import type { CoachLinkType, SessionMode, UserRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { COACH_CATEGORY_CATALOG } from "@/lib/coach-category-catalog";
 import { slugify } from "@/lib/utils";
 import type { SessionUser } from "@/lib/auth-session";
 
@@ -19,6 +20,7 @@ type CoachProfileSaveInput = {
   pricing?: { basePriceEur?: number | null; detailsHtml?: string | null; notes?: string | null } | null;
   links?: Partial<Record<CoachLinkType, string | null>>;
   galleryUrls?: string[];
+  categorySlugs?: string[];
 };
 
 async function uniqueCoachSlug(base: string, exceptId?: string) {
@@ -86,6 +88,27 @@ async function upsertLocation(location: NonNullable<CoachProfileSaveInput["locat
   return created.id;
 }
 
+async function ensureCoachCategoryCatalogSeeded() {
+  await prisma.$transaction(
+    COACH_CATEGORY_CATALOG.map((item) =>
+      prisma.coachCategory.upsert({
+        where: { slug: item.slug },
+        create: {
+          slug: item.slug,
+          name: item.name,
+          isActive: true,
+          sortOrder: item.sortOrder,
+        },
+        update: {
+          name: item.name,
+          sortOrder: item.sortOrder,
+          isActive: true,
+        },
+      }),
+    ),
+  );
+}
+
 export async function getCoachProfileForEditor(sessionUser: SessionUser) {
   if (sessionUser.role !== "coach" && sessionUser.role !== "admin") return null;
   const coachProfileId = sessionUser.coachProfileId;
@@ -96,6 +119,7 @@ export async function getCoachProfileForEditor(sessionUser: SessionUser) {
       location: true,
       pricing: true,
       links: true,
+      categories: { include: { category: true }, orderBy: { category: { sortOrder: "asc" } } },
       galleryAssets: { orderBy: { sortOrder: "asc" } },
       sessionModes: true,
       subscriptions: { orderBy: { updatedAt: "desc" }, take: 1 },
@@ -106,6 +130,9 @@ export async function getCoachProfileForEditor(sessionUser: SessionUser) {
 export async function saveCoachProfile(sessionUser: SessionUser, input: CoachProfileSaveInput) {
   const coachProfileId = await ensureOwnedCoachProfile(sessionUser, input.coachProfileId);
   const locationId = input.location ? await upsertLocation(input.location) : null;
+  if (input.categorySlugs) {
+    await ensureCoachCategoryCatalogSeeded();
+  }
 
   const current = await prisma.coachProfile.findUnique({
     where: { id: coachProfileId },
@@ -194,6 +221,26 @@ export async function saveCoachProfile(sessionUser: SessionUser, input: CoachPro
         });
       }
     }
+
+    if (input.categorySlugs) {
+      const slugs = Array.from(new Set(input.categorySlugs.map((s) => s.trim()).filter(Boolean))).slice(0, 12);
+      await tx.coachProfileCategory.deleteMany({ where: { coachProfileId } });
+      if (slugs.length) {
+        const categories = await tx.coachCategory.findMany({
+          where: { slug: { in: slugs } },
+          select: { id: true, slug: true },
+        });
+        if (categories.length) {
+          await tx.coachProfileCategory.createMany({
+            data: categories.map((category) => ({
+              coachProfileId,
+              categoryId: category.id,
+            })),
+            skipDuplicates: true,
+          });
+        }
+      }
+    }
   });
 
   return prisma.coachProfile.findUnique({
@@ -202,6 +249,7 @@ export async function saveCoachProfile(sessionUser: SessionUser, input: CoachPro
       location: true,
       pricing: true,
       links: true,
+      categories: { include: { category: true }, orderBy: { category: { sortOrder: "asc" } } },
       galleryAssets: { orderBy: { sortOrder: "asc" } },
       sessionModes: true,
       subscriptions: { orderBy: { updatedAt: "desc" }, take: 1 },
@@ -221,12 +269,14 @@ export async function publishCoachProfile(sessionUser: SessionUser, input?: { co
     include: {
       subscriptions: { orderBy: { updatedAt: "desc" }, take: 1 },
       pricing: true,
+      categories: true,
     },
   });
   if (!profile) throw new Error("Perfil no encontrado");
 
   if (!profile.name?.trim()) throw new Error("Completa el nombre del perfil");
   if (!(profile.bio?.trim() || profile.aboutHtml?.trim())) throw new Error("Completa la seccion Sobre mi");
+  if (!profile.categories.length) throw new Error("Selecciona al menos una categoria de coaching");
   if (!profile.pricing?.basePriceEur) throw new Error("Completa el precio base");
 
   const sub = profile.subscriptions[0];
@@ -245,6 +295,7 @@ export async function publishCoachProfile(sessionUser: SessionUser, input?: { co
       location: true,
       pricing: true,
       links: true,
+      categories: { include: { category: true }, orderBy: { category: { sortOrder: "asc" } } },
       galleryAssets: { orderBy: { sortOrder: "asc" } },
       sessionModes: true,
       subscriptions: { orderBy: { updatedAt: "desc" }, take: 1 },
@@ -263,4 +314,3 @@ export async function canManageCoachProfile(sessionUser: SessionUser, coachProfi
 export function roleCanEditCoachProfile(role: UserRole) {
   return role === "coach" || role === "admin";
 }
-

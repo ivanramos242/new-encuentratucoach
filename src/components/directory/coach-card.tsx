@@ -1,14 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
+import { getCoachCategoryLabel } from "@/lib/coach-category-catalog";
 import { getCoachAverageRating } from "@/lib/directory";
-import { coachCategories } from "@/lib/mock-data";
 import { formatEuro } from "@/lib/utils";
 import type { CoachProfile } from "@/types/domain";
 
 export function CoachCard({ coach }: { coach: CoachProfile }) {
   const rating = getCoachAverageRating(coach);
   const categoryLabels = coach.categories
-    .map((slug) => coachCategories.find((category) => category.slug === slug)?.name ?? slug)
+    .map((slug) => getCoachCategoryLabel(slug) ?? slug)
     .slice(0, 2);
 
   return (

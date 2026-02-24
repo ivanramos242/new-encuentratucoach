@@ -1,3 +1,4 @@
+import { getCoachCategoryLabel } from "@/lib/coach-category-catalog";
 import { coachCategories, coaches, cities } from "@/lib/mock-data";
 import { average } from "@/lib/utils";
 import type { CoachProfile, DirectoryFilters, SessionMode } from "@/types/domain";
@@ -13,7 +14,17 @@ export function getCoachBySlug(slug: string) {
 }
 
 export function getCategoryBySlug(slug: string) {
-  return coachCategories.find((category) => category.slug === slug);
+  const legacy = coachCategories.find((category) => category.slug === slug);
+  if (legacy) return legacy;
+  const label = getCoachCategoryLabel(slug);
+  if (!label) return undefined;
+  return {
+    id: slug,
+    slug,
+    name: label,
+    shortDescription: `Encuentra coaches especializados en ${label.toLowerCase()} en Espana.`,
+    icon: "sparkles",
+  };
 }
 
 export function getCityBySlug(slug: string) {
@@ -61,8 +72,8 @@ export function parseDirectoryFilters(input: Record<string, string | string[] | 
   };
 }
 
-export function filterAndSortCoaches(filters: DirectoryFilters) {
-  let list = [...getVisibleCoaches()];
+export function filterAndSortCoachesFrom(source: CoachProfile[], filters: DirectoryFilters) {
+  let list = [...source];
 
   if (filters.q) {
     const q = normalize(filters.q);
@@ -130,6 +141,10 @@ export function filterAndSortCoaches(filters: DirectoryFilters) {
   return list;
 }
 
+export function filterAndSortCoaches(filters: DirectoryFilters) {
+  return filterAndSortCoachesFrom(getVisibleCoaches(), filters);
+}
+
 export function paginateCoaches(items: CoachProfile[], page: number, pageSize = PAGE_SIZE) {
   const total = items.length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -145,14 +160,18 @@ export function paginateCoaches(items: CoachProfile[], page: number, pageSize = 
   };
 }
 
-export function getLatestCoaches(limit = 6) {
-  return [...getVisibleCoaches()]
+export function getLatestCoachesFrom(source: CoachProfile[], limit = 6) {
+  return [...source]
     .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))
     .slice(0, limit);
 }
 
-export function getRelatedCoaches(coach: CoachProfile, limit = 3) {
-  return getVisibleCoaches()
+export function getLatestCoaches(limit = 6) {
+  return getLatestCoachesFrom(getVisibleCoaches(), limit);
+}
+
+export function getRelatedCoachesFrom(source: CoachProfile[], coach: CoachProfile, limit = 3) {
+  return source
     .filter((item) => item.id !== coach.id)
     .sort((a, b) => {
       const aOverlap = a.categories.filter((cat) => coach.categories.includes(cat)).length;
@@ -161,4 +180,8 @@ export function getRelatedCoaches(coach: CoachProfile, limit = 3) {
       return b.featured === a.featured ? 0 : b.featured ? 1 : -1;
     })
     .slice(0, limit);
+}
+
+export function getRelatedCoaches(coach: CoachProfile, limit = 3) {
+  return getRelatedCoachesFrom(getVisibleCoaches(), coach, limit);
 }
