@@ -103,6 +103,12 @@ export async function loginUser(input: { email: string; password: string; ipAddr
 
   if (!user || !user.passwordHash) return { error: "Credenciales incorrectas." as const };
   if (!user.isActive) return { error: "La cuenta esta desactivada." as const };
+  if (user.mustResetPassword) {
+    return {
+      error: "Debes restablecer tu contraseña antes de iniciar sesión. Usa 'Recuperar contraseña' con este email.",
+      code: "PASSWORD_RESET_REQUIRED" as const,
+    };
+  }
 
   const ok = await verifyPasswordHash(user.passwordHash, input.password);
   if (!ok) return { error: "Credenciales incorrectas." as const };
