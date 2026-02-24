@@ -22,7 +22,10 @@ export async function POST(request: Request) {
       userAgent: request.headers.get("user-agent"),
     });
 
-    if ("error" in result) return jsonError(String(result.error), 401);
+    if ("error" in result) {
+      const code = (result as { code?: string }).code;
+      return jsonError(String(result.error), code === "PASSWORD_RESET_REQUIRED" ? 403 : 401, code ? { code } : undefined);
+    }
 
     const response = NextResponse.json({
       ok: true,

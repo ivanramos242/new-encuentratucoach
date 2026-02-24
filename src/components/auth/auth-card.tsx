@@ -140,6 +140,15 @@ export function LoginCard({ returnTo = "/mi-cuenta" }: { returnTo?: string }) {
           {pending ? "Entrando..." : "Entrar"}
         </button>
         <StatusLine type={status.type} text={status.text} />
+        {status.type === "error" && /restablecer tu contrase/i.test(status.text) ? (
+          <p className="text-sm text-zinc-700">
+            Ve a{" "}
+            <a href="/recuperar-contrasena" className="font-semibold text-cyan-700 underline">
+              Recuperar contraseña
+            </a>{" "}
+            y usa ese mismo email.
+          </p>
+        ) : null}
       </form>
     </CardShell>
   );
