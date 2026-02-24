@@ -29,6 +29,16 @@ function parseAllowedMimeList() {
   );
 }
 
+function getImageMaxBytes() {
+  const parsed = Number(process.env.COACH_MEDIA_IMAGE_MAX_BYTES || 15 * 1024 * 1024);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 15 * 1024 * 1024;
+}
+
+function getVideoMaxBytes() {
+  const parsed = Number(process.env.COACH_MEDIA_VIDEO_MAX_BYTES || 150 * 1024 * 1024);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 150 * 1024 * 1024;
+}
+
 export async function POST(request: Request) {
   try {
     const auth = await requireApiRole(request, ["coach", "admin"]);
@@ -38,9 +48,13 @@ export async function POST(request: Request) {
     const parsed = schema.safeParse(body);
     if (!parsed.success) return jsonError("Payload invalido", 400, { issues: parsed.error.flatten() });
 
-    const maxBytes = Number(process.env.CHAT_ATTACHMENT_MAX_BYTES ?? 5 * 1024 * 1024);
-    if (parsed.data.scope !== "coach_video" && parsed.data.sizeBytes > maxBytes) {
-      return jsonError(`Archivo demasiado grande. Maximo ${maxBytes} bytes`, 400);
+    const imageMaxBytes = getImageMaxBytes();
+    const videoMaxBytes = getVideoMaxBytes();
+    if (parsed.data.scope !== "coach_video" && parsed.data.sizeBytes > imageMaxBytes) {
+      return jsonError(`Archivo demasiado grande. Maximo ${(imageMaxBytes / (1024 * 1024)).toFixed(0)}MB`, 400);
+    }
+    if (parsed.data.scope === "coach_video" && parsed.data.sizeBytes > videoMaxBytes) {
+      return jsonError(`Video demasiado grande. Maximo ${(videoMaxBytes / (1024 * 1024)).toFixed(0)}MB`, 400);
     }
 
     const allowedMime = parseAllowedMimeList();
@@ -83,7 +97,8 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("[uploads/presign] error", error);
-    return jsonError("No se pudo generar la URL de subida", 500);
+    const message = error instanceof Error ? error.message : "No se pudo generar la URL de subida";
+    return jsonError(message, 500);
   }
 }
 

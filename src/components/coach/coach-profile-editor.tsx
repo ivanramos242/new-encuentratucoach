@@ -61,8 +61,8 @@ async function uploadViaPresign(input: { file: File; scope: UploadScope }) {
   return { url: finalUrl, storageKey: presign.storageKey || null };
 }
 
-function fieldInputClass() {
-  return "rounded-xl border border-black/10 px-3 py-2";
+function fieldInputClass(invalid = false) {
+  return `rounded-xl border px-3 py-2 ${invalid ? "border-red-300 bg-red-50/40" : "border-black/10"}`;
 }
 
 function StepBadge({ done, label, current }: { done: boolean; label: string; current: boolean }) {
@@ -158,6 +158,8 @@ export function CoachProfileEditor({
   const [uploading, setUploading] = useState<null | "hero" | "video" | "gallery">(null);
   const [status, setStatus] = useState<{ type: "idle" | "ok" | "error"; text: string }>({ type: "idle", text: "" });
   const [wizardStep, setWizardStep] = useState(0);
+  const [showValidation, setShowValidation] = useState(false);
+  const [autoSavingStep, setAutoSavingStep] = useState<number | null>(null);
   const [form, setForm] = useState({
     name: initialProfile?.name || "",
     headline: initialProfile?.headline || "",
@@ -196,6 +198,77 @@ export function CoachProfileEditor({
   const doneCount = steps.filter((s) => s.done).length;
   const allDone = doneCount === steps.length;
   const currentStep = wizardMode ? wizardStep : -1;
+
+  function getStepErrors(stepIndex: number) {
+    if (stepIndex === 0) {
+      return {
+        name: !form.name.trim() ? "El nombre visible es obligatorio." : "",
+        bio: !form.bio.trim() ? "La bio es obligatoria." : "",
+      };
+    }
+    if (stepIndex === 1) {
+      return {
+        city: !form.city.trim() ? "La ciudad es obligatoria." : "",
+        sessionModes: !(form.modeOnline || form.modePresencial) ? "Selecciona al menos una modalidad." : "",
+      };
+    }
+    if (stepIndex === 2) {
+      const price = Number(form.basePriceEur);
+      return {
+        basePriceEur: !form.basePriceEur || !Number.isFinite(price) || price <= 0 ? "Indica un precio base mayor que 0." : "",
+      };
+    }
+    if (stepIndex === 3) {
+      return {
+        contact:
+          !(form.whatsapp.trim() || form.email.trim() || form.web.trim()) ? "Añade al menos un canal de contacto (WhatsApp, email o web)." : "",
+      };
+    }
+    return {};
+  }
+
+  const currentStepErrors = getStepErrors(Math.max(0, currentStep));
+  async function saveDraftSilent(reason?: string) {
+    try {
+      await postJson("/api/coach-profile/save", buildPayload());
+      setStatus({
+        type: "ok",
+        text: reason ? `Autoguardado correcto (${reason}).` : "Autoguardado correcto.",
+      });
+      return true;
+    } catch (error) {
+      setStatus({
+        type: "error",
+        text: error instanceof Error ? error.message : "No se pudo autoguardar el perfil.",
+      });
+      return false;
+    }
+  }
+
+  async function goToWizardStep(nextStep: number) {
+    if (!wizardMode) {
+      setWizardStep(nextStep);
+      return;
+    }
+
+    const bounded = Math.max(0, Math.min(steps.length - 1, nextStep));
+    if (bounded === wizardStep) return;
+
+    const errors = getStepErrors(wizardStep);
+    const hasErrors = Object.values(errors).some(Boolean);
+    if (hasErrors && bounded > wizardStep) {
+      setShowValidation(true);
+      setStatus({ type: "error", text: "Completa los campos obligatorios del paso actual antes de continuar." });
+      return;
+    }
+
+    setAutoSavingStep(wizardStep);
+    const ok = await saveDraftSilent(`paso ${wizardStep + 1}`);
+    setAutoSavingStep(null);
+    if (!ok && bounded > wizardStep) return;
+    setShowValidation(false);
+    setWizardStep(bounded);
+  }
 
   function buildPayload() {
     const sessionModes = [
@@ -246,6 +319,11 @@ export function CoachProfileEditor({
     startTransition(async () => {
       setStatus({ type: "idle", text: "" });
       try {
+        if (wizardMode && !allDone) {
+          setShowValidation(true);
+          setStatus({ type: "error", text: "Completa todos los pasos obligatorios del wizard antes de publicar." });
+          return;
+        }
         await postJson("/api/coach-profile/save", buildPayload());
         await postJson("/api/coach-profile/publish", {});
         setStatus({ type: "ok", text: "Perfil publicado correctamente." });
@@ -335,7 +413,9 @@ export function CoachProfileEditor({
               <button
                 key={step.label}
                 type="button"
-                onClick={() => setWizardStep(idx)}
+                onClick={() => {
+                  void goToWizardStep(idx);
+                }}
                 className="text-left"
               >
                 <StepBadge done={step.done} label={step.label} current={wizardStep === idx} />
@@ -346,7 +426,9 @@ export function CoachProfileEditor({
             <button
               type="button"
               disabled={wizardStep <= 0}
-              onClick={() => setWizardStep((v) => Math.max(0, v - 1))}
+              onClick={() => {
+                void goToWizardStep(wizardStep - 1);
+              }}
               className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm font-semibold text-zinc-900 disabled:opacity-50"
             >
               Paso anterior
@@ -354,11 +436,14 @@ export function CoachProfileEditor({
             <button
               type="button"
               disabled={wizardStep >= steps.length - 1}
-              onClick={() => setWizardStep((v) => Math.min(steps.length - 1, v + 1))}
+              onClick={() => {
+                void goToWizardStep(wizardStep + 1);
+              }}
               className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm font-semibold text-zinc-900 disabled:opacity-50"
             >
               Siguiente paso
             </button>
+            {autoSavingStep !== null ? <span className="self-center text-sm text-zinc-600">Autoguardando paso {autoSavingStep + 1}...</span> : null}
           </div>
         </section>
       ) : null}
@@ -386,7 +471,8 @@ export function CoachProfileEditor({
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <label className="grid gap-1 text-sm font-medium text-zinc-800">
               Nombre visible
-              <input value={form.name} onChange={(e) => setField("name", e.target.value)} className={fieldInputClass()} />
+              <input value={form.name} onChange={(e) => setField("name", e.target.value)} className={fieldInputClass(showValidation && !!currentStepErrors.name)} />
+              {showValidation && currentStepErrors.name ? <span className="text-xs text-red-600">{currentStepErrors.name}</span> : null}
             </label>
             <label className="grid gap-1 text-sm font-medium text-zinc-800">
               Titular / headline
@@ -394,7 +480,8 @@ export function CoachProfileEditor({
             </label>
             <label className="grid gap-1 text-sm font-medium text-zinc-800 md:col-span-2">
               Sobre mi (bio)
-              <textarea value={form.bio} onChange={(e) => setField("bio", e.target.value)} rows={5} className={fieldInputClass()} />
+              <textarea value={form.bio} onChange={(e) => setField("bio", e.target.value)} rows={5} className={fieldInputClass(showValidation && !!currentStepErrors.bio)} />
+              {showValidation && currentStepErrors.bio ? <span className="text-xs text-red-600">{currentStepErrors.bio}</span> : null}
             </label>
             <label className="grid gap-1 text-sm font-medium text-zinc-800">
               Especialidades (texto)
@@ -422,7 +509,8 @@ export function CoachProfileEditor({
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <label className="grid gap-1 text-sm font-medium text-zinc-800">
               Ciudad
-              <input value={form.city} onChange={(e) => setField("city", e.target.value)} className={fieldInputClass()} />
+              <input value={form.city} onChange={(e) => setField("city", e.target.value)} className={fieldInputClass(showValidation && !!currentStepErrors.city)} />
+              {showValidation && currentStepErrors.city ? <span className="text-xs text-red-600">{currentStepErrors.city}</span> : null}
             </label>
             <label className="grid gap-1 text-sm font-medium text-zinc-800">
               Provincia
@@ -438,6 +526,9 @@ export function CoachProfileEditor({
                 <input type="checkbox" checked={form.modePresencial} onChange={(e) => setField("modePresencial", e.target.checked)} />
                 Presencial
               </label>
+              {showValidation && currentStepErrors.sessionModes ? (
+                <span className="text-xs font-normal text-red-600">{currentStepErrors.sessionModes}</span>
+              ) : null}
             </div>
           </div>
         </section>
@@ -449,7 +540,15 @@ export function CoachProfileEditor({
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <label className="grid gap-1 text-sm font-medium text-zinc-800">
               Precio base (EUR)
-              <input type="number" value={form.basePriceEur} onChange={(e) => setField("basePriceEur", e.target.value)} className={fieldInputClass()} />
+              <input
+                type="number"
+                value={form.basePriceEur}
+                onChange={(e) => setField("basePriceEur", e.target.value)}
+                className={fieldInputClass(showValidation && !!currentStepErrors.basePriceEur)}
+              />
+              {showValidation && currentStepErrors.basePriceEur ? (
+                <span className="text-xs text-red-600">{currentStepErrors.basePriceEur}</span>
+              ) : null}
             </label>
             <div />
             <label className="grid gap-1 text-sm font-medium text-zinc-800 md:col-span-2">
@@ -471,7 +570,7 @@ export function CoachProfileEditor({
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <label className="grid gap-1 text-sm font-medium text-zinc-800">
               Web
-              <input value={form.web} onChange={(e) => setField("web", e.target.value)} className={fieldInputClass()} />
+              <input value={form.web} onChange={(e) => setField("web", e.target.value)} className={fieldInputClass(showValidation && !!currentStepErrors.contact)} />
             </label>
             <label className="grid gap-1 text-sm font-medium text-zinc-800">
               LinkedIn
@@ -479,16 +578,19 @@ export function CoachProfileEditor({
             </label>
             <label className="grid gap-1 text-sm font-medium text-zinc-800">
               WhatsApp
-              <input value={form.whatsapp} onChange={(e) => setField("whatsapp", e.target.value)} className={fieldInputClass()} />
+              <input value={form.whatsapp} onChange={(e) => setField("whatsapp", e.target.value)} className={fieldInputClass(showValidation && !!currentStepErrors.contact)} />
             </label>
             <label className="grid gap-1 text-sm font-medium text-zinc-800">
               Email de contacto
-              <input value={form.email} onChange={(e) => setField("email", e.target.value)} className={fieldInputClass()} />
+              <input value={form.email} onChange={(e) => setField("email", e.target.value)} className={fieldInputClass(showValidation && !!currentStepErrors.contact)} />
             </label>
             <label className="grid gap-1 text-sm font-medium text-zinc-800">
               Telefono
               <input value={form.phone} onChange={(e) => setField("phone", e.target.value)} className={fieldInputClass()} />
             </label>
+            {showValidation && currentStepErrors.contact ? (
+              <p className="md:col-span-2 text-xs text-red-600">{currentStepErrors.contact}</p>
+            ) : null}
           </div>
 
           <div className="mt-5 grid gap-4">
@@ -503,6 +605,13 @@ export function CoachProfileEditor({
               URL imagen principal
               <input value={form.heroImageUrl} onChange={(e) => setField("heroImageUrl", e.target.value)} className={fieldInputClass()} />
             </label>
+            {form.heroImageUrl ? (
+              <div className="rounded-2xl border border-black/10 bg-zinc-50 p-3">
+                <p className="mb-2 text-sm font-semibold text-zinc-900">Preview imagen principal</p>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={form.heroImageUrl} alt="Preview imagen principal" className="max-h-52 w-full rounded-xl object-cover" />
+              </div>
+            ) : null}
 
             <UploadDropzone
               label="Video de presentacion"
@@ -519,6 +628,12 @@ export function CoachProfileEditor({
                 className={fieldInputClass()}
               />
             </label>
+            {form.videoPresentationUrl ? (
+              <div className="rounded-2xl border border-black/10 bg-zinc-50 p-3">
+                <p className="mb-2 text-sm font-semibold text-zinc-900">Preview video</p>
+                <video src={form.videoPresentationUrl} controls className="max-h-64 w-full rounded-xl bg-black" />
+              </div>
+            ) : null}
 
             <UploadDropzone
               label="Galeria de imagenes"
@@ -532,6 +647,22 @@ export function CoachProfileEditor({
               Galeria (1 URL por linea)
               <textarea value={form.galleryUrls} onChange={(e) => setField("galleryUrls", e.target.value)} rows={5} className={fieldInputClass()} />
             </label>
+            {form.galleryUrls.trim() ? (
+              <div className="rounded-2xl border border-black/10 bg-zinc-50 p-3">
+                <p className="mb-2 text-sm font-semibold text-zinc-900">Preview galeria</p>
+                <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+                  {form.galleryUrls
+                    .split(/\r?\n/)
+                    .map((v) => v.trim())
+                    .filter(Boolean)
+                    .slice(0, 8)
+                    .map((url) => (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img key={url} src={url} alt="Preview galeria" className="h-24 w-full rounded-lg object-cover" />
+                    ))}
+                </div>
+              </div>
+            ) : null}
           </div>
         </section>
       ) : null}
