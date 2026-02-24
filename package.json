@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "user:make-admin": "tsx scripts/make-admin.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.995.0",

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 
 async function createCheckout(planCode: "monthly" | "annual") {
@@ -15,11 +16,18 @@ async function createCheckout(planCode: "monthly" | "annual") {
 
 export function MembershipCheckoutCard({
   currentStatus,
+  profileHref = "/mi-cuenta/coach/perfil",
+  showOnboardingCta = false,
+  onboardingStepSummary,
 }: {
   currentStatus?: { status?: string | null; planCode?: string | null; currentPeriodEnd?: string | null } | null;
+  profileHref?: string;
+  showOnboardingCta?: boolean;
+  onboardingStepSummary?: string;
 }) {
   const [pending, startTransition] = useTransition();
   const [status, setStatus] = useState<{ type: "idle" | "error"; text: string }>({ type: "idle", text: "" });
+  const hasActiveSubscription = currentStatus?.status === "active" || currentStatus?.status === "trialing";
 
   function startCheckout(planCode: "monthly" | "annual") {
     startTransition(async () => {
@@ -57,26 +65,51 @@ export function MembershipCheckoutCard({
       </div>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
-        <button
-          type="button"
-          disabled={pending}
-          onClick={() => startCheckout("monthly")}
-          className="rounded-xl bg-zinc-950 px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
-        >
-          {pending ? "Procesando..." : "Activar plan mensual"}
-        </button>
-        <button
-          type="button"
-          disabled={pending}
-          onClick={() => startCheckout("annual")}
-          className="rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-zinc-900 disabled:opacity-60"
-        >
-          {pending ? "Procesando..." : "Activar plan anual"}
-        </button>
+        {hasActiveSubscription ? (
+          <>
+            <Link
+              href={showOnboardingCta ? `${profileHref}${profileHref.includes("?") ? "&" : "?"}wizard=1` : profileHref}
+              className="inline-flex items-center justify-center rounded-xl bg-zinc-950 px-4 py-3 text-sm font-semibold text-white"
+            >
+              {showOnboardingCta ? "Empezar wizard de perfil" : "Editar mi perfil coach"}
+            </Link>
+            <Link
+              href="/coaches"
+              className="inline-flex items-center justify-center rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-zinc-900"
+            >
+              Ver directorio
+            </Link>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => startCheckout("monthly")}
+              className="rounded-xl bg-zinc-950 px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
+            >
+              {pending ? "Procesando..." : "Activar plan mensual"}
+            </button>
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => startCheckout("annual")}
+              className="rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-zinc-900 disabled:opacity-60"
+            >
+              {pending ? "Procesando..." : "Activar plan anual"}
+            </button>
+          </>
+        )}
       </div>
+
+      {hasActiveSubscription && showOnboardingCta ? (
+        <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+          <p className="font-semibold">Pago confirmado. Siguiente paso: completar tu perfil coach.</p>
+          {onboardingStepSummary ? <p className="mt-1">{onboardingStepSummary}</p> : null}
+        </div>
+      ) : null}
 
       {status.text ? <p className="mt-4 text-sm text-red-600">{status.text}</p> : null}
     </div>
   );
 }
-
