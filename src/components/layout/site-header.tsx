@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState, useTransition } from "react";
 import { Container } from "@/components/layout/container";
 import { siteNav } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
@@ -12,9 +12,82 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+type HeaderSessionUser = {
+  id: string;
+  role: "admin" | "coach" | "client";
+  displayName?: string | null;
+};
+
+type HeaderSessionState = {
+  loading: boolean;
+  authenticated: boolean;
+  user: HeaderSessionUser | null;
+};
+
 export function SiteHeader() {
   const pathname = usePathname();
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [pendingLogout, startLogout] = useTransition();
+  const [session, setSession] = useState<HeaderSessionState>({
+    loading: true,
+    authenticated: false,
+    user: null,
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const res = await fetch("/api/auth/session", {
+          method: "GET",
+          credentials: "same-origin",
+          cache: "no-store",
+          headers: { "cache-control": "no-store" },
+        });
+        const json = (await res.json()) as { authenticated?: boolean; user?: HeaderSessionUser | null };
+        if (!cancelled) {
+          setSession({
+            loading: false,
+            authenticated: Boolean(json.authenticated),
+            user: json.user ?? null,
+          });
+        }
+      } catch {
+        if (!cancelled) {
+          setSession({ loading: false, authenticated: false, user: null });
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
+
+  const accountHref =
+    session.user?.role === "admin"
+      ? "/admin"
+      : session.user?.role === "coach"
+        ? "/mi-cuenta/coach"
+        : "/mi-cuenta/cliente";
+
+  function handleLogout() {
+    startLogout(async () => {
+      try {
+        await fetch("/api/auth/logout", {
+          method: "POST",
+          credentials: "same-origin",
+          cache: "no-store",
+        });
+      } catch {}
+      setSession({ loading: false, authenticated: false, user: null });
+      setMenuOpen(false);
+      router.push("/");
+      router.refresh();
+    });
+  }
 
   return (
     <header className="sticky top-0 z-40 border-b border-black/5 bg-white/90 backdrop-blur">
@@ -69,18 +142,39 @@ export function SiteHeader() {
         </nav>
 
         <div className="ml-auto hidden items-center gap-2 sm:flex">
-          <Link
-            href="/iniciar-sesion"
-            className="rounded-xl border border-black/10 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
-          >
-            Iniciar sesión
-          </Link>
-          <Link
-            href="/membresia"
-            className="rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:brightness-95"
-          >
-            Soy coach
-          </Link>
+          {session.authenticated ? (
+            <>
+              <Link
+                href={accountHref}
+                className="rounded-xl border border-black/10 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
+              >
+                {session.user?.role === "admin" ? "Admin" : "Mi cuenta"}
+              </Link>
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={pendingLogout}
+                className="rounded-xl bg-zinc-950 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 disabled:opacity-60"
+              >
+                {pendingLogout ? "Saliendo..." : "Cerrar sesión"}
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/iniciar-sesion"
+                className="rounded-xl border border-black/10 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
+              >
+                {session.loading ? "Cargando..." : "Iniciar sesión"}
+              </Link>
+              <Link
+                href="/membresia"
+                className="rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:brightness-95"
+              >
+                Soy coach
+              </Link>
+            </>
+          )}
         </div>
 
         <button
@@ -120,20 +214,42 @@ export function SiteHeader() {
               })}
             </ul>
             <div className="mt-4 grid gap-2">
-              <Link
-                href="/iniciar-sesion"
-                onClick={() => setMenuOpen(false)}
-                className="rounded-xl border border-black/10 bg-white px-4 py-3 text-center text-sm font-semibold text-zinc-900"
-              >
-                Iniciar sesión
-              </Link>
-              <Link
-                href="/membresia"
-                onClick={() => setMenuOpen(false)}
-                className="rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 px-4 py-3 text-center text-sm font-semibold text-white"
-              >
-                Membresía para coaches
-              </Link>
+              {session.authenticated ? (
+                <>
+                  <Link
+                    href={accountHref}
+                    onClick={() => setMenuOpen(false)}
+                    className="rounded-xl border border-black/10 bg-white px-4 py-3 text-center text-sm font-semibold text-zinc-900"
+                  >
+                    {session.user?.role === "admin" ? "Ir al admin" : "Mi cuenta"}
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    disabled={pendingLogout}
+                    className="rounded-xl bg-zinc-950 px-4 py-3 text-center text-sm font-semibold text-white disabled:opacity-60"
+                  >
+                    {pendingLogout ? "Saliendo..." : "Cerrar sesión"}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/iniciar-sesion"
+                    onClick={() => setMenuOpen(false)}
+                    className="rounded-xl border border-black/10 bg-white px-4 py-3 text-center text-sm font-semibold text-zinc-900"
+                  >
+                    {session.loading ? "Cargando..." : "Iniciar sesión"}
+                  </Link>
+                  <Link
+                    href="/membresia"
+                    onClick={() => setMenuOpen(false)}
+                    className="rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 px-4 py-3 text-center text-sm font-semibold text-white"
+                  >
+                    Membresía para coaches
+                  </Link>
+                </>
+              )}
             </div>
           </Container>
         </div>
@@ -141,3 +257,4 @@ export function SiteHeader() {
     </header>
   );
 }
+
