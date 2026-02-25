@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { ProfileAnalyticsTracker } from "@/components/analytics/profile-analytics-tracker";
 import { CoachGalleryLightbox } from "@/components/coach/coach-gallery-lightbox";
 import { CoachProfileActionPopups } from "@/components/coach/coach-profile-action-popups";
+import { CoachProfileSectionNav } from "@/components/coach/coach-profile-section-nav";
 import { CoachCard } from "@/components/directory/coach-card";
 import { ContactCoachForm } from "@/components/forms/contact-coach-form";
 import { PageShell } from "@/components/layout/page-shell";
@@ -47,7 +48,8 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
   if (!coach) notFound();
 
   const sessionUser = await getOptionalSessionUser();
-  const canSeeCoachStats = sessionUser?.role === "coach" && sessionUser.coachProfileId === coach.id;
+  const canSeeCoachStats =
+    sessionUser?.role === "admin" || (sessionUser?.role === "coach" && sessionUser.coachProfileId === coach.id);
 
   const rating = getCoachAverageRating(coach);
   const approvedReviews = coach.reviews.filter((review) => review.coachDecision === "approved");
@@ -117,7 +119,7 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
 
       <PageShell className="pt-6">
         <section id="inicio" className="overflow-hidden rounded-[2rem] border border-black/10 bg-white shadow-sm">
-          <div className="grid gap-6 bg-[radial-gradient(circle_at_8%_0%,rgba(6,182,212,.10),transparent_38%),radial-gradient(circle_at_98%_10%,rgba(16,185,129,.10),transparent_36%)] p-5 sm:p-6 lg:grid-cols-[1.15fr_.85fr] lg:p-8">
+          <div className="grid gap-6 bg-[radial-gradient(circle_at_8%_0%,rgba(6,182,212,.10),transparent_38%),radial-gradient(circle_at_98%_10%,rgba(16,185,129,.10),transparent_36%)] p-5 sm:p-6 xl:grid-cols-[1.15fr_.85fr] xl:p-8">
             <div>
               <div className="flex items-center justify-between gap-3">
                 <Link
@@ -125,7 +127,7 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
                   className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-black/10 bg-white/90 text-zinc-900"
                   aria-label="Volver al directorio"
                 >
-                  ←
+                  <HeroIcon name="back" />
                 </Link>
                 <button
                   type="button"
@@ -133,11 +135,11 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
                   className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-black/10 bg-white/90 text-zinc-900"
                   aria-label="Compartir perfil"
                 >
-                  ↗
+                  <HeroIcon name="share" />
                 </button>
               </div>
 
-              <p className="mt-4 text-sm font-semibold text-zinc-600">Encuentra • coach en Espana • online o presencial</p>
+              <p className="mt-4 text-sm font-semibold text-zinc-600">Encuentra • coach en España • online o presencial</p>
               <h1 className="mt-2 text-3xl font-black tracking-tight text-zinc-950 sm:text-4xl lg:text-5xl">{coach.name}</h1>
               <p className="mt-4 max-w-3xl text-base leading-7 text-zinc-700">{leadBits.join(" · ") || coach.headline}</p>
 
@@ -161,35 +163,39 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
 
               <div className="mt-4 rounded-2xl border border-black/10 bg-zinc-50 p-4">
                 <div className="flex flex-wrap items-center gap-3">
-                  <div className="text-3xl font-black tracking-tight text-zinc-900">{rating > 0 ? rating.toFixed(1).replace(".", ",") : "Nueva"}</div>
-                  <div className="text-xl text-amber-500">★★★★★</div>
+                  <div className="text-3xl font-black tracking-tight text-zinc-900">
+                    {rating > 0 ? rating.toFixed(1).replace(".", ",") : "Sin reseñas"}
+                  </div>
+                  {rating > 0 ? <div className="text-xl text-amber-500">★★★★★</div> : null}
                 </div>
                 <p className="mt-1 text-sm text-zinc-700">
                   {approvedReviews.length
-                    ? `${rating.toFixed(1).replace(".", ",")} de 5 estrellas (basado en ${approvedReviews.length} resena${approvedReviews.length > 1 ? "s" : ""})`
-                    : "Este perfil todavia no tiene resenas publicas"}
+                    ? `${rating.toFixed(1).replace(".", ",")} de 5 estrellas (basado en ${approvedReviews.length} reseña${approvedReviews.length > 1 ? "s" : ""})`
+                    : "Este perfil todavía no tiene reseñas públicas"}
                 </p>
               </div>
 
-              <CoachProfileActionPopups coach={{ id: coach.id, name: coach.name, links: coach.links }} />
+              <CoachProfileActionPopups coach={{ id: coach.id, name: coach.name, heroImageUrl: coach.heroImageUrl, headline: coach.headline, links: coach.links }} />
 
               <p className="mt-3 text-sm text-zinc-600">
                 <Link href="/pregunta-a-un-coach" className="font-semibold text-cyan-700 hover:text-cyan-800">¿Tienes dudas? Pregunta a un coach</Link>
                 <span> · </span>
-                <Link href="/coaches" className="font-semibold text-cyan-700 hover:text-cyan-800">Ver mas coaches</Link>
+                <Link href="/coaches" className="font-semibold text-cyan-700 hover:text-cyan-800">Ver más coaches</Link>
               </p>
             </div>
 
             <div className="space-y-4">
               <div className="relative overflow-hidden rounded-3xl border border-black/10 bg-zinc-100">
                 <div className="relative aspect-[16/10]">
-                  <Image src={coach.heroImageUrl} alt={`Imagen de ${coach.name}`} fill className="object-cover" priority sizes="(max-width: 1024px) 100vw, 40vw" />
+                  <Image src={coach.heroImageUrl} alt={`Imagen de ${coach.name}`} fill className="object-cover" priority sizes="(max-width: 1279px) 100vw, 40vw" />
                 </div>
-                <div className="absolute right-3 top-3 inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/20 bg-black/35 text-white">⌕</div>
+                <div className="absolute right-3 top-3 inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/20 bg-black/35 text-white">
+                  <HeroIcon name="zoom" />
+                </div>
               </div>
 
               <div className="rounded-3xl border border-black/10 bg-white p-4">
-                <h2 className="text-lg font-black tracking-tight text-zinc-950">Redes y contacto rapido</h2>
+                <h2 className="text-lg font-black tracking-tight text-zinc-950">Redes y contacto rápido</h2>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {coach.links.whatsapp ? <ContactLink href={`https://wa.me/${coach.links.whatsapp.replace(/\D+/g, "")}`} label="WhatsApp" /> : null}
                   {coach.links.phone ? <ContactLink href={`tel:${coach.links.phone}`} label="Llamar" /> : null}
@@ -203,27 +209,20 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
           </div>
         </section>
 
-        <div className="sticky top-20 z-20 mt-4 flex justify-center">
-          <nav className="flex max-w-full gap-1 overflow-x-auto rounded-full border border-black/10 bg-white/95 p-1 shadow-sm backdrop-blur" aria-label="Secciones del perfil">
-            {[
-              ["inicio", "Inicio"],
-              ["sobre-mi", "Sobre Mi"],
-              ["galeria", "Galeria"],
-              ["precios", "Precios"],
-              ["resenas", "Resenas"],
-            ].map(([id, label]) => (
-              <a key={id} href={`#${id}`} className="whitespace-nowrap rounded-full border border-transparent px-4 py-2 text-sm font-semibold text-zinc-700 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-900">
-                <span className="mr-1 text-zinc-500">{id === "inicio" ? "⌂" : id === "sobre-mi" ? "◌" : id === "galeria" ? "▣" : id === "precios" ? "¤" : "☆"}</span>
-                {label}
-              </a>
-            ))}
-          </nav>
-        </div>
+        <CoachProfileSectionNav
+          sections={[
+            { id: "inicio", label: "Inicio" },
+            { id: "sobre-mi", label: "Sobre Mi" },
+            { id: "galeria", label: "Galería" },
+            { id: "precios", label: "Precios" },
+            { id: "resenas", label: "Reseñas" },
+          ]}
+        />
 
         <div className="mt-4 space-y-6">
-          <section id="sobre-mi" className="scroll-mt-36 rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
+          <section id="sobre-mi" className="scroll-mt-[calc(var(--site-header-offset,96px)+5rem)] rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
             <h2 className="text-2xl font-black tracking-tight text-zinc-950">Sobre mi</h2>
-            <div className="mt-4 grid gap-4 lg:grid-cols-[1.05fr_.95fr]">
+            <div className="mt-4 grid gap-4 xl:grid-cols-[1.05fr_.95fr]">
               <div>
                 {coach.aboutHtml ? (
                   <div className="prose prose-zinc max-w-none prose-a:text-cyan-700" dangerouslySetInnerHTML={{ __html: coach.aboutHtml }} />
@@ -232,24 +231,24 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
                 )}
               </div>
               <div className="space-y-3">
-                <InfoCard title="Primer paso recomendado" text="Mi objetivo es X. Ahora mismo estoy en Y. Mi mayor bloqueo es Z. Como lo trabajariamos?" />
-                <InfoCard title="Precio y condiciones" text={coach.basePriceEur ? `Desde ${formatEuro(coach.basePriceEur)} por sesion. Ver detalles en precios.` : "Consulta el precio y formato en la seccion de precios."} />
+                <InfoCard title="Primer paso recomendado" text="Mi objetivo es X. Ahora mismo estoy en Y. Mi mayor bloqueo es Z. ¿Cómo lo trabajaríamos?" />
+                <InfoCard title="Precio y condiciones" text={coach.basePriceEur ? `Desde ${formatEuro(coach.basePriceEur)} por sesión. Ver detalles en precios.` : "Consulta el precio y formato en la sección de precios."} />
                 {coach.specialties.length ? <InfoCard title="Especialidades" text={coach.specialties.join(", ")} /> : null}
               </div>
             </div>
           </section>
 
-          <section id="galeria" className="scroll-mt-36 rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
-            <h2 className="text-2xl font-black tracking-tight text-zinc-950">Galeria</h2>
+          <section id="galeria" className="scroll-mt-[calc(var(--site-header-offset,96px)+5rem)] rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
+            <h2 className="text-2xl font-black tracking-tight text-zinc-950">Galería</h2>
             <CoachGalleryLightbox coachName={coach.name} heroImageUrl={coach.heroImageUrl} galleryImageUrls={coach.galleryImageUrls} />
           </section>
 
-          <section id="precios" className="scroll-mt-36 rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
+          <section id="precios" className="scroll-mt-[calc(var(--site-header-offset,96px)+5rem)] rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
             <h2 className="text-2xl font-black tracking-tight text-zinc-950">Precios</h2>
             <div className="mt-4">
               <p className="text-4xl font-black tracking-tight text-zinc-900">
                 {coach.basePriceEur ? formatEuro(coach.basePriceEur) : "Consultar"}
-                <span className="ml-2 text-lg font-semibold text-zinc-500">precio orientativo por sesion</span>
+                <span className="ml-2 text-lg font-semibold text-zinc-500">precio orientativo por sesión</span>
               </p>
             </div>
             <div className="my-4 h-px bg-black/10" />
@@ -260,23 +259,25 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-zinc-700">Contacta con el coach para confirmar importe, modalidad y duracion.</p>
+              <p className="text-sm text-zinc-700">Contacta con el coach para confirmar importe, modalidad y duración.</p>
             )}
             <div className="my-4 h-px bg-black/10" />
             <div className="grid gap-3 sm:grid-cols-2">
               <MiniCard title="Modalidad" value={coach.sessionModes.join(" · ") || "A consultar"} />
-              <MiniCard title="Ubicacion" value={coach.cityLabel} />
+              <MiniCard title="Ubicación" value={coach.cityLabel} />
             </div>
           </section>
 
-          <section id="resenas" className="scroll-mt-36 rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
-            <h2 className="text-2xl font-black tracking-tight text-zinc-950">Resenas</h2>
+          <section id="resenas" className="scroll-mt-[calc(var(--site-header-offset,96px)+5rem)] rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
+            <h2 className="text-2xl font-black tracking-tight text-zinc-950">Reseñas</h2>
             <div className="mt-4 rounded-2xl border border-black/10 bg-zinc-50 p-4">
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="text-3xl font-black tracking-tight text-zinc-900">{rating > 0 ? rating.toFixed(1).replace(".", ",") : "Nueva"}</div>
-                <div className="text-xl text-amber-500">★★★★★</div>
-              </div>
-              <p className="mt-1 text-sm text-zinc-700">{approvedReviews.length ? `${rating.toFixed(1).replace('.', ',')} de 5 estrellas (basado en ${approvedReviews.length} resena${approvedReviews.length > 1 ? 's' : ''})` : 'Sin resenas todavia'}</p>
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="text-3xl font-black tracking-tight text-zinc-900">
+                    {rating > 0 ? rating.toFixed(1).replace(".", ",") : "Sin reseñas"}
+                  </div>
+                  {rating > 0 ? <div className="text-xl text-amber-500">★★★★★</div> : null}
+                </div>
+              <p className="mt-1 text-sm text-zinc-700">{approvedReviews.length ? `${rating.toFixed(1).replace(".", ",")} de 5 estrellas (basado en ${approvedReviews.length} reseña${approvedReviews.length > 1 ? "s" : ""})` : "Sin reseñas todavía"}</p>
             </div>
 
             <div className="my-4 h-px bg-black/10" />
@@ -294,7 +295,7 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
                 ))}
               </div>
             ) : (
-              <div className="mt-3 rounded-2xl border border-dashed border-black/15 bg-zinc-50 p-4 text-sm text-zinc-700">Este perfil todavia no tiene resenas publicas.</div>
+              <div className="mt-3 rounded-2xl border border-dashed border-black/15 bg-zinc-50 p-4 text-sm text-zinc-700">Este perfil todavía no tiene reseñas públicas.</div>
             )}
 
             <div className="my-4 h-px bg-black/10" />
@@ -307,7 +308,7 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
           {canSeeCoachStats ? (
             <section className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
               <h2 className="text-2xl font-black tracking-tight text-zinc-950">Estadisticas del coach (privadas)</h2>
-              <p className="mt-2 text-sm text-zinc-700">Solo visibles para el propietario del perfil.</p>
+              <p className="mt-2 text-sm text-zinc-700">Solo visibles para administradores y para el propietario del perfil.</p>
               <dl className="mt-4 grid gap-3 sm:grid-cols-3">
                 <MetricLine label="Total de visitas" value={String(coach.metrics.totalViews)} />
                 <MetricLine label="Tiempo medio" value={`${coach.metrics.avgViewSeconds}s`} />
@@ -370,6 +371,32 @@ function MetricLine({ label, value }: { label: string; value: string }) {
       <dt className="text-sm text-zinc-700">{label}</dt>
       <dd className="mt-1 text-lg font-black text-zinc-950">{value}</dd>
     </div>
+  );
+}
+
+function HeroIcon({ name }: { name: "back" | "share" | "zoom" }) {
+  if (name === "back") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
+        <path d="M14.5 5 8 12l6.5 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+  if (name === "share") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
+        <path d="M12 16V4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <path d="M7 8l5-5 5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M6 14v5a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
+      <circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M21 21l-4.5-4.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M10.5 7.8v5.4M7.8 10.5h5.4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
   );
 }
 

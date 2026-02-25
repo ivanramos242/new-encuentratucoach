@@ -1,4 +1,4 @@
-import Image from "next/image";
+﻿import Image from "next/image";
 import Link from "next/link";
 import { getCoachCategoryLabel } from "@/lib/coach-category-catalog";
 import { getCoachAverageRating } from "@/lib/directory";
@@ -68,8 +68,8 @@ export function CoachCard({ coach }: { coach: CoachProfile }) {
           <div className="text-right">
             <div className="text-sm font-semibold text-zinc-500">Valoración</div>
             <div className="text-sm font-black text-zinc-900">
-              {rating > 0 ? rating.toFixed(1) : "Nueva"}
-              {rating > 0 ? ` · ${coach.reviews.length} reseñas` : " · sin reseñas"}
+              {rating > 0 ? rating.toFixed(1) : "Sin reseñas"}
+              {rating > 0 ? ` · ${coach.reviews.length} reseñas` : ""}
             </div>
           </div>
         </div>

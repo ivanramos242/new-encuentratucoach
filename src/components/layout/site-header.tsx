@@ -1,8 +1,8 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { Container } from "@/components/layout/container";
 import { siteNav } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
@@ -27,7 +27,9 @@ type HeaderSessionState = {
 export function SiteHeader() {
   const pathname = usePathname();
   const router = useRouter();
+  const headerRef = useRef<HTMLElement | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [topStripCollapsed, setTopStripCollapsed] = useState(false);
   const [pendingLogout, startLogout] = useTransition();
   const [session, setSession] = useState<HeaderSessionState>({
     loading: true,
@@ -66,6 +68,38 @@ export function SiteHeader() {
     };
   }, [pathname]);
 
+  useEffect(() => {
+    const onScroll = () => setTopStripCollapsed(window.scrollY > 28);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    const headerEl = headerRef.current;
+    if (!headerEl) return;
+
+    const rootStyle = document.documentElement.style;
+    const updateHeaderOffset = () => {
+      const height = Math.round(headerEl.getBoundingClientRect().height);
+      rootStyle.setProperty("--site-header-offset", `${height}px`);
+    };
+
+    updateHeaderOffset();
+
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(updateHeaderOffset);
+      ro.observe(headerEl);
+    }
+    window.addEventListener("resize", updateHeaderOffset);
+
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener("resize", updateHeaderOffset);
+    };
+  }, [menuOpen, topStripCollapsed]);
+
   const accountHref =
     session.user?.role === "admin"
       ? "/admin"
@@ -90,37 +124,43 @@ export function SiteHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-black/5 bg-white/90 backdrop-blur">
-      <div className="border-b border-black/5 bg-white">
-        <Container className="flex h-11 items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-sm text-zinc-600">
-            <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-            <span>Directorio de coaches en España</span>
-          </div>
-          <div className="hidden items-center gap-5 text-sm font-medium text-zinc-700 sm:flex">
-            <Link href="/membresia" className="hover:text-zinc-950">
-              Unirse como coach
-            </Link>
-            <Link href="/contacto" className="hover:text-zinc-950">
-              Ayuda
-            </Link>
-          </div>
-        </Container>
+    <header ref={headerRef} className="sticky top-0 z-40 border-b border-black/5 bg-white/90 backdrop-blur">
+      <div
+        className="overflow-hidden transition-[height,opacity] duration-200 ease-out"
+        style={{ height: topStripCollapsed ? 0 : 44, opacity: topStripCollapsed ? 0 : 1 }}
+        aria-hidden={topStripCollapsed}
+      >
+        <div className="border-b border-black/5 bg-white">
+          <Container className="flex h-11 items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2 text-sm text-zinc-600">
+              <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+              <span className="truncate">Directorio de coaches en España</span>
+            </div>
+            <div className="hidden items-center gap-5 text-sm font-medium text-zinc-700 sm:flex">
+              <Link href="/membresia" className="hover:text-zinc-950">
+                Unirse como coach
+              </Link>
+              <Link href="/contacto" className="hover:text-zinc-950">
+                Ayuda
+              </Link>
+            </div>
+          </Container>
+        </div>
       </div>
 
-      <Container className="flex items-center gap-4 py-3">
-        <Link href="/" className="flex items-center gap-3">
-          <div className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-cyan-500 to-emerald-500 font-black text-white shadow">
+      <Container className="flex items-center gap-3 py-3 sm:gap-4">
+        <Link href="/" className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-cyan-500 to-emerald-500 font-black text-white shadow">
             ET
           </div>
-          <div className="hidden sm:block">
+          <div className="hidden min-w-0 sm:block">
             <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Encuentra</div>
             <div className="text-base font-black tracking-tight text-zinc-950">TuCoach</div>
           </div>
         </Link>
 
-        <nav className="ml-2 hidden flex-1 justify-center lg:flex" aria-label="Principal">
-          <ul className="flex items-center gap-1">
+        <nav className="ml-1 hidden flex-1 justify-center lg:flex" aria-label="Principal">
+          <ul className="flex flex-wrap items-center justify-center gap-1">
             {siteNav.map((item) => {
               const active = isActive(pathname, item.href);
               return (
@@ -141,7 +181,7 @@ export function SiteHeader() {
           </ul>
         </nav>
 
-        <div className="ml-auto hidden items-center gap-2 sm:flex">
+        <div className="ml-auto hidden items-center gap-2 xl:flex">
           {session.authenticated ? (
             <>
               <Link
@@ -194,6 +234,23 @@ export function SiteHeader() {
       {menuOpen ? (
         <div id="mobile-menu" className="border-t border-black/5 bg-white lg:hidden">
           <Container className="py-4">
+            <div className="mb-4 grid gap-2 rounded-2xl border border-black/10 bg-zinc-50 p-3 sm:hidden">
+              <Link
+                href="/membresia"
+                onClick={() => setMenuOpen(false)}
+                className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-zinc-900"
+              >
+                Unirse como coach
+              </Link>
+              <Link
+                href="/contacto"
+                onClick={() => setMenuOpen(false)}
+                className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-zinc-900"
+              >
+                Ayuda
+              </Link>
+            </div>
+
             <ul className="grid gap-2">
               {siteNav.map((item) => {
                 const active = isActive(pathname, item.href);
@@ -257,4 +314,3 @@ export function SiteHeader() {
     </header>
   );
 }
-
