@@ -10,6 +10,7 @@ import {
   faClock,
   faEnvelope,
   faGlobe,
+  faPenToSquare,
   faPhone,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -18,6 +19,7 @@ import { ProfileClickLink } from "@/components/analytics/profile-click-link";
 import { CoachGalleryLightbox } from "@/components/coach/coach-gallery-lightbox";
 import { CoachMessageBottomCta } from "@/components/coach/coach-message-bottom-cta";
 import { CoachProfileActionPopups } from "@/components/coach/coach-profile-action-popups";
+import { CoachReviewForm } from "@/components/coach/coach-review-form";
 import { CoachProfileSectionNav } from "@/components/coach/coach-profile-section-nav";
 import { CoachCard } from "@/components/directory/coach-card";
 import { PageShell } from "@/components/layout/page-shell";
@@ -67,7 +69,7 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
   const privateStats = canSeeCoachStats ? await getCoachPrivateAnalyticsSummary(coach.id) : null;
 
   const rating = getCoachAverageRating(coach);
-  const approvedReviews = coach.reviews.filter((review) => review.coachDecision === "approved");
+  const visibleReviews = coach.reviews;
   const related = getRelatedCoachesFrom(await listPublicCoachesMerged(), coach, 3);
   const categoryLabels = coach.categories.map((slug) => getCoachCategoryLabel(slug) ?? slug);
   const categoryNames = categoryLabels.join(", ");
@@ -113,7 +115,7 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
             ? {
                 "@type": "AggregateRating",
                 ratingValue: Number(rating.toFixed(1)),
-                reviewCount: approvedReviews.length,
+                reviewCount: visibleReviews.length,
               }
             : undefined,
       },
@@ -144,14 +146,25 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
                 >
                   <HeroIcon name="back" />
                 </Link>
-                <button
-                  type="button"
-                  data-etc-open-popup="share"
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-black/10 bg-white/90 text-zinc-900"
-                  aria-label="Compartir perfil"
-                >
-                  <HeroIcon name="share" />
-                </button>
+                <div className="flex items-center gap-2">
+                  {isOwnCoachProfile ? (
+                    <Link
+                      href={`/mi-cuenta/coach/perfil?${new URLSearchParams({ returnTo: `/coaches/${coach.slug}` }).toString()}`}
+                      className="inline-flex items-center gap-2 rounded-2xl border border-cyan-300 bg-cyan-50 px-3 py-2.5 text-sm font-semibold text-cyan-900 hover:bg-cyan-100"
+                    >
+                      <FontAwesomeIcon icon={faPenToSquare} className="h-4 w-4" />
+                      Editar perfil
+                    </Link>
+                  ) : null}
+                  <button
+                    type="button"
+                    data-etc-open-popup="share"
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-black/10 bg-white/90 text-zinc-900"
+                    aria-label="Compartir perfil"
+                  >
+                    <HeroIcon name="share" />
+                  </button>
+                </div>
               </div>
 
               <p className="mt-4 text-sm font-semibold text-zinc-600">Encuentra • coach en España • online o presencial</p>
@@ -184,9 +197,9 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
                   {rating > 0 ? <div className="text-xl text-amber-500">★★★★★</div> : null}
                 </div>
                 <p className="mt-1 text-sm text-zinc-700">
-                  {approvedReviews.length
-                    ? `${rating.toFixed(1).replace(".", ",")} de 5 estrellas (basado en ${approvedReviews.length} reseña${approvedReviews.length > 1 ? "s" : ""})`
-                    : "Este perfil todavía no tiene reseñas públicas"}
+                  {visibleReviews.length
+                    ? `${rating.toFixed(1).replace(".", ",")} de 5 estrellas (basado en ${visibleReviews.length} reseña${visibleReviews.length > 1 ? "s" : ""})`
+                    : "Este perfil todavia no tiene reseñas"}
                 </p>
               </div>
 
@@ -344,14 +357,23 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
                   </div>
                   {rating > 0 ? <div className="text-xl text-amber-500">★★★★★</div> : null}
                 </div>
-              <p className="mt-1 text-sm text-zinc-700">{approvedReviews.length ? `${rating.toFixed(1).replace(".", ",")} de 5 estrellas (basado en ${approvedReviews.length} reseña${approvedReviews.length > 1 ? "s" : ""})` : "Sin reseñas todavía"}</p>
+              <p className="mt-1 text-sm text-zinc-700">{visibleReviews.length ? `${rating.toFixed(1).replace(".", ",")} de 5 estrellas (basado en ${visibleReviews.length} reseña${visibleReviews.length > 1 ? "s" : ""})` : "Sin reseñas todavia"}</p>
             </div>
 
             <div className="my-4 h-px bg-black/10" />
+            <CoachReviewForm
+              coachId={coach.id}
+              coachSlug={coach.slug}
+              coachName={coach.name}
+              isAuthenticated={Boolean(sessionUser)}
+              isOwnCoachProfile={isOwnCoachProfile}
+            />
+
+            <div className="my-4 h-px bg-black/10" />
             <h3 className="text-xl font-black tracking-tight text-zinc-950">Opiniones</h3>
-            {approvedReviews.length ? (
+            {visibleReviews.length ? (
               <div className="mt-3 grid gap-3">
-                {approvedReviews.map((review) => (
+                {visibleReviews.map((review) => (
                   <article key={review.id} className="rounded-2xl border border-black/10 bg-white p-4">
                     <div className="flex items-center justify-between gap-4">
                       <p className="font-semibold text-zinc-900">{review.authorName}</p>
@@ -362,7 +384,7 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
                 ))}
               </div>
             ) : (
-              <div className="mt-3 rounded-2xl border border-dashed border-black/15 bg-zinc-50 p-4 text-sm text-zinc-700">Este perfil todavía no tiene reseñas públicas.</div>
+              <div className="mt-3 rounded-2xl border border-dashed border-black/15 bg-zinc-50 p-4 text-sm text-zinc-700">Este perfil todavia no tiene reseñas.</div>
             )}
 
           </section>

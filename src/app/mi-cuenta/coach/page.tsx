@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { faArrowRight, faListCheck } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { PageHero } from "@/components/layout/page-hero";
@@ -33,9 +33,9 @@ export default async function CoachDashboardPage() {
   return (
     <>
       <PageHero
-        badge="Mi cuenta · Coach"
+        badge="Mi cuenta Â· Coach"
         title="Panel de coach"
-        description="Gestiona tu membresía, completa tu perfil y accede a mensajes, reseñas y métricas."
+        description="Gestiona tu membresia, completa tu perfil y accede a mensajes y metricas."
       />
       <PageShell className="pt-8">
         <div className="grid gap-6">
@@ -46,12 +46,12 @@ export default async function CoachDashboardPage() {
                   {profile?.name || user.displayName || "Tu perfil coach"}
                 </h2>
                 <p className="mt-2 text-sm text-zinc-700">
-                  Estado perfil: <strong>{profile?.profileStatus || "draft"}</strong> · Visibilidad:{" "}
+                  Estado perfil: <strong>{profile?.profileStatus || "draft"}</strong> Â· Visibilidad:{" "}
                   <strong>{profile?.visibilityStatus || "inactive"}</strong>
                 </p>
                 <p className="mt-1 text-sm text-zinc-700">
-                  Membresía: <strong>{sub?.status || "sin suscripción"}</strong>
-                  {sub?.planCode ? ` · ${sub.planCode}` : ""}
+                  MembresÃ­a: <strong>{sub?.status || "sin suscripciÃ³n"}</strong>
+                  {sub?.planCode ? ` Â· ${sub.planCode}` : ""}
                 </p>
               </div>
               <div className="rounded-2xl border border-black/10 bg-zinc-50 px-4 py-3 text-sm text-zinc-800">
@@ -64,10 +64,10 @@ export default async function CoachDashboardPage() {
 
             {!hasActiveMembership ? (
               <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                <p className="font-semibold">Activa tu membresía para publicar el perfil y responder en mensajes/Q&A.</p>
+                <p className="font-semibold">Activa tu membresÃ­a para publicar el perfil y responder en mensajes/Q&A.</p>
                 <Link href="/mi-cuenta/coach/membresia" className="mt-3 inline-flex rounded-xl bg-zinc-950 px-4 py-2 text-white">
                   <FontAwesomeIcon icon={faArrowRight} className="mr-2 mt-0.5 h-3.5 w-3.5" />
-                  Ir a membresía
+                  Ir a membresÃ­a
                 </Link>
               </div>
             ) : null}
@@ -88,12 +88,11 @@ export default async function CoachDashboardPage() {
 
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {[
-              { href: "/mi-cuenta/coach/perfil", title: "Perfil coach", desc: "Editar datos públicos, precios, enlaces y galería." },
-              { href: "/mi-cuenta/coach/membresia", title: "Membresía", desc: "Estado de suscripción y facturación con Stripe." },
-              { href: "/mi-cuenta/coach/mensajes", title: "Mensajes", desc: "Conversaciones con clientes (V2/V3)." },
-              { href: "/mi-cuenta/coach/resenas", title: "Reseñas", desc: "Revisar y gestionar reseñas del perfil." },
-              { href: "/mi-cuenta/coach/certificacion", title: "Certificación", desc: "Subir documentación y ver estado." },
-              { href: "/mi-cuenta/coach/metricas", title: "Métricas", desc: "Visitas, retención y clics de tu perfil." },
+              { href: "/mi-cuenta/coach/perfil", title: "Perfil coach", desc: "Editar datos pÃºblicos, precios, enlaces y galerÃ­a." },
+              { href: "/mi-cuenta/coach/membresia", title: "MembresÃ­a", desc: "Estado de suscripciÃ³n y facturaciÃ³n con Stripe." },
+              { href: "/mi-cuenta/coach/mensajes", title: "Mensajes", desc: "Conversaciones con clientes y coaches." },
+              { href: "/mi-cuenta/coach/certificacion", title: "CertificaciÃ³n", desc: "Subir documentaciÃ³n y ver estado." },
+              { href: "/mi-cuenta/coach/metricas", title: "MÃ©tricas", desc: "Visitas, retenciÃ³n y clics de tu perfil." },
             ].map((item) => (
               <Link
                 key={item.href}

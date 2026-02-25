@@ -118,7 +118,6 @@ async function listDbPublicCoachesRaw() {
       galleryAssets: { orderBy: { sortOrder: "asc" } },
       sessionModes: true,
       reviews: {
-        where: { isVisible: true, coachDecision: "approved" },
         include: {
           rating: true,
           clientUser: { select: { displayName: true } },

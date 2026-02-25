@@ -8,6 +8,18 @@ function isActiveish(status?: string | null) {
   return status === "active" || status === "trialing";
 }
 
+function pickOne(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function sanitizeReturnToPath(value: string | undefined) {
+  if (!value) return undefined;
+  const trimmed = value.trim();
+  if (!trimmed.startsWith("/")) return undefined;
+  if (trimmed.startsWith("//")) return undefined;
+  return trimmed;
+}
+
 export default async function CoachProfilePage({
   searchParams,
 }: {
@@ -17,6 +29,7 @@ export default async function CoachProfilePage({
   const profile = await getCoachProfileForEditor(user);
   const params = (await searchParams) || {};
   const wizardParam = typeof params.wizard === "string" ? params.wizard : undefined;
+  const returnToPath = sanitizeReturnToPath(pickOne(params.returnTo));
   const fromCheckout = typeof params.checkout === "string" ? params.checkout === "success" : false;
   const sub = profile?.subscriptions?.[0];
   const wizardMode = wizardParam === "1" || (fromCheckout && isActiveish(sub?.status));
@@ -29,7 +42,7 @@ export default async function CoachProfilePage({
         description="Editor del perfil público: datos, precios, enlaces, galería y publicación."
       />
       <PageShell className="pt-8" containerClassName="w-[94%] xl:w-[80%] max-w-[1600px]">
-        <CoachProfileEditor initialProfile={profile} wizardMode={wizardMode} />
+        <CoachProfileEditor initialProfile={profile} wizardMode={wizardMode} returnToPath={returnToPath} />
       </PageShell>
     </>
   );

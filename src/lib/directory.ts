@@ -32,8 +32,7 @@ export function getCityBySlug(slug: string) {
 }
 
 export function getCoachAverageRating(coach: CoachProfile) {
-  const approved = coach.reviews.filter((review) => review.coachDecision === "approved");
-  return average(approved.map((review) => review.rating));
+  return average(coach.reviews.map((review) => review.rating));
 }
 
 function normalize(text: string) {
