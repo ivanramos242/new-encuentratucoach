@@ -11,6 +11,10 @@ const allowedMimeList = (process.env.CHAT_ATTACHMENT_ALLOWED_MIME ??
   .map((item) => item.trim())
   .filter(Boolean);
 
+function normalizeMime(mimeType: string) {
+  return mimeType.split(";")[0]?.trim().toLowerCase() || mimeType.trim().toLowerCase();
+}
+
 const schema = z.object({
   fileName: z.string().min(1).max(255),
   mimeType: z.string().min(1).max(120),
@@ -26,7 +30,9 @@ export async function POST(request: Request) {
     const parsed = schema.safeParse(body);
     if (!parsed.success) return jsonError("Payload invalido", 400, { issues: parsed.error.flatten() });
 
-    if (!allowedMimeList.includes(parsed.data.mimeType)) {
+    const normalizedMime = normalizeMime(parsed.data.mimeType);
+
+    if (!allowedMimeList.includes(normalizedMime)) {
       return jsonError("Tipo de archivo no permitido", 400, {
         allowedMimeTypes: allowedMimeList,
         maxBytes,
@@ -44,7 +50,7 @@ export async function POST(request: Request) {
       uploadUrl = await createPresignedPutUrl({
         bucket: process.env.S3_BUCKET_PUBLIC || "etc-public",
         key,
-        contentType: parsed.data.mimeType,
+        contentType: normalizedMime,
         contentLength: parsed.data.sizeBytes,
         expiresInSeconds: 600,
       });

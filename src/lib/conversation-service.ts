@@ -137,10 +137,10 @@ function previewFromMessage(message?: Pick<MessageItemDto, "body" | "attachment"
   if (!message) return "Conversación iniciada. Envía tu primer mensaje.";
   if (message.body?.trim()) return message.body.trim();
   if (message.attachment) {
-    if (message.attachment.type === "audio") return "🎤 Nota de audio";
-    if (message.attachment.type === "image") return `📷 ${message.attachment.fileName}`;
-    if (message.attachment.type === "pdf") return `📄 ${message.attachment.fileName}`;
-    return `📎 ${message.attachment.fileName}`;
+    if (message.attachment.type === "audio") return "Nota de audio";
+    if (message.attachment.type === "image") return `Imagen: ${message.attachment.fileName}`;
+    if (message.attachment.type === "pdf") return `PDF: ${message.attachment.fileName}`;
+    return `Archivo: ${message.attachment.fileName}`;
   }
   return "Mensaje";
 }

@@ -12,10 +12,7 @@ type ThreadsResponse = {
   message?: string;
 };
 
-function mergeThreadSummary(
-  list: MessageThreadSummaryDto[],
-  updated: MessageThreadSummaryDto,
-) {
+function mergeThreadSummary(list: MessageThreadSummaryDto[], updated: MessageThreadSummaryDto) {
   const map = new Map(list.map((thread) => [thread.id, thread]));
   map.set(updated.id, { ...(map.get(updated.id) ?? updated), ...updated });
   return [...map.values()].sort((a, b) => +new Date(b.lastMessageAt) - +new Date(a.lastMessageAt));
@@ -33,7 +30,7 @@ export function MessagingShell({
   const [threads, setThreads] = useState(initialThreads);
   const [selectedThread, setSelectedThread] = useState<MessageThreadDetailDto | null>(initialThread ?? null);
   const [loadingThreads, setLoadingThreads] = useState(false);
-  const [threadsPollMs, setThreadsPollMs] = useState(5000);
+  const [threadsPollMs, setThreadsPollMs] = useState(20_000);
 
   useEffect(() => {
     setThreads(initialThreads);
@@ -62,14 +59,16 @@ export function MessagingShell({
   useEffect(() => {
     let timeoutId: number | null = null;
     let canceled = false;
+
     const loop = async () => {
       if (canceled) return;
       await refreshThreads();
       if (canceled) return;
       const jitter = Math.round(threadsPollMs * Math.random() * 0.15);
-      timeoutId = window.setTimeout(loop, Math.max(4000, threadsPollMs) + jitter);
+      timeoutId = window.setTimeout(loop, Math.max(15_000, threadsPollMs) + jitter);
     };
-    timeoutId = window.setTimeout(loop, Math.max(3000, threadsPollMs));
+
+    timeoutId = window.setTimeout(loop, Math.max(15_000, threadsPollMs));
     return () => {
       canceled = true;
       if (timeoutId != null) window.clearTimeout(timeoutId);
@@ -79,11 +78,11 @@ export function MessagingShell({
   const selectedSummaryId = selectedThread?.id ?? null;
   const placeholder = useMemo(
     () => (
-      <section className="hidden min-h-[60vh] items-center justify-center rounded-3xl border border-black/10 bg-white p-8 text-center text-zinc-500 shadow-sm md:flex">
+      <section className="hidden h-[clamp(36rem,72vh,60rem)] min-h-0 items-center justify-center rounded-3xl border border-black/10 bg-white p-8 text-center text-zinc-500 shadow-sm md:flex">
         <div>
           <p className="text-lg font-black tracking-tight text-zinc-900">Selecciona una conversación</p>
           <p className="mt-2 max-w-md text-sm leading-6">
-            Tu inbox interno está listo para mensajes con coaches/clientes, adjuntos e incluso notas de audio (MVP).
+            Tu inbox interno está listo para mensajes con coaches/clientes, adjuntos y notas de audio (MVP).
           </p>
         </div>
       </section>
@@ -92,7 +91,7 @@ export function MessagingShell({
   );
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
+    <div className="grid gap-4 xl:grid-cols-[440px_minmax(0,1fr)]">
       <div className={selectedThread ? "hidden xl:block" : ""}>
         <ThreadList
           role={role}
@@ -137,3 +136,4 @@ export function MessagingShell({
     </div>
   );
 }
+

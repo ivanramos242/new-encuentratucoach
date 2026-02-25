@@ -1,5 +1,7 @@
 "use client";
 
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTimes } from "@fortawesome/free-solid-svg-icons";
 import type { AttachmentType } from "@/types/messages";
 
 export type PendingAttachmentPreview = {
@@ -25,7 +27,6 @@ export function AttachmentPreview({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-zinc-900">
-            {attachment.type === "audio" ? "🎤 " : attachment.type === "image" ? "🖼️ " : "📄 "}
             {attachment.fileName}
           </p>
           <p className="mt-1 text-xs text-zinc-500">
@@ -38,8 +39,9 @@ export function AttachmentPreview({
             type="button"
             onClick={onRemove}
             className="rounded-lg border border-black/10 bg-white px-2 py-1 text-xs font-semibold text-zinc-700"
+            aria-label="Quitar adjunto"
           >
-            Quitar
+            <FontAwesomeIcon icon={faTimes} className="h-3 w-3" />
           </button>
         ) : null}
       </div>
@@ -54,4 +56,3 @@ export function AttachmentPreview({
     </div>
   );
 }
-

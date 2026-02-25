@@ -26,10 +26,9 @@ export default async function CoachMessageThreadPage({ params }: { params: Param
         title="Conversación"
         description="Chat privado con clientes, lectura, adjuntos y cola de envío con control de carga del servidor."
       />
-      <PageShell className="pt-8">
+      <PageShell className="pt-8" containerClassName="max-w-[110rem]">
         <MessagingShell role="coach" initialThreads={threads} initialThread={threadResult.thread} />
       </PageShell>
     </>
   );
 }
-

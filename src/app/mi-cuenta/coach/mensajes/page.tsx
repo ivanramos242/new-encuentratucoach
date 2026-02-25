@@ -16,10 +16,9 @@ export default async function CoachMessagesInboxPage() {
         title="Mensajes"
         description="Inbox interno estilo chat con clientes, adjuntos e intervalos de polling adaptativos para no saturar el servidor."
       />
-      <PageShell className="pt-8">
+      <PageShell className="pt-8" containerClassName="max-w-[110rem]">
         <MessagingShell role="coach" initialThreads={threads} initialThread={null} />
       </PageShell>
     </>
   );
 }
-

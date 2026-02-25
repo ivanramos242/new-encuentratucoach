@@ -48,7 +48,7 @@ function pressureFromRate(rateScore: number): QueuePressure {
 
 function hintsFromPressure(pressure: QueuePressure, retryAfterMs?: number): MessageServerHints {
   const suggestedPollMs =
-    pressure === "high" ? 8_000 : pressure === "medium" ? 3_000 : 1_500;
+    pressure === "high" ? 30_000 : pressure === "medium" ? 22_000 : 15_000;
   return {
     queuePressure: pressure,
     suggestedPollMs,
@@ -127,9 +127,9 @@ export function checkPollAllowance(input: { userId: string; threadId?: string; m
   const base = hintsFromPressure(pressure);
   const suggestedPollMs =
     mode === "background"
-      ? Math.max(base.suggestedPollMs, 12_000)
+      ? Math.max(base.suggestedPollMs, 30_000)
       : mode === "inbox"
-        ? Math.max(base.suggestedPollMs, 4_000)
+        ? Math.max(base.suggestedPollMs, 20_000)
         : base.suggestedPollMs;
 
   return {
@@ -137,4 +137,3 @@ export function checkPollAllowance(input: { userId: string; threadId?: string; m
     serverHints: { ...base, suggestedPollMs },
   };
 }
-

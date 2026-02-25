@@ -10,9 +10,7 @@ import type { MessageItemDto, MessageServerHints, MessageThreadDetailDto, Messag
 
 function mergeMessages(current: MessageItemDto[], incoming: MessageItemDto[]) {
   const map = new Map<string, MessageItemDto>();
-  for (const msg of current) {
-    map.set(msg.id, msg);
-  }
+  for (const msg of current) map.set(msg.id, msg);
 
   for (const msg of incoming) {
     const existingById = map.get(msg.id);
@@ -23,9 +21,7 @@ function mergeMessages(current: MessageItemDto[], incoming: MessageItemDto[]) {
 
     if (msg.clientRequestId) {
       const optimistic = [...map.values()].find((m) => m.clientRequestId === msg.clientRequestId);
-      if (optimistic) {
-        map.delete(optimistic.id);
-      }
+      if (optimistic) map.delete(optimistic.id);
     }
     map.set(msg.id, msg);
   }
@@ -37,8 +33,8 @@ function lastPreview(messages: MessageItemDto[]) {
   const last = messages.at(-1);
   if (!last) return "Conversación iniciada. Envía tu primer mensaje.";
   if (last.body?.trim()) return last.body.trim();
-  if (last.attachment?.type === "audio") return "🎤 Nota de audio";
-  if (last.attachment) return `📎 ${last.attachment.fileName}`;
+  if (last.attachment?.type === "audio") return "Nota de audio";
+  if (last.attachment) return `Archivo: ${last.attachment.fileName}`;
   return "Mensaje";
 }
 
@@ -102,20 +98,14 @@ export function ChatThread({
       });
     },
     onStatusChange(clientRequestId, status) {
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.clientRequestId === clientRequestId ? { ...m, deliveryState: status } : m,
-        ),
-      );
+      setMessages((prev) => prev.map((m) => (m.clientRequestId === clientRequestId ? { ...m, deliveryState: status } : m)));
     },
     onConfirmed(clientRequestId, serverMessage) {
       setMessages((prev) => {
         const replaced = prev.map((m) =>
-          m.clientRequestId === clientRequestId
-            ? { ...serverMessage, deliveryState: "sent" as const, isOptimistic: false }
-            : m,
+          m.clientRequestId === clientRequestId ? { ...serverMessage, deliveryState: "sent" as const, isOptimistic: false } : m,
         );
-        if (replaced.some((m) => m.clientRequestId === clientRequestId && m.id.startsWith("optimistic-"))) {
+        if (replaced.some((m) => m.id.startsWith("optimistic-") && m.clientRequestId === clientRequestId)) {
           return replaced;
         }
         return mergeMessages(replaced, [{ ...serverMessage, deliveryState: "sent" as const }]);
@@ -124,11 +114,9 @@ export function ChatThread({
     },
     onFailed(clientRequestId, error) {
       setMessages((prev) =>
-        prev.map((m) =>
-          m.clientRequestId === clientRequestId ? { ...m, deliveryState: "failed", isOptimistic: true } : m,
-        ),
+        prev.map((m) => (m.clientRequestId === clientRequestId ? { ...m, deliveryState: "failed", isOptimistic: true } : m)),
       );
-      setComposerHints((prev) => prev ?? { queuePressure: "medium", suggestedPollMs: 3000 });
+      setComposerHints((prev) => prev ?? { queuePressure: "medium", suggestedPollMs: 22_000 });
       console.warn("[messages] send failed", error);
     },
   });
@@ -164,18 +152,18 @@ export function ChatThread({
   }, [latestIncomingId, thread.id]);
 
   return (
-    <section className="flex h-full min-h-[60vh] flex-col overflow-hidden rounded-3xl border border-black/10 bg-[linear-gradient(180deg,#f8fafc_0%,#ffffff_100%)] shadow-sm">
+    <section className="flex h-[clamp(36rem,72vh,60rem)] min-h-0 flex-col overflow-hidden rounded-3xl border border-black/10 bg-[linear-gradient(180deg,#f8fafc_0%,#ffffff_100%)] shadow-sm">
       <ChatHeader role={role} thread={thread} />
 
-      <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto px-3 py-4 sm:px-4">
+      <div ref={listRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-4 sm:px-4">
         {sendQueue.recoveredDraftCount > 0 ? (
-          <div className="mx-auto max-w-xl rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-center text-xs text-amber-800">
+          <div className="mx-auto max-w-2xl rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-center text-xs text-amber-800">
             Se recuperaron {sendQueue.recoveredDraftCount} mensajes de texto de una cola local anterior. Revisa y reintenta si hace falta.
           </div>
         ) : null}
 
         {polling.lastError ? (
-          <div className="mx-auto max-w-xl rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-center text-xs text-red-700">
+          <div className="mx-auto max-w-2xl rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-center text-xs text-red-700">
             {polling.lastError}
           </div>
         ) : null}
@@ -198,3 +186,4 @@ export function ChatThread({
     </section>
   );
 }
+
