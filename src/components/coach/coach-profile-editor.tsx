@@ -384,11 +384,13 @@ export function CoachProfileEditor({
   wizardMode = false,
   adminMode = false,
   targetCoachProfileId,
+  returnToPath,
 }: {
   initialProfile: EditorProfile | null;
   wizardMode?: boolean;
   adminMode?: boolean;
   targetCoachProfileId?: string;
+  returnToPath?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -641,6 +643,11 @@ export function CoachProfileEditor({
       try {
         await postJson("/api/coach-profile/save", buildPayload());
         setIsDirty(false);
+        if (!adminMode && returnToPath) {
+          router.push(returnToPath);
+          router.refresh();
+          return;
+        }
         setStatus({ type: "ok", text: "Perfil guardado correctamente." });
       } catch (error) {
         setStatus({ type: "error", text: error instanceof Error ? error.message : "No se pudo guardar el perfil." });

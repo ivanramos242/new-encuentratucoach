@@ -4,11 +4,9 @@ export default function Page() {
   return (
     <PlaceholderPage
       badge="Admin"
-      title="Admin · Reseñas"
-      description="Moderación y override de reseñas."
-      routeType="Administración"
+      title="Admin · Resenas"
+      description="Revision manual de resenas (opcional). Ahora se publican automaticamente."
+      routeType="Administracion"
     />
   );
 }
-
-

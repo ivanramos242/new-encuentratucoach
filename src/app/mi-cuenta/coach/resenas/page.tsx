@@ -4,11 +4,9 @@ export default function Page() {
   return (
     <PlaceholderPage
       badge="Mi cuenta"
-      title="Reseñas"
-      description="Validación de reseñas por coach y seguimiento de estado."
-      routeType="Área privada"
+      title="Resenas"
+      description="Ya no hace falta validar resenas: se publican automaticamente cuando un usuario registrado las envia."
+      routeType="Area privada"
     />
   );
 }
-
-
