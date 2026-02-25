@@ -45,6 +45,15 @@ function getPlanAction(
     };
   }
 
+  if (sessionUser.role === "client") {
+    return {
+      primaryHref: `/membresia/checkout?plan=${planCode}`,
+      primaryLabel: "Pagar membresía",
+      secondaryHref: "/mi-cuenta/cliente",
+      secondaryLabel: "Ir a mi cuenta",
+    };
+  }
+
   if (sessionUser.role === "coach" || sessionUser.role === "admin") {
     if (options?.coachHasActivePlan) {
       return {

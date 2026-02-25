@@ -4,7 +4,7 @@ import { jsonError, jsonOk } from "@/lib/api-handlers";
 import { requireApiRole } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import { getStripeServer, resolveStripePlanPriceConfig } from "@/lib/stripe-server";
-import { absoluteUrl } from "@/lib/utils";
+import { absoluteUrl, slugify } from "@/lib/utils";
 
 const schema = z.object({
   planCode: z.enum(["monthly", "annual"]),
@@ -14,6 +14,52 @@ const schema = z.object({
 
 function isActiveishSubscription(status?: string | null) {
   return status === "active" || status === "trialing";
+}
+
+async function uniqueCoachSlug(base: string) {
+  const normalized = slugify(base) || "coach";
+  let slug = normalized;
+  let i = 2;
+  while (true) {
+    const existing = await prisma.coachProfile.findUnique({ where: { slug }, select: { id: true } });
+    if (!existing) return slug;
+    slug = `${normalized}-${i++}`;
+  }
+}
+
+async function ensureCoachProfileForCheckout(input: {
+  userId: string;
+  email: string;
+  displayName?: string | null;
+  preferredCoachProfileId?: string | null;
+}) {
+  const existingProfiles = await prisma.coachProfile.findMany({
+    where: { userId: input.userId },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, slug: true, name: true },
+  });
+
+  if (existingProfiles.length) {
+    const preferred = input.preferredCoachProfileId
+      ? existingProfiles.find((profile) => profile.id === input.preferredCoachProfileId)
+      : null;
+    return preferred || existingProfiles[0];
+  }
+
+  const name = input.displayName?.trim() || input.email.split("@")[0] || "Coach";
+  const slug = await uniqueCoachSlug(name);
+  return prisma.coachProfile.create({
+    data: {
+      userId: input.userId,
+      name,
+      slug,
+      profileStatus: "draft",
+      visibilityStatus: "inactive",
+      certifiedStatus: "none",
+      messagingEnabled: true,
+    },
+    select: { id: true, slug: true, name: true },
+  });
 }
 
 async function ensureStripeCustomer(input: { userId: string; email: string; name?: string | null }) {
@@ -37,9 +83,8 @@ async function ensureStripeCustomer(input: { userId: string; email: string; name
 
 export async function POST(request: Request) {
   try {
-    const auth = await requireApiRole(request, "coach");
+    const auth = await requireApiRole(request, ["client", "coach", "admin"]);
     if (!auth.ok) return auth.response;
-    if (!auth.user.coachProfileId) return jsonError("No se encontro perfil de coach asociado a tu cuenta", 400);
 
     const body = await request.json().catch(() => ({}));
     const parsed = schema.safeParse(body);
@@ -58,8 +103,15 @@ export async function POST(request: Request) {
       select: { id: true, email: true, displayName: true, coachProfiles: { select: { id: true, slug: true, name: true } } },
     });
     if (!user) return jsonError("Usuario no encontrado", 404);
-    const coachProfile = user.coachProfiles.find((p) => p.id === auth.user.coachProfileId) || user.coachProfiles[0];
-    if (!coachProfile) return jsonError("Perfil de coach no encontrado", 404);
+    const coachProfile =
+      user.coachProfiles.find((p) => p.id === auth.user.coachProfileId) ||
+      user.coachProfiles[0] ||
+      (await ensureCoachProfileForCheckout({
+        userId: user.id,
+        email: user.email,
+        displayName: user.displayName,
+        preferredCoachProfileId: auth.user.coachProfileId ?? null,
+      }));
 
     const latestSubscription = await prisma.coachSubscription.findFirst({
       where: { coachProfileId: coachProfile.id },
@@ -112,8 +164,8 @@ export async function POST(request: Request) {
     });
 
     const stripe = getStripeServer();
-    const successUrl = absoluteUrl(parsed.data.successPath || "/mi-cuenta/coach/membresia?checkout=success");
-    const cancelUrl = absoluteUrl(parsed.data.cancelPath || "/mi-cuenta/coach/membresia?checkout=cancel");
+    const successUrl = absoluteUrl(parsed.data.successPath || "/membresia/confirmacion?checkout=success");
+    const cancelUrl = absoluteUrl(parsed.data.cancelPath || "/membresia?checkout=cancel");
 
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] =
       priceConfig.mode === "price_id"

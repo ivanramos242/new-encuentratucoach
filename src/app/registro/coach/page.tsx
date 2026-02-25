@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata = buildMetadata({
   title: "Registro de coach",
-  description: "Crea una cuenta de coach para activar tu membresia y gestionar tu perfil.",
+  description: "Crea tu cuenta unica y activa la membresia para habilitar tu perfil coach.",
   path: "/registro/coach",
 });
 

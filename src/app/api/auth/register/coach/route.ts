@@ -16,7 +16,8 @@ export async function POST(request: Request) {
     const parsed = schema.safeParse(body);
     if (!parsed.success) return jsonError("Datos inválidos", 400, { issues: parsed.error.flatten() });
 
-    const created = await registerUser({ ...parsed.data, role: "coach" });
+    // Alias temporal: todas las cuentas nuevas empiezan como cliente.
+    const created = await registerUser({ ...parsed.data, role: "client" });
     if ("error" in created) return jsonError(String(created.error), 409);
 
     const login = await loginUser({
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
 
     const response = NextResponse.json({
       ok: true,
-      message: "Cuenta de coach creada",
+      message: "Cuenta creada. Completa la membresía para activar modo coach.",
       user: login.user,
     });
     applySessionCookie(response, login.session.rawToken, login.session.expiresAt);
