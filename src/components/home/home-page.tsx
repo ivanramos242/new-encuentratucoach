@@ -15,7 +15,7 @@ const quickSearches = [
 ];
 
 export async function HomePage() {
-  const latest = (await listPublicCoachesMerged())
+  const latest = [...(await listPublicCoachesMerged())]
     .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))
     .slice(0, 10);
 
