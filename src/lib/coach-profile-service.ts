@@ -1,4 +1,11 @@
-import type { CoachLinkType, SessionMode, UserRole } from "@prisma/client";
+import type {
+  CoachCertificationStatus,
+  CoachLinkType,
+  CoachProfileStatus,
+  CoachVisibilityStatus,
+  SessionMode,
+  UserRole,
+} from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { COACH_CATEGORY_CATALOG } from "@/lib/coach-category-catalog";
 import { slugify } from "@/lib/utils";
@@ -15,6 +22,13 @@ type CoachProfileSaveInput = {
   languagesText?: string | null;
   heroImageUrl?: string | null;
   videoPresentationUrl?: string | null;
+  featured?: boolean;
+  messagingEnabled?: boolean;
+  messagingAutoReply?: string | null;
+  messagingReplySlaMinutes?: number | null;
+  profileStatus?: CoachProfileStatus;
+  visibilityStatus?: CoachVisibilityStatus;
+  certifiedStatus?: CoachCertificationStatus;
   location?: { city: string; province?: string | null; country?: string | null } | null;
   sessionModes?: SessionMode[];
   pricing?: { basePriceEur?: number | null; detailsHtml?: string | null; notes?: string | null } | null;
@@ -22,6 +36,25 @@ type CoachProfileSaveInput = {
   galleryUrls?: string[];
   categorySlugs?: string[];
 };
+
+const coachProfileEditorInclude = {
+  owner: {
+    select: {
+      id: true,
+      email: true,
+      displayName: true,
+      role: true,
+      isActive: true,
+    },
+  },
+  location: true,
+  pricing: true,
+  links: true,
+  categories: { include: { category: true }, orderBy: { category: { sortOrder: "asc" as const } } },
+  galleryAssets: { orderBy: { sortOrder: "asc" as const } },
+  sessionModes: true,
+  subscriptions: { orderBy: { updatedAt: "desc" as const }, take: 1 },
+} as const;
 
 async function uniqueCoachSlug(base: string, exceptId?: string) {
   const normalized = slugify(base) || "coach";
@@ -115,15 +148,17 @@ export async function getCoachProfileForEditor(sessionUser: SessionUser) {
   if (!coachProfileId) return null;
   return prisma.coachProfile.findUnique({
     where: { id: coachProfileId },
-    include: {
-      location: true,
-      pricing: true,
-      links: true,
-      categories: { include: { category: true }, orderBy: { category: { sortOrder: "asc" } } },
-      galleryAssets: { orderBy: { sortOrder: "asc" } },
-      sessionModes: true,
-      subscriptions: { orderBy: { updatedAt: "desc" }, take: 1 },
-    },
+    include: coachProfileEditorInclude,
+  });
+}
+
+export async function getCoachProfileForEditorById(sessionUser: SessionUser, coachProfileId: string) {
+  if (sessionUser.role !== "admin") {
+    throw new Error("Solo admin puede abrir perfiles de coach ajenos");
+  }
+  return prisma.coachProfile.findUnique({
+    where: { id: coachProfileId },
+    include: coachProfileEditorInclude,
   });
 }
 
@@ -142,6 +177,7 @@ export async function saveCoachProfile(sessionUser: SessionUser, input: CoachPro
 
   const nextName = input.name?.trim() || undefined;
   const nextSlug = nextName ? await uniqueCoachSlug(nextName, current.id) : undefined;
+  const canEditAdminFields = sessionUser.role === "admin";
 
   await prisma.$transaction(async (tx) => {
     await tx.coachProfile.update({
@@ -158,7 +194,22 @@ export async function saveCoachProfile(sessionUser: SessionUser, input: CoachPro
         heroImageUrl: input.heroImageUrl?.trim() || null,
         videoPresentationUrl: input.videoPresentationUrl?.trim() || null,
         locationId,
-        messagingEnabled: true,
+        ...(canEditAdminFields && typeof input.featured === "boolean" ? { featured: input.featured } : {}),
+        ...(canEditAdminFields && typeof input.messagingEnabled === "boolean"
+          ? { messagingEnabled: input.messagingEnabled }
+          : {}),
+        ...(canEditAdminFields ? { messagingAutoReply: input.messagingAutoReply?.trim() || null } : {}),
+        ...(canEditAdminFields
+          ? {
+              messagingReplySlaMinutes:
+                typeof input.messagingReplySlaMinutes === "number" && Number.isFinite(input.messagingReplySlaMinutes)
+                  ? Math.max(0, Math.round(input.messagingReplySlaMinutes))
+                  : null,
+            }
+          : {}),
+        ...(canEditAdminFields && input.profileStatus ? { profileStatus: input.profileStatus } : {}),
+        ...(canEditAdminFields && input.visibilityStatus ? { visibilityStatus: input.visibilityStatus } : {}),
+        ...(canEditAdminFields && input.certifiedStatus ? { certifiedStatus: input.certifiedStatus } : {}),
       },
     });
 
@@ -245,15 +296,7 @@ export async function saveCoachProfile(sessionUser: SessionUser, input: CoachPro
 
   return prisma.coachProfile.findUnique({
     where: { id: coachProfileId },
-    include: {
-      location: true,
-      pricing: true,
-      links: true,
-      categories: { include: { category: true }, orderBy: { category: { sortOrder: "asc" } } },
-      galleryAssets: { orderBy: { sortOrder: "asc" } },
-      sessionModes: true,
-      subscriptions: { orderBy: { updatedAt: "desc" }, take: 1 },
-    },
+    include: coachProfileEditorInclude,
   });
 }
 
@@ -291,15 +334,7 @@ export async function publishCoachProfile(sessionUser: SessionUser, input?: { co
       visibilityStatus: "active",
       publishedAt: profile.publishedAt ?? new Date(),
     },
-    include: {
-      location: true,
-      pricing: true,
-      links: true,
-      categories: { include: { category: true }, orderBy: { category: { sortOrder: "asc" } } },
-      galleryAssets: { orderBy: { sortOrder: "asc" } },
-      sessionModes: true,
-      subscriptions: { orderBy: { updatedAt: "desc" }, take: 1 },
-    },
+    include: coachProfileEditorInclude,
   });
 
   return published;

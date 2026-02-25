@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { SessionMode } from "@prisma/client";
+import { CoachCertificationStatus, CoachProfileStatus, CoachVisibilityStatus, SessionMode } from "@prisma/client";
 import { jsonError, jsonOk } from "@/lib/api-handlers";
 import { requireApiRole } from "@/lib/api-auth";
 import { getCoachProfileForEditor, saveCoachProfile } from "@/lib/coach-profile-service";
@@ -23,6 +23,13 @@ const schema = z.object({
   languagesText: z.string().max(400).optional().nullable(),
   heroImageUrl: urlField.nullable().optional(),
   videoPresentationUrl: urlField.nullable().optional(),
+  featured: z.boolean().optional(),
+  messagingEnabled: z.boolean().optional(),
+  messagingAutoReply: z.string().max(1200).optional().nullable(),
+  messagingReplySlaMinutes: z.number().int().min(0).max(10080).optional().nullable(),
+  profileStatus: z.nativeEnum(CoachProfileStatus).optional(),
+  visibilityStatus: z.nativeEnum(CoachVisibilityStatus).optional(),
+  certifiedStatus: z.nativeEnum(CoachCertificationStatus).optional(),
   location: z
     .object({
       city: z.string().min(2).max(120),
