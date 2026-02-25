@@ -7,6 +7,10 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 
 type PlanCode = "monthly" | "annual";
 
+function isPlanCode(value?: string | null): value is PlanCode {
+  return value === "monthly" || value === "annual";
+}
+
 async function createCheckout(
   planCode: PlanCode,
   options?: {
@@ -38,6 +42,17 @@ async function postAction(url: string) {
   const res = await fetch(url, { method: "POST" });
   const json = await res.json().catch(() => ({ ok: false, message: `Error ${res.status}` }));
   if (!res.ok || !json.ok) throw new Error(json.message || "No se pudo completar la acción");
+  return json;
+}
+
+async function postJsonAction(url: string, body: Record<string, unknown>) {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const json = await res.json().catch(() => ({ ok: false, message: `Error ${res.status}` }));
+  if (!res.ok || !json.ok) throw new Error(json.message || "No se pudo completar la accion");
   return json;
 }
 
@@ -80,10 +95,11 @@ export function MembershipCheckoutCard({
   onboardingStepSummary?: string;
 }) {
   const [pending, startTransition] = useTransition();
-  const [status, setStatus] = useState<{ type: "idle" | "error"; text: string }>({ type: "idle", text: "" });
+  const [status, setStatus] = useState<{ type: "idle" | "error" | "success"; text: string }>({ type: "idle", text: "" });
   const [remainingMs, setRemainingMs] = useState(0);
 
   const hasActiveSubscription = currentStatus?.status === "active" || currentStatus?.status === "trialing";
+  const activePlanCode = isPlanCode(currentStatus?.planCode) ? currentStatus.planCode : null;
   const cancelAtPeriodEnd = Boolean(currentStatus?.cancelAtPeriodEnd);
   const pendingActivationActive = Boolean(pendingActivation?.active);
   const pendingActivationTimedOut = pendingActivationActive && remainingMs <= 0;
@@ -155,6 +171,21 @@ export function MembershipCheckoutCard({
         window.location.reload();
       } catch (error) {
         setStatus({ type: "error", text: error instanceof Error ? error.message : "No se pudo actualizar la suscripción." });
+      }
+    });
+  }
+
+  function changePlan(planCode: PlanCode) {
+    if (!hasActiveSubscription || activePlanCode === planCode) return;
+
+    startTransition(async () => {
+      setStatus({ type: "idle", text: "" });
+      try {
+        await postJsonAction("/api/stripe/subscription/change-plan", { planCode });
+        setStatus({ type: "success", text: "Plan actualizado. Recargando..." });
+        window.location.reload();
+      } catch (error) {
+        setStatus({ type: "error", text: error instanceof Error ? error.message : "No se pudo cambiar el plan." });
       }
     });
   }
@@ -336,7 +367,44 @@ export function MembershipCheckoutCard({
         </div>
       ) : null}
 
-      {status.text ? <p className="mt-4 text-sm text-red-600">{status.text}</p> : null}
+      {hasActiveSubscription && activePlanCode ? (
+        <div id="cambiar-plan" className="mt-4 rounded-2xl border border-black/10 bg-zinc-50 p-4">
+          <p className="text-sm font-semibold text-zinc-900">Cambiar de plan (solo uno activo a la vez)</p>
+          <p className="mt-1 text-xs text-zinc-600">
+            El cambio actualiza tu suscripcion actual en Stripe; no se crea una segunda membresia.
+          </p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <button
+              type="button"
+              disabled={pending || pendingActivationActive || activePlanCode === "monthly"}
+              onClick={() => changePlan("monthly")}
+              className="rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-zinc-900 disabled:opacity-60"
+            >
+              {pending
+                ? "Procesando..."
+                : activePlanCode === "monthly"
+                  ? "Plan mensual (actual)"
+                  : "Cambiar a plan mensual"}
+            </button>
+            <button
+              type="button"
+              disabled={pending || pendingActivationActive || activePlanCode === "annual"}
+              onClick={() => changePlan("annual")}
+              className="rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-zinc-900 disabled:opacity-60"
+            >
+              {pending
+                ? "Procesando..."
+                : activePlanCode === "annual"
+                  ? "Plan anual (actual)"
+                  : "Cambiar a plan anual"}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {status.text ? (
+        <p className={`mt-4 text-sm ${status.type === "success" ? "text-emerald-700" : "text-red-600"}`}>{status.text}</p>
+      ) : null}
     </div>
   );
 }

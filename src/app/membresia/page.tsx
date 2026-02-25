@@ -39,6 +39,10 @@ function isPendingCoachActivation(status?: string | null) {
   return status === "incomplete";
 }
 
+function isPlanCode(value?: string | null): value is "monthly" | "annual" {
+  return value === "monthly" || value === "annual";
+}
+
 function isRecentPendingCoachActivation(status?: string | null, updatedAt?: Date | null) {
   if (!isPendingCoachActivation(status) || !updatedAt) return false;
   const ageMs = Date.now() - updatedAt.getTime();
@@ -74,7 +78,11 @@ async function getMembershipCoachSubscriptionSummary(sessionUser: Awaited<Return
 function getPlanAction(
   sessionUser: Awaited<ReturnType<typeof getOptionalSessionUser>>,
   planCode: "monthly" | "annual",
-  options?: { coachHasActivePlan?: boolean; coachHasPendingActivation?: boolean },
+  options?: {
+    coachHasActivePlan?: boolean;
+    coachActivePlanCode?: "monthly" | "annual" | null;
+    coachHasPendingActivation?: boolean;
+  },
 ) {
   if (!sessionUser) {
     return {
@@ -105,11 +113,20 @@ function getPlanAction(
 
   if (sessionUser.role === "coach" || sessionUser.role === "admin") {
     if (options?.coachHasActivePlan) {
+      if (options.coachActivePlanCode === planCode) {
+        return {
+          primaryHref: "/mi-cuenta/coach/membresia",
+          primaryLabel: "Mi plan actual",
+          secondaryHref: undefined,
+          secondaryLabel: undefined,
+        };
+      }
+
       return {
-        primaryHref: "/mi-cuenta/coach/membresia",
-        primaryLabel: "Mi plan actual",
-        secondaryHref: undefined,
-        secondaryLabel: undefined,
+        primaryHref: "/mi-cuenta/coach/membresia#cambiar-plan",
+        primaryLabel: planCode === "monthly" ? "Cambiar a plan mensual" : "Cambiar a plan anual",
+        secondaryHref: "/mi-cuenta/coach/membresia",
+        secondaryLabel: "Ver mi membresia",
       };
     }
 
@@ -153,6 +170,7 @@ export default async function MembershipPage({ searchParams }: { searchParams: S
 
   const coachHasActivePlan = isActiveCoachSubscription(latestSubscription?.status);
   const coachHasPendingActivation = isRecentPendingCoachActivation(latestSubscription?.status, latestSubscription?.updatedAt);
+  const coachActivePlanCode = coachHasActivePlan && isPlanCode(latestSubscription?.planCode) ? latestSubscription.planCode : null;
   const plans = await listMembershipPlansForPublic();
 
   return (
@@ -199,7 +217,11 @@ export default async function MembershipPage({ searchParams }: { searchParams: S
 
         <div className="grid gap-6 lg:grid-cols-2">
           {plans.map((plan) => {
-            const cta = getPlanAction(sessionUser, plan.code, { coachHasActivePlan, coachHasPendingActivation });
+            const cta = getPlanAction(sessionUser, plan.code, {
+              coachHasActivePlan,
+              coachActivePlanCode,
+              coachHasPendingActivation,
+            });
             const highlighted = plan.code === "annual";
             const hasDiscount = plan.discountActive && plan.effectivePriceCents < plan.priceCents;
             const original = formatEuro(plan.priceCents / 100);
