@@ -625,3 +625,32 @@ export async function pollThreadMessages(input: {
     serverTime: nowIso(),
   };
 }
+
+export async function closeThreadForUser(input: {
+  threadId: string;
+  user: SessionUser;
+}): Promise<{ threadId: string; status: "closed_by_client" | "closed_by_coach"; closedAt: string } | ServiceError> {
+  const loaded = await loadThreadForUser(input.threadId, input.user);
+  if (!("thread" in loaded)) return loaded;
+  const thread = loaded.thread;
+
+  if (input.user.role === "client") {
+    if (thread.clientUserId !== input.user.id) return { error: "No tienes acceso a esta conversación.", code: "FORBIDDEN" };
+    await prisma.conversationThread.update({
+      where: { id: input.threadId },
+      data: { status: "closed_by_client" },
+    });
+    return { threadId: input.threadId, status: "closed_by_client", closedAt: nowIso() };
+  }
+
+  if (input.user.role === "coach") {
+    if (thread.coachUserId !== input.user.id) return { error: "No tienes acceso a esta conversación.", code: "FORBIDDEN" };
+    await prisma.conversationThread.update({
+      where: { id: input.threadId },
+      data: { status: "closed_by_coach" },
+    });
+    return { threadId: input.threadId, status: "closed_by_coach", closedAt: nowIso() };
+  }
+
+  return { error: "Acción no permitida.", code: "FORBIDDEN" };
+}
