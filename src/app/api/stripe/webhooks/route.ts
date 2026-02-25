@@ -46,6 +46,15 @@ async function upsertSubscriptionFromStripe(subscription: Stripe.Subscription) {
   });
   if (!coachProfileId) coachProfileId = existingByStripeId?.coachProfileId || "";
 
+  if (!coachProfileId && userId) {
+    const linkedCoach = await prisma.coachProfile.findFirst({
+      where: { userId },
+      orderBy: { createdAt: "asc" },
+      select: { id: true },
+    });
+    if (linkedCoach) coachProfileId = linkedCoach.id;
+  }
+
   const firstItem = subscription.items.data[0];
   const priceId = firstItem?.price?.id || null;
   if (!planCode) planCode = planCodeFromStripePriceId(priceId) || "monthly";
@@ -128,6 +137,15 @@ async function upsertSubscriptionFromStripe(subscription: Stripe.Subscription) {
             : "inactive",
       },
     });
+  }
+
+  if (userId && isActiveish(status)) {
+    await prisma.user
+      .updateMany({
+        where: { id: userId, role: "client" },
+        data: { role: "coach" },
+      })
+      .catch(() => undefined);
   }
 
   return { subscriptionRecord, coachProfileId };
