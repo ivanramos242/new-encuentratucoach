@@ -318,13 +318,13 @@ export async function publishCoachProfile(sessionUser: SessionUser, input?: { co
   if (!profile) throw new Error("Perfil no encontrado");
 
   if (!profile.name?.trim()) throw new Error("Completa el nombre del perfil");
-  if (!(profile.bio?.trim() || profile.aboutHtml?.trim())) throw new Error("Completa la seccion Sobre mi");
-  if (!profile.categories.length) throw new Error("Selecciona al menos una categoria de coaching");
+  if (!(profile.bio?.trim() || profile.aboutHtml?.trim())) throw new Error("Completa la sección Sobre mí");
+  if (!profile.categories.length) throw new Error("Selecciona al menos una categoría de coaching");
   if (!profile.pricing?.basePriceEur) throw new Error("Completa el precio base");
 
   const sub = profile.subscriptions[0];
   if (!sub || !isSubscriptionStatusActiveish(sub.status)) {
-    throw new Error("Necesitas una membresia activa para publicar el perfil");
+    throw new Error("Necesitas una membresía activa para publicar el perfil");
   }
 
   const published = await prisma.coachProfile.update({

@@ -36,8 +36,8 @@ function pricingDetailsFromHtml(detailsHtml?: string | null) {
 type DbCoachRecord = Awaited<ReturnType<typeof listDbPublicCoachesRaw>>[number];
 
 function mapDbCoachToPublic(coach: DbCoachRecord): PublicCoachProfile {
-  const city = coach.location?.city?.trim() || "Espana";
-  const country = coach.location?.country?.trim() || "Espana";
+  const city = coach.location?.city?.trim() || "España";
+  const country = coach.location?.country?.trim() || "España";
   const cityLabel = [city, country].filter(Boolean).join(", ");
   const citySlug = slugify(city) || "espana";
   const reviews: CoachReview[] = coach.reviews.map((review) => ({

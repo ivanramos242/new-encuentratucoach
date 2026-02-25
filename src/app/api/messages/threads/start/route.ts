@@ -29,7 +29,7 @@ export async function POST(request: Request) {
       thread: result.thread,
     });
   } catch {
-    return jsonError("No se pudo iniciar la conversacion", 400);
+    return jsonError("No se pudo iniciar la conversación", 400);
   }
 }
 

@@ -202,8 +202,8 @@ export function startOrGetThread(input: {
   notify(
     thread.coachUserId,
     "message_new",
-    "Nueva conversacion iniciada",
-    `${thread.clientName} ha iniciado una conversacion contigo.`,
+    "Nueva conversación iniciada",
+    `${thread.clientName} ha iniciado una conversación contigo.`,
     { threadId: thread.id, coachProfileId: thread.coachProfileId },
   );
 
@@ -213,7 +213,7 @@ export function startOrGetThread(input: {
 export function getThreadForActor(threadId: string, actor: MockActor) {
   const thread = getMessageThreadById(threadId);
   if (!thread) return { error: "Conversacion no encontrada." as const };
-  if (!ensureActorCanViewThread(actor, thread)) return { error: "No tienes acceso a esta conversacion." as const };
+  if (!ensureActorCanViewThread(actor, thread)) return { error: "No tienes acceso a esta conversación." as const };
   return { thread };
 }
 
@@ -225,7 +225,7 @@ export function addThreadMessage(input: {
 }) {
   const thread = getMessageThreadById(input.threadId);
   if (!thread) return { error: "Conversacion no encontrada." as const };
-  if (!ensureActorCanViewThread(input.actor, thread)) return { error: "No tienes acceso a esta conversacion." as const };
+  if (!ensureActorCanViewThread(input.actor, thread)) return { error: "No tienes acceso a esta conversación." as const };
 
   const body = (input.body ?? "").trim();
   if (!body && !input.attachment) return { error: "Debes enviar texto o un adjunto." as const };
@@ -234,7 +234,7 @@ export function addThreadMessage(input: {
   if (input.actor.role === "coach") {
     if (thread.coachUserId !== input.actor.userId) return { error: "Solo el coach del hilo puede responder." as const };
     if (!thread.coachMembershipActive) {
-      return { error: "Tu membresia esta inactiva. Puedes leer, pero no responder." as const };
+      return { error: "Tu membresía está inactiva. Puedes leer, pero no responder." as const };
     }
   }
   if (input.actor.role === "client" && thread.clientUserId !== input.actor.userId) {
@@ -294,7 +294,7 @@ export function addThreadMessage(input: {
 export function markThreadRead(input: { threadId: string; actor: MockActor }) {
   const thread = getMessageThreadById(input.threadId);
   if (!thread) return { error: "Conversacion no encontrada." as const };
-  if (!ensureActorCanViewThread(input.actor, thread)) return { error: "No tienes acceso a esta conversacion." as const };
+  if (!ensureActorCanViewThread(input.actor, thread)) return { error: "No tienes acceso a esta conversación." as const };
 
   if (input.actor.role === "coach") {
     thread.unreadForCoach = 0;
@@ -314,7 +314,7 @@ export function markThreadRead(input: { threadId: string; actor: MockActor }) {
 export function pollThreadMessages(input: { threadId: string; actor: MockActor; since?: string | null }) {
   const thread = getMessageThreadById(input.threadId);
   if (!thread) return { error: "Conversacion no encontrada." as const };
-  if (!ensureActorCanViewThread(input.actor, thread)) return { error: "No tienes acceso a esta conversacion." as const };
+  if (!ensureActorCanViewThread(input.actor, thread)) return { error: "No tienes acceso a esta conversación." as const };
 
   const sinceMs = input.since ? +new Date(input.since) : 0;
   const items = thread.messages.filter((m) => +new Date(m.createdAt) > sinceMs);
@@ -330,7 +330,7 @@ export function createConversationReport(input: {
 }) {
   const thread = getMessageThreadById(input.threadId);
   if (!thread) return { error: "Conversacion no encontrada." as const };
-  if (!ensureActorCanViewThread(input.actor, thread)) return { error: "No tienes acceso a esta conversacion." as const };
+  if (!ensureActorCanViewThread(input.actor, thread)) return { error: "No tienes acceso a esta conversación." as const };
 
   const report: ConversationReportRecord = {
     id: uid("conv-report"),

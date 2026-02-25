@@ -17,10 +17,10 @@ export function MessageThreadView({
       <section className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/5 pb-4">
           <div>
-            <p className="text-sm font-semibold text-zinc-500">{role === "coach" ? "Conversacion con cliente" : "Conversacion con coach"}</p>
+            <p className="text-sm font-semibold text-zinc-500">{role === "coach" ? "Conversación con cliente" : "Conversación con coach"}</p>
             <h2 className="text-2xl font-black tracking-tight text-zinc-950">{counterpart}</h2>
             <p className="mt-1 text-sm text-zinc-600">
-              Hilo unico por cliente + coach · polling recomendado cada 5 minutos · 1 adjunto por mensaje (V2)
+              Hilo único por cliente + coach · polling recomendado cada 5 minutos · 1 adjunto por mensaje (V2)
             </p>
           </div>
           <Link href={backHref} className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm font-semibold text-zinc-900">
@@ -57,7 +57,7 @@ export function MessageThreadView({
                 <div className="mt-3 flex items-center justify-between text-xs">
                   <span className="text-zinc-500">ID: {message.id}</span>
                   <span className={message.readByOtherSide ? "text-emerald-700" : "text-zinc-500"}>
-                    {message.readByOtherSide ? "Leido" : "Pendiente de leer"}
+                    {message.readByOtherSide ? "Leído" : "Pendiente de leer"}
                   </span>
                 </div>
               </article>
@@ -72,10 +72,10 @@ export function MessageThreadView({
           <div className="mt-4 grid gap-2 text-sm text-zinc-700">
             <p>Estado: <strong className="text-zinc-900">{thread.status}</strong></p>
             <p>Coach: <strong className="text-zinc-900">{thread.coachName}</strong></p>
-            <p>Membresia coach: <strong className="text-zinc-900">{thread.coachMembershipActive ? "Activa" : "Inactiva"}</strong></p>
+            <p>Membresía coach: <strong className="text-zinc-900">{thread.coachMembershipActive ? "Activa" : "Inactiva"}</strong></p>
             {!thread.coachMembershipActive ? (
               <p className="rounded-xl bg-amber-50 px-3 py-2 text-amber-900">
-                El coach puede leer el historial, pero no responder mientras la membresia siga inactiva.
+                El coach puede leer el historial, pero no responder mientras la membresía siga inactiva.
               </p>
             ) : null}
           </div>
@@ -84,13 +84,13 @@ export function MessageThreadView({
         <div className="rounded-2xl border border-black/10 bg-white p-5 shadow-sm">
           <h3 className="text-lg font-black tracking-tight text-zinc-950">Responder (mock UI)</h3>
           <p className="mt-2 text-sm text-zinc-700">
-            En V2 real esta vista enviara mensajes a <code>/api/messages/threads/{thread.id}/messages</code> y hara polling cada 5 minutos.
+            En V2 real esta vista enviará mensajes a <code>/api/messages/threads/{thread.id}/messages</code> y hará polling cada 5 minutos.
           </p>
           <div className="mt-4 grid gap-3">
             <textarea
               rows={5}
               disabled={!canReply}
-              placeholder={canReply ? "Escribe tu respuesta..." : "No puedes responder mientras la membresia este inactiva."}
+              placeholder={canReply ? "Escribe tu respuesta..." : "No puedes responder mientras la membresía esté inactiva."}
               className="rounded-xl border border-black/10 px-3 py-2 text-sm outline-none disabled:bg-zinc-100"
             />
             <button
@@ -106,4 +106,3 @@ export function MessageThreadView({
     </div>
   );
 }
-

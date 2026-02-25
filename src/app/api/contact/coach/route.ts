@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     const parsed = contactSchema.safeParse(body);
 
     if (!parsed.success) {
-      return jsonError("Datos invÃ¡lidos", 400, { issues: parsed.error.flatten() });
+      return jsonError("Datos inválidos", 400, { issues: parsed.error.flatten() });
     }
 
     if (parsed.data.honeypot.trim()) {
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
 
     // V1 foundation: relay email + persistence will be wired to Nodemailer/DB in a later sprint.
     return jsonOk({
-      message: "Mensaje recibido (relay pendiente de integraciÃ³n con email/DB).",
+      message: "Mensaje recibido (relay pendiente de integración con email/DB).",
       coachId: parsed.data.coachId,
     });
   } catch {

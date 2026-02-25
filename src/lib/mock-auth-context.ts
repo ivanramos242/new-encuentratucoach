@@ -107,7 +107,7 @@ export async function resolveApiActorFromRequest(
     return { ok: true, actor: getMockActorFromRequest(request, fallbackRole), source: "mock" };
   }
 
-  return { ok: false, response: jsonError("Debes iniciar sesion para acceder a este recurso.", 401) };
+  return { ok: false, response: jsonError("Debes iniciar sesión para acceder a este recurso.", 401) };
 }
 
 export async function resolvePageActorForRole(role: MockActorRole): Promise<MockActor> {

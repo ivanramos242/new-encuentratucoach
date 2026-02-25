@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     const text = await request.text();
     const body = text ? (JSON.parse(text) as unknown) : {};
     const parsed = schema.safeParse(body);
-    if (!parsed.success) return jsonError("Payload invÃ¡lido", 400);
+    if (!parsed.success) return jsonError("Payload inválido", 400);
 
     return jsonOk({
       status: "captured",

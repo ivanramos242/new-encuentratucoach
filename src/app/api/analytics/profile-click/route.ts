@@ -10,7 +10,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const parsed = schema.safeParse(body);
-    if (!parsed.success) return jsonError("Payload invÃ¡lido", 400);
+    if (!parsed.success) return jsonError("Payload inválido", 400);
 
     return jsonOk({
       status: "captured",
