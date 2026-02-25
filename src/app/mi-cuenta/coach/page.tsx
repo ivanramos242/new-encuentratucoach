@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { faArrowRight, faListCheck } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
 import { requireRole } from "@/lib/auth-server";
@@ -64,6 +66,7 @@ export default async function CoachDashboardPage() {
               <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                 <p className="font-semibold">Activa tu membresía para publicar el perfil y responder en mensajes/Q&A.</p>
                 <Link href="/mi-cuenta/coach/membresia" className="mt-3 inline-flex rounded-xl bg-zinc-950 px-4 py-2 text-white">
+                  <FontAwesomeIcon icon={faArrowRight} className="mr-2 mt-0.5 h-3.5 w-3.5" />
                   Ir a membresía
                 </Link>
               </div>
@@ -71,12 +74,13 @@ export default async function CoachDashboardPage() {
 
             {needsOnboarding ? (
               <div className="mt-4 rounded-2xl border border-cyan-200 bg-cyan-50 p-4 text-sm text-cyan-900">
-                <p className="font-semibold">Ya tienes una membresía activa. Completa el wizard para publicar tu perfil.</p>
+                <p className="font-semibold">Ya tienes una membresia activa. Completa el formulario para publicar tu perfil.</p>
                 <Link
                   href="/mi-cuenta/coach/perfil?wizard=1"
                   className="mt-3 inline-flex rounded-xl border border-cyan-300 bg-white px-4 py-2 font-semibold text-zinc-900"
                 >
-                  Continuar wizard de perfil
+                  <FontAwesomeIcon icon={faListCheck} className="mr-2 mt-0.5 h-3.5 w-3.5 text-cyan-700" />
+                  Continuar formulario de bienvenida
                 </Link>
               </div>
             ) : null}
