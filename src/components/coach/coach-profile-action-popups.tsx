@@ -92,6 +92,21 @@ export function CoachProfileActionPopups({
     };
   }, [modal]);
 
+  useEffect(() => {
+    const onClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (!target) return;
+      const trigger = target.closest("[data-etc-open-popup]") as HTMLElement | null;
+      if (!trigger) return;
+      const value = trigger.getAttribute("data-etc-open-popup");
+      if (value !== "contact" && value !== "mail" && value !== "share") return;
+      event.preventDefault();
+      setModal(value);
+    };
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+  }, []);
+
   async function share() {
     const url = cleanUrl();
     const title = `${coach.name} · EncuentraTuCoach`;
