@@ -7,7 +7,6 @@ import { CoachGalleryLightbox } from "@/components/coach/coach-gallery-lightbox"
 import { CoachProfileActionPopups } from "@/components/coach/coach-profile-action-popups";
 import { CoachProfileSectionNav } from "@/components/coach/coach-profile-section-nav";
 import { CoachCard } from "@/components/directory/coach-card";
-import { ContactCoachForm } from "@/components/forms/contact-coach-form";
 import { PageShell } from "@/components/layout/page-shell";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getOptionalSessionUser } from "@/lib/auth-server";
@@ -301,7 +300,28 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
             <div className="my-4 h-px bg-black/10" />
             <h3 className="text-xl font-black tracking-tight text-zinc-950">Enviar mensaje</h3>
             <div className="mt-3 max-w-2xl">
-              <ContactCoachForm coachId={coach.id} coachName={coach.name} />
+              <div className="rounded-2xl border border-black/10 bg-zinc-50 p-4">
+                <p className="text-sm leading-6 text-zinc-700">
+                  Inicia una conversación privada con {coach.name} desde el inbox interno de la plataforma.
+                </p>
+                {sessionUser?.role === "coach" && sessionUser.coachProfileId === coach.id ? (
+                  <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                    Estás viendo tu propio perfil. El chat se usa para conversaciones cliente ↔ coach.
+                  </p>
+                ) : (
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <Link
+                      href={`/mi-cuenta/cliente/mensajes/nuevo?coachSlug=${encodeURIComponent(coach.slug)}&source=${encodeURIComponent(`/coaches/${coach.slug}`)}`}
+                      className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-cyan-500 to-emerald-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm"
+                    >
+                      {sessionUser?.role === "client" ? "Enviar mensaje por chat" : "Iniciar chat (login requerido)"}
+                    </Link>
+                    <p className="text-xs text-zinc-500">
+                      Si no has iniciado sesión, te llevaremos a login y volverás aquí para abrir el chat.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </section>
 

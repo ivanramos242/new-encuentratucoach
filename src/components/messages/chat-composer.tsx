@@ -1,0 +1,187 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { AttachmentPreview, type PendingAttachmentPreview } from "@/components/messages/attachment-preview";
+import { AudioRecorder, type RecordedAudio } from "@/components/messages/audio-recorder";
+import type { ComposerAttachmentInput } from "@/components/messages/use-send-queue";
+import type { MessageServerHints } from "@/types/messages";
+
+function attachmentTypeFromFile(file: File): "image" | "pdf" | null {
+  if (file.type.startsWith("image/")) return "image";
+  if (file.type === "application/pdf") return "pdf";
+  return null;
+}
+
+export function ChatComposer({
+  canReply,
+  pendingCount,
+  serverHints,
+  onSend,
+}: {
+  canReply: boolean;
+  pendingCount: number;
+  serverHints?: MessageServerHints | null;
+  onSend: (input: { body: string; attachment?: ComposerAttachmentInput }) => void;
+}) {
+  const [text, setText] = useState("");
+  const [attachment, setAttachment] = useState<ComposerAttachmentInput | null>(null);
+  const [preview, setPreview] = useState<PendingAttachmentPreview | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (preview?.previewUrl?.startsWith("blob:")) URL.revokeObjectURL(preview.previewUrl);
+    };
+  }, [preview?.previewUrl]);
+
+  function setAttachmentState(next: ComposerAttachmentInput | null, nextPreview: PendingAttachmentPreview | null) {
+    if (preview?.previewUrl?.startsWith("blob:")) URL.revokeObjectURL(preview.previewUrl);
+    setAttachment(next);
+    setPreview(nextPreview);
+  }
+
+  function onFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setError(null);
+    const type = attachmentTypeFromFile(file);
+    if (!type) {
+      setError("Solo se permiten imágenes o PDF en adjuntos.");
+      event.target.value = "";
+      return;
+    }
+    const previewUrl = type === "image" ? URL.createObjectURL(file) : undefined;
+    setAttachmentState(
+      {
+        blob: file,
+        type,
+        fileName: file.name,
+        mimeType: file.type || (type === "pdf" ? "application/pdf" : "image/jpeg"),
+        sizeBytes: file.size,
+        previewUrl,
+      },
+      {
+        type,
+        fileName: file.name,
+        mimeType: file.type || (type === "pdf" ? "application/pdf" : "image/jpeg"),
+        sizeBytes: file.size,
+        previewUrl,
+      },
+    );
+    event.target.value = "";
+  }
+
+  function onRecorded(audio: RecordedAudio) {
+    setError(null);
+    setAttachmentState(
+      {
+        blob: audio.blob,
+        type: "audio",
+        fileName: audio.fileName,
+        mimeType: audio.mimeType,
+        sizeBytes: audio.blob.size,
+        durationMs: audio.durationMs,
+        previewUrl: audio.previewUrl,
+      },
+      {
+        type: "audio",
+        fileName: audio.fileName,
+        mimeType: audio.mimeType,
+        sizeBytes: audio.blob.size,
+        durationMs: audio.durationMs,
+        previewUrl: audio.previewUrl,
+      },
+    );
+  }
+
+  function submit() {
+    if (!canReply) return;
+    const trimmed = text.trim();
+    if (!trimmed && !attachment) {
+      setError("Escribe un mensaje o añade un adjunto.");
+      return;
+    }
+    onSend({ body: trimmed, attachment: attachment ?? undefined });
+    setText("");
+    setError(null);
+    setAttachmentState(null, null);
+  }
+
+  return (
+    <div className="sticky bottom-0 border-t border-black/5 bg-white/95 p-3 backdrop-blur">
+      {preview ? (
+        <div className="mb-2">
+          <AttachmentPreview attachment={preview} onRemove={() => setAttachmentState(null, null)} />
+        </div>
+      ) : null}
+
+      {serverHints?.queuePressure === "high" ? (
+        <p className="mb-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          Alta carga: los mensajes se enviarán de forma gradual para no saturar el servidor.
+        </p>
+      ) : null}
+
+      <div className="flex items-end gap-2">
+        <button
+          type="button"
+          disabled={!canReply}
+          onClick={() => fileInputRef.current?.click()}
+          aria-label="Adjuntar archivo"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-black/10 bg-white text-zinc-700 disabled:opacity-50"
+        >
+          📎
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          onChange={onFileChange}
+          accept="image/*,application/pdf"
+          className="hidden"
+        />
+
+        <div className="min-w-0 flex-1 rounded-2xl border border-black/10 bg-zinc-50 px-3 py-2">
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            rows={1}
+            disabled={!canReply}
+            placeholder={canReply ? "Escribe un mensaje..." : "No puedes responder en este hilo."}
+            className="max-h-32 min-h-6 w-full resize-none bg-transparent text-sm outline-none placeholder:text-zinc-400"
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                submit();
+              }
+            }}
+          />
+        </div>
+
+        <AudioRecorder disabled={!canReply || Boolean(attachment)} onRecorded={onRecorded} />
+
+        <button
+          type="button"
+          onClick={submit}
+          disabled={!canReply}
+          aria-label="Enviar mensaje"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-cyan-600 text-white shadow-sm disabled:opacity-50"
+        >
+          ➤
+        </button>
+      </div>
+
+      <div className="mt-2 flex items-center justify-between gap-3">
+        <p className="text-xs text-zinc-500">
+          Imágenes, PDF y audio (MVP) · una pieza por mensaje
+        </p>
+        {pendingCount > 0 ? (
+          <p className="text-xs font-semibold text-cyan-700">
+            {pendingCount} pendiente{pendingCount > 1 ? "s" : ""} en cola
+          </p>
+        ) : null}
+      </div>
+      {error ? <p className="mt-1 text-xs text-red-600">{error}</p> : null}
+    </div>
+  );
+}
+

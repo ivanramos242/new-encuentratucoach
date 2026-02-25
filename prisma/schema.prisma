@@ -117,6 +117,7 @@ enum MessageSenderType {
 enum AttachmentType {
   image
   pdf
+  audio
 }
 
 enum AttachmentStatus {
@@ -782,6 +783,7 @@ model ConversationMessage {
   threadId            String
   senderUserId        String?
   senderType          MessageSenderType
+  clientRequestId     String?
   body                String?
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
@@ -792,6 +794,8 @@ model ConversationMessage {
   reports             ConversationReport[]
 
   @@index([threadId, createdAt])
+  @@index([threadId, senderUserId, clientRequestId])
+  @@unique([threadId, senderUserId, clientRequestId])
 }
 
 model ConversationMessageAttachment {
@@ -804,6 +808,7 @@ model ConversationMessageAttachment {
   mimeType            String
   sizeBytes           Int
   storageKey          String
+  durationMs          Int?
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
   validatedAt         DateTime?

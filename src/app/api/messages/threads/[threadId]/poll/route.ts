@@ -1,23 +1,40 @@
+import { NextResponse } from "next/server";
 import { jsonError, jsonOk } from "@/lib/api-handlers";
-import { resolveApiActorFromRequest } from "@/lib/mock-auth-context";
-import { pollThreadMessages } from "@/lib/v2-service";
+import { requireApiRole } from "@/lib/api-auth";
+import { pollThreadMessages } from "@/lib/conversation-service";
+import { checkPollAllowance } from "@/lib/message-backpressure";
 
 type ParamsInput = Promise<{ threadId: string }>;
 
 export async function GET(request: Request, { params }: { params: ParamsInput }) {
-  const actorResolved = await resolveApiActorFromRequest(request, "client");
-  if (!actorResolved.ok) return actorResolved.response;
-  const actor = actorResolved.actor;
+  const auth = await requireApiRole(request, ["client", "coach"]);
+  if (!auth.ok) return auth.response;
   const { threadId } = await params;
   const url = new URL(request.url);
-  const since = url.searchParams.get("since");
-  const result = pollThreadMessages({ threadId, actor, since });
-  if ("error" in result) return jsonError(String(result.error), 404);
+  const cursor = url.searchParams.get("cursor") ?? url.searchParams.get("since");
+  const modeRaw = url.searchParams.get("mode");
+  const mode =
+    modeRaw === "background" || modeRaw === "inbox" ? modeRaw : "foreground";
+  const pollGate = checkPollAllowance({ userId: auth.user.id, threadId, mode });
+  if (!pollGate.allowed) {
+    return NextResponse.json(
+      { ok: false, message: "Polling demasiado frecuente.", serverHints: pollGate.serverHints },
+      { status: 429, headers: { "Retry-After": String(Math.ceil(pollGate.retryAfterMs / 1000)) } },
+    );
+  }
+
+  const result = await pollThreadMessages({ threadId, user: auth.user, cursor });
+  if ("error" in result) {
+    const status = result.code === "NOT_FOUND" ? 404 : 403;
+    return jsonError(result.error, status);
+  }
   return jsonOk({
-    actor,
+    actor: { role: auth.user.role, userId: auth.user.id, displayName: auth.user.displayName ?? auth.user.email },
     threadId: result.threadId,
     items: result.items,
+    nextCursor: result.nextCursor,
     serverTime: result.serverTime,
-    pollIntervalMs: Number(process.env.MESSAGE_POLL_INTERVAL_MS ?? 300_000),
+    pollIntervalMs: pollGate.serverHints.suggestedPollMs,
+    serverHints: pollGate.serverHints,
   });
 }

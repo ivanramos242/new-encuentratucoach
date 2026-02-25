@@ -1,11 +1,12 @@
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { jsonError, jsonOk } from "@/lib/api-handlers";
-import { resolveApiActorFromRequest } from "@/lib/mock-auth-context";
-import { getThreadAttachmentPresign } from "@/lib/v2-service";
+import { requireApiRole } from "@/lib/api-auth";
+import { buildPublicObjectUrl, createPresignedPutUrl } from "@/lib/s3-storage";
 
 const maxBytes = Number(process.env.CHAT_ATTACHMENT_MAX_BYTES ?? 5_242_880);
 const allowedMimeList = (process.env.CHAT_ATTACHMENT_ALLOWED_MIME ??
-  "image/jpeg,image/png,image/webp,application/pdf")
+  "image/jpeg,image/png,image/webp,application/pdf,audio/webm,audio/ogg,audio/mp4")
   .split(",")
   .map((item) => item.trim())
   .filter(Boolean);
@@ -19,9 +20,8 @@ const schema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const actorResolved = await resolveApiActorFromRequest(request, "client");
-  if (!actorResolved.ok) return actorResolved.response;
-  const actor = actorResolved.actor;
+    const auth = await requireApiRole(request, ["client", "coach"]);
+    if (!auth.ok) return auth.response;
     const body = await request.json();
     const parsed = schema.safeParse(body);
     if (!parsed.success) return jsonError("Payload invalido", 400, { issues: parsed.error.flatten() });
@@ -33,14 +33,54 @@ export async function POST(request: Request) {
       });
     }
 
-    const presign = getThreadAttachmentPresign(parsed.data);
+    const safeName = parsed.data.fileName.replace(/[^\w.\-]+/g, "-").toLowerCase();
+    const threadPart = parsed.data.threadId ? parsed.data.threadId.replace(/[^\w-]+/g, "") : "temp";
+    const key = `chat-attachments/${threadPart}/${Date.now()}-${randomUUID()}-${safeName}`;
+
+    let uploadUrl: string;
+    let note: string | undefined;
+    let publicObjectUrl: string | null = null;
+    try {
+      uploadUrl = await createPresignedPutUrl({
+        bucket: process.env.S3_BUCKET_PUBLIC || "etc-public",
+        key,
+        contentType: parsed.data.mimeType,
+        contentLength: parsed.data.sizeBytes,
+        expiresInSeconds: 600,
+      });
+      publicObjectUrl = buildPublicObjectUrl(process.env.S3_BUCKET_PUBLIC || "etc-public", key);
+    } catch (error) {
+      const mockKey = `mock-message/${threadPart}/${Date.now()}-${randomUUID()}-${safeName}`;
+      uploadUrl = `/api/messages/attachments/mock-upload?key=${encodeURIComponent(mockKey)}`;
+      publicObjectUrl = `/api/messages/attachments/mock-upload?key=${encodeURIComponent(mockKey)}&download=1`;
+      note = error instanceof Error ? `S3 no configurado. Usando mock local (${error.message}).` : "S3 no configurado. Usando mock local.";
+      return jsonOk({
+        actor: { role: auth.user.role, userId: auth.user.id, displayName: auth.user.displayName ?? auth.user.email },
+        maxBytes,
+        allowedMimeTypes: allowedMimeList,
+        upload: {
+          uploadUrl,
+          method: "PUT",
+          storageKey: mockKey,
+          publicObjectUrl,
+        },
+        expiresInSeconds: 600,
+        note,
+      });
+    }
+
     return jsonOk({
-      actor,
+      actor: { role: auth.user.role, userId: auth.user.id, displayName: auth.user.displayName ?? auth.user.email },
       maxBytes,
       allowedMimeTypes: allowedMimeList,
-      upload: presign,
+      upload: {
+        uploadUrl,
+        method: "PUT",
+        storageKey: key,
+        publicObjectUrl,
+      },
       expiresInSeconds: 600,
-      note: "Mock presign response. En V2 real se firma contra MinIO/S3.",
+      note,
     });
   } catch {
     return jsonError("No se pudo generar la URL de subida", 400);
