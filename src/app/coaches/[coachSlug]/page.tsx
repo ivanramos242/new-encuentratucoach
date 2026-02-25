@@ -2,7 +2,19 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import {
+  faArrowTrendDown,
+  faArrowTrendUp,
+  faChartColumn,
+  faCirclePlay,
+  faClock,
+  faEnvelope,
+  faGlobe,
+  faPhone,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ProfileAnalyticsTracker } from "@/components/analytics/profile-analytics-tracker";
+import { ProfileClickLink } from "@/components/analytics/profile-click-link";
 import { CoachGalleryLightbox } from "@/components/coach/coach-gallery-lightbox";
 import { CoachMessageBottomCta } from "@/components/coach/coach-message-bottom-cta";
 import { CoachProfileActionPopups } from "@/components/coach/coach-profile-action-popups";
@@ -11,6 +23,7 @@ import { CoachCard } from "@/components/directory/coach-card";
 import { PageShell } from "@/components/layout/page-shell";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getOptionalSessionUser } from "@/lib/auth-server";
+import { getCoachPrivateAnalyticsSummary, type CoachPrivateAnalyticsSummary } from "@/lib/coach-profile-analytics";
 import { getCoachCategoryLabel } from "@/lib/coach-category-catalog";
 import { getCoachAverageRating, getRelatedCoachesFrom } from "@/lib/directory";
 import { getPublicCoachBySlugMerged, listPublicCoachesMerged } from "@/lib/public-coaches";
@@ -51,6 +64,7 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
   const isOwnCoachProfile = sessionUser?.role === "coach" && sessionUser.coachProfileId === coach.id;
   const canSeeCoachStats =
     sessionUser?.role === "admin" || isOwnCoachProfile;
+  const privateStats = canSeeCoachStats ? await getCoachPrivateAnalyticsSummary(coach.id) : null;
 
   const rating = getCoachAverageRating(coach);
   const approvedReviews = coach.reviews.filter((review) => review.coachDecision === "approved");
@@ -196,16 +210,38 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
               </div>
 
               <div className="rounded-3xl border border-black/10 bg-white p-4">
-                <h2 className="text-lg font-black tracking-tight text-zinc-950">Redes y contacto rápido</h2>
+                <h2 className="text-lg font-black tracking-tight text-zinc-950">
+                  <FontAwesomeIcon icon={faGlobe} className="mr-2 h-4 w-4 text-zinc-500" />
+                  Redes y contacto rápido
+                </h2>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {coach.links.whatsapp ? <ContactLink href={`https://wa.me/${coach.links.whatsapp.replace(/\D+/g, "")}`} label="WhatsApp" /> : null}
-                  {coach.links.phone ? <ContactLink href={`tel:${coach.links.phone}`} label="Llamar" /> : null}
-                  {coach.links.web ? <ContactLink href={coach.links.web} label="Web" external /> : null}
-                  {coach.links.instagram ? <ContactLink href={coach.links.instagram} label="Instagram" external /> : null}
-                  {coach.links.linkedin ? <ContactLink href={coach.links.linkedin} label="LinkedIn" external /> : null}
-                  {coach.links.facebook ? <ContactLink href={coach.links.facebook} label="Facebook" external /> : null}
+                  {coach.links.whatsapp ? (
+                    <ContactLink coachId={coach.id} target="whatsapp" href={`https://wa.me/${coach.links.whatsapp.replace(/\D+/g, "")}`} label="WhatsApp" />
+                  ) : null}
+                  {coach.links.phone ? <ContactLink coachId={coach.id} target="phone" href={`tel:${coach.links.phone}`} label="Llamar" /> : null}
+                  {coach.links.web ? <ContactLink coachId={coach.id} target="web" href={coach.links.web} label="Web" external /> : null}
+                  {coach.links.instagram ? <ContactLink coachId={coach.id} target="instagram" href={coach.links.instagram} label="Instagram" external /> : null}
+                  {coach.links.linkedin ? <ContactLink coachId={coach.id} target="linkedin" href={coach.links.linkedin} label="LinkedIn" external /> : null}
+                  {coach.links.facebook ? <ContactLink coachId={coach.id} target="facebook" href={coach.links.facebook} label="Facebook" external /> : null}
                 </div>
               </div>
+
+              {coach.videoPresentationUrl ? (
+                <div className="rounded-3xl border border-black/10 bg-white p-4">
+                  <h2 className="text-lg font-black tracking-tight text-zinc-950">
+                    <FontAwesomeIcon icon={faCirclePlay} className="mr-2 h-4 w-4 text-zinc-500" />
+                    Video de presentación
+                  </h2>
+                  <p className="mt-2 text-sm text-zinc-700">Conoce al coach en un video corto antes de contactarle.</p>
+                  <a
+                    href="#video-presentacion"
+                    className="mt-3 inline-flex items-center rounded-xl border border-cyan-300 bg-cyan-50 px-4 py-2.5 text-sm font-semibold text-cyan-900"
+                  >
+                    <FontAwesomeIcon icon={faCirclePlay} className="mr-2 h-4 w-4" />
+                    Ver video presentacion
+                  </a>
+                </div>
+              ) : null}
             </div>
           </div>
         </section>
@@ -215,6 +251,7 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
             { id: "inicio", label: "Inicio" },
             { id: "sobre-mi", label: "Sobre mí" },
             { id: "galeria", label: "Galería" },
+            ...(coach.videoPresentationUrl ? [{ id: "video-presentacion", label: "Vídeo" }] : []),
             { id: "precios", label: "Precios" },
             { id: "resenas", label: "Reseñas" },
           ]}
@@ -243,6 +280,35 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
             <h2 className="text-2xl font-black tracking-tight text-zinc-950">Galería</h2>
             <CoachGalleryLightbox coachName={coach.name} heroImageUrl={coach.heroImageUrl} galleryImageUrls={coach.galleryImageUrls} />
           </section>
+
+          {coach.videoPresentationUrl ? (
+            <section
+              id="video-presentacion"
+              className="scroll-mt-[calc(var(--site-header-offset,96px)+5rem)] rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-2xl font-black tracking-tight text-zinc-950">
+                  <FontAwesomeIcon icon={faCirclePlay} className="mr-2 h-5 w-5 text-zinc-500" />
+                  Video de presentación
+                </h2>
+                <a
+                  href={coach.videoPresentationUrl}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="inline-flex items-center rounded-xl border border-black/10 bg-zinc-50 px-4 py-2 text-sm font-semibold text-zinc-900"
+                >
+                  <FontAwesomeIcon icon={faCirclePlay} className="mr-2 h-4 w-4 text-zinc-500" />
+                  Abrir en otra pestaña
+                </a>
+              </div>
+              <p className="mt-2 text-sm text-zinc-700">
+                Si tu navegador no reproduce el video, usa el botón para abrirlo directamente.
+              </p>
+              <div className="mt-4 overflow-hidden rounded-2xl border border-black/10 bg-black">
+                <video src={coach.videoPresentationUrl} controls className="aspect-video w-full bg-black" preload="metadata" />
+              </div>
+            </section>
+          ) : null}
 
           <section id="precios" className="scroll-mt-[calc(var(--site-header-offset,96px)+5rem)] rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
             <h2 className="text-2xl font-black tracking-tight text-zinc-950">Precios</h2>
@@ -303,13 +369,7 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
 
           {canSeeCoachStats ? (
             <section className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
-              <h2 className="text-2xl font-black tracking-tight text-zinc-950">Estadisticas del coach (privadas)</h2>
-              <p className="mt-2 text-sm text-zinc-700">Solo visibles para administradores y para el propietario del perfil.</p>
-              <dl className="mt-4 grid gap-3 sm:grid-cols-3">
-                <MetricLine label="Total de visitas" value={String(coach.metrics.totalViews)} />
-                <MetricLine label="Tiempo medio" value={`${coach.metrics.avgViewSeconds}s`} />
-                <MetricLine label="Clics en enlaces" value={String(Object.values(coach.metrics.clicks).reduce((sum, value) => sum + value, 0))} />
-              </dl>
+              <CoachPrivateStatsPanel stats={privateStats} />
             </section>
           ) : null}
 
@@ -380,6 +440,213 @@ function MetricLine({ label, value }: { label: string; value: string }) {
   );
 }
 
+function inflateStat(value: number) {
+  return Math.ceil(Math.max(0, value) * 1.7);
+}
+
+function trendText(current: number, previous: number) {
+  if (previous <= 0 && current <= 0) return "Sin cambios";
+  if (previous <= 0 && current > 0) return "Subida fuerte";
+  const pct = Math.round(((current - previous) / previous) * 100);
+  if (pct === 0) return "Estable";
+  return `${pct > 0 ? "+" : ""}${pct}%`;
+}
+
+function clickTargetLabel(target: string) {
+  const labels: Record<string, string> = {
+    whatsapp: "WhatsApp",
+    phone: "Teléfono",
+    email: "Email",
+    web: "Web",
+    linkedin: "LinkedIn",
+    instagram: "Instagram",
+    facebook: "Facebook",
+    mensaje: "Mensaje",
+  };
+  return labels[target] || target;
+}
+
+function CoachPrivateStatsPanel({ stats }: { stats: CoachPrivateAnalyticsSummary | null }) {
+  if (!stats) {
+    return (
+      <>
+        <h2 className="text-2xl font-black tracking-tight text-zinc-950">
+          <FontAwesomeIcon icon={faChartColumn} className="mr-2 h-5 w-5 text-zinc-500" />
+          Estadísticas del coach (privadas)
+        </h2>
+        <p className="mt-2 text-sm text-zinc-700">
+          Solo visibles para administradores y para el propietario del perfil.
+        </p>
+        <div className="mt-4 rounded-2xl border border-dashed border-black/15 bg-zinc-50 p-4 text-sm text-zinc-700">
+          Aún no hay datos de analítica disponibles para este perfil.
+        </div>
+      </>
+    );
+  }
+
+  const totalViews = inflateStat(stats.totals.totalViews);
+  const totalClicks = inflateStat(stats.totals.totalClicks);
+  const avgViewSeconds = inflateStat(stats.totals.avgViewSeconds);
+  const qualityViews = inflateStat(stats.totals.qualityViews30s);
+  const last7Views = inflateStat(stats.totals.last7Views);
+  const last7Clicks = inflateStat(stats.totals.last7Clicks);
+  const last30Views = inflateStat(stats.totals.last30Views);
+  const last30Clicks = inflateStat(stats.totals.last30Clicks);
+  const previous7Views = inflateStat(stats.totals.previous7Views);
+  const previous7Clicks = inflateStat(stats.totals.previous7Clicks);
+  const ctrPercent = stats.totals.ctrPercent;
+  const topTarget = stats.topClickTarget ? clickTargetLabel(stats.topClickTarget) : "Sin clics";
+
+  return (
+    <>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="text-2xl font-black tracking-tight text-zinc-950">
+            <FontAwesomeIcon icon={faChartColumn} className="mr-2 h-5 w-5 text-zinc-500" />
+            Estadísticas del coach (privadas)
+          </h2>
+          <p className="mt-2 text-sm text-zinc-700">
+            Datos propios de la plataforma (sin GA4). Visualización ajustada x1,7 y redondeada hacia arriba.
+          </p>
+        </div>
+        <div className="rounded-2xl border border-black/10 bg-zinc-50 px-4 py-3 text-xs text-zinc-700">
+          Últimos 14 días + resumen total
+        </div>
+      </div>
+
+      <dl className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <MetricLine label="Visitas totales" value={String(totalViews)} />
+        <MetricLine label="Clics totales" value={String(totalClicks)} />
+        <MetricLine label="Tiempo medio" value={`${avgViewSeconds}s`} />
+        <MetricLine label="CTR aprox." value={`${Math.ceil(ctrPercent * 10) / 10}%`} />
+        <MetricLine label="Visitas (7 días)" value={String(last7Views)} />
+        <MetricLine label="Clics (7 días)" value={String(last7Clicks)} />
+        <MetricLine label="Visitas (30 días)" value={String(last30Views)} />
+        <MetricLine label="Clics (30 días)" value={String(last30Clicks)} />
+        <MetricLine label="Clic favorito" value={topTarget} />
+      </dl>
+
+      <div className="mt-4 grid gap-4 xl:grid-cols-[1.2fr_.8fr]">
+        <div className="rounded-2xl border border-black/10 bg-zinc-50 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-black tracking-tight text-zinc-950">Grafico de actividad (14 días)</h3>
+              <p className="mt-1 text-sm text-zinc-700">Visitas y clics por día, con tiempo medio por visita.</p>
+            </div>
+            <div className="flex flex-wrap gap-2 text-xs">
+              <span className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-3 py-1">
+                <span className="h-2 w-2 rounded-full bg-cyan-500" /> Visitas
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-3 py-1">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" /> Clics
+              </span>
+            </div>
+          </div>
+          <StatsBarsChart stats={stats} />
+        </div>
+
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-black/10 bg-zinc-50 p-4">
+            <h3 className="text-lg font-black tracking-tight text-zinc-950">Tendencia semanal</h3>
+            <div className="mt-3 grid gap-2">
+              <TrendLine
+                label="Visitas"
+                current={last7Views}
+                previous={previous7Views}
+                trend={trendText(last7Views, previous7Views)}
+              />
+              <TrendLine
+                label="Clics"
+                current={last7Clicks}
+                previous={previous7Clicks}
+                trend={trendText(last7Clicks, previous7Clicks)}
+              />
+              <TrendLine label="Visitas de calidad (+30s)" current={qualityViews} previous={0} trend="Acumulado" />
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-black/10 bg-zinc-50 p-4">
+            <h3 className="text-lg font-black tracking-tight text-zinc-950">Desglose de clics por canal</h3>
+            {stats.clicksByTarget.length ? (
+              <ul className="mt-3 space-y-2">
+                {stats.clicksByTarget.map((item) => (
+                  <li key={item.target} className="flex items-center justify-between gap-3 rounded-xl border border-black/10 bg-white px-3 py-2 text-sm">
+                    <span className="font-semibold text-zinc-900">{clickTargetLabel(item.target)}</span>
+                    <span className="font-black text-zinc-900">{inflateStat(item.count)}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-3 text-sm text-zinc-700">Todavía no hay clics registrados en enlaces del perfil.</p>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function StatsBarsChart({ stats }: { stats: CoachPrivateAnalyticsSummary }) {
+  const inflatedSeries = stats.series14d.map((day) => ({
+    ...day,
+    views: inflateStat(day.views),
+    clicks: inflateStat(day.clicks),
+    avgViewSeconds: inflateStat(day.avgViewSeconds),
+  }));
+  const maxViews = Math.max(1, ...inflatedSeries.map((d) => d.views));
+  const maxClicks = Math.max(1, ...inflatedSeries.map((d) => d.clicks));
+
+  return (
+    <div className="mt-4 space-y-2">
+      {inflatedSeries.map((day) => (
+        <div key={day.dateIso} className="grid grid-cols-[54px_1fr_auto] items-center gap-3">
+          <div className="text-xs font-semibold text-zinc-600">{day.label}</div>
+          <div className="space-y-1">
+            <div className="h-2 overflow-hidden rounded-full bg-white">
+              <div className="h-full rounded-full bg-cyan-500" style={{ width: `${Math.max(4, (day.views / maxViews) * 100)}%` }} />
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-white">
+              <div className="h-full rounded-full bg-emerald-500" style={{ width: `${Math.max(day.clicks > 0 ? 4 : 0, (day.clicks / maxClicks) * 100)}%` }} />
+            </div>
+          </div>
+          <div className="text-right text-xs text-zinc-700">
+            <div>V {day.views}</div>
+            <div>C {day.clicks}</div>
+            <div className="inline-flex items-center gap-1 text-zinc-500">
+              <FontAwesomeIcon icon={faClock} className="h-3 w-3" />
+              {day.avgViewSeconds}s
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function TrendLine({ label, current, previous, trend }: { label: string; current: number; previous: number; trend: string }) {
+  const rising = previous === 0 ? current > 0 : current >= previous;
+  return (
+    <div className="rounded-xl border border-black/10 bg-white px-3 py-2">
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-sm font-semibold text-zinc-900">{label}</span>
+        <span className={`inline-flex items-center gap-1 text-xs font-semibold ${rising ? "text-emerald-700" : "text-amber-700"}`}>
+          <FontAwesomeIcon icon={rising ? faArrowTrendUp : faArrowTrendDown} className="h-3 w-3" />
+          {trend}
+        </span>
+      </div>
+      <div className="mt-1 text-xs text-zinc-600">
+        Últimos 7 días: <span className="font-semibold text-zinc-900">{current}</span>
+        {previous > 0 ? (
+          <>
+            <span className="mx-1 text-zinc-400">·</span>
+            7 días previos: <span className="font-semibold text-zinc-900">{previous}</span>
+          </>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function HeroIcon({ name }: { name: "back" | "share" | "zoom" }) {
   if (name === "back") {
     return (
@@ -406,10 +673,37 @@ function HeroIcon({ name }: { name: "back" | "share" | "zoom" }) {
   );
 }
 
-function ContactLink({ href, label, external = false }: { href: string; label: string; external?: boolean }) {
+function ContactLink({
+  coachId,
+  target,
+  href,
+  label,
+  external = false,
+}: {
+  coachId: string;
+  target: "whatsapp" | "phone" | "email" | "web" | "linkedin" | "instagram" | "facebook";
+  href: string;
+  label: string;
+  external?: boolean;
+}) {
+  const icon =
+    target === "phone"
+      ? faPhone
+      : target === "email"
+        ? faEnvelope
+        : target === "web"
+          ? faGlobe
+          : faGlobe;
   return (
-    <a href={href} target={external ? "_blank" : undefined} rel={external ? "noreferrer noopener" : undefined} className="rounded-xl border border-black/10 bg-zinc-50 px-4 py-2.5 text-sm font-semibold text-zinc-900 hover:bg-white">
+    <ProfileClickLink
+      coachId={coachId}
+      target={target}
+      href={href}
+      external={external}
+      className="inline-flex items-center rounded-xl border border-black/10 bg-zinc-50 px-4 py-2.5 text-sm font-semibold text-zinc-900 hover:bg-white"
+    >
+      <FontAwesomeIcon icon={icon} className="mr-2 h-4 w-4 text-zinc-500" />
       {label}
-    </a>
+    </ProfileClickLink>
   );
 }
