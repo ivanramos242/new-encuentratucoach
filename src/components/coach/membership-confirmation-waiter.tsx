@@ -13,7 +13,7 @@ type SessionPayload = {
 export function MembershipConfirmationWaiter() {
   const router = useRouter();
   const [state, setState] = useState<"checking" | "waiting" | "ready" | "error">("checking");
-  const [message, setMessage] = useState("Verificando el pago y activando tu cuenta de coach...");
+  const [message, setMessage] = useState("Comprobando el estado del pago y la activación de tu cuenta de coach...");
   const [ticks, setTicks] = useState(0);
   const [retryKey, setRetryKey] = useState(0);
 
@@ -53,11 +53,11 @@ export function MembershipConfirmationWaiter() {
         }
 
         setState("waiting");
-        setMessage("Pago recibido. Estamos activando tu cuenta de coach (puede tardar unos segundos).");
+        setMessage("Estamos comprobando la confirmación de Stripe y activando tu cuenta de coach (puede tardar unos segundos).");
       } catch {
         if (cancelled) return;
         setState("error");
-        setMessage("No hemos podido confirmar el estado del pago. Puedes reintentar o ir a tu cuenta.");
+        setMessage("No hemos podido confirmar el estado del pago. Puedes reintentar o volver a membresía.");
         if (interval) window.clearInterval(interval);
       }
     };
@@ -115,10 +115,10 @@ export function MembershipConfirmationWaiter() {
           Reintentar comprobación
         </button>
         <Link
-          href="/mi-cuenta/cliente"
+          href="/membresia"
           className="rounded-xl border border-black/10 bg-white px-4 py-2.5 text-center text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
         >
-          Ir a mi cuenta
+          Volver a membresía
         </Link>
       </div>
 

@@ -7,6 +7,10 @@ import { prisma } from "@/lib/prisma";
 import { buildMetadata } from "@/lib/seo";
 import { formatEuro } from "@/lib/utils";
 
+type SearchParamsInput = Promise<Record<string, string | string[] | undefined>>;
+
+const PENDING_ACTIVATION_WINDOW_MS = 3 * 60 * 1000;
+
 export const dynamic = "force-dynamic";
 
 export const metadata = buildMetadata({
@@ -35,6 +39,16 @@ function isPendingCoachActivation(status?: string | null) {
   return status === "incomplete";
 }
 
+function isRecentPendingCoachActivation(status?: string | null, updatedAt?: Date | null) {
+  if (!isPendingCoachActivation(status) || !updatedAt) return false;
+  const ageMs = Date.now() - updatedAt.getTime();
+  return ageMs >= 0 && ageMs < PENDING_ACTIVATION_WINDOW_MS;
+}
+
+function pick(input: string | string[] | undefined) {
+  return Array.isArray(input) ? input[0] : input;
+}
+
 async function getMembershipCoachSubscriptionSummary(sessionUser: Awaited<ReturnType<typeof getOptionalSessionUser>>) {
   if (!sessionUser) return null;
 
@@ -51,7 +65,7 @@ async function getMembershipCoachSubscriptionSummary(sessionUser: Awaited<Return
       subscriptions: {
         orderBy: { updatedAt: "desc" },
         take: 1,
-        select: { id: true, status: true, planCode: true, updatedAt: true },
+        select: { id: true, status: true, planCode: true, updatedAt: true, stripeSubscriptionId: true },
       },
     },
   });
@@ -115,12 +129,30 @@ function getPlanAction(
   };
 }
 
-export default async function MembershipPage() {
+export default async function MembershipPage({ searchParams }: { searchParams: SearchParamsInput }) {
+  const sp = await searchParams;
+  const checkout = pick(sp.checkout);
   const sessionUser = await getOptionalSessionUser();
   const membershipCoachProfile = await getMembershipCoachSubscriptionSummary(sessionUser);
-  const latestSubscription = membershipCoachProfile?.subscriptions?.[0];
+  let latestSubscription = membershipCoachProfile?.subscriptions?.[0] ?? null;
+
+  if (
+    checkout === "cancel" &&
+    latestSubscription &&
+    latestSubscription.status === "incomplete" &&
+    isRecentPendingCoachActivation(latestSubscription.status, latestSubscription.updatedAt)
+  ) {
+    await prisma.coachSubscription
+      .update({
+        where: { id: latestSubscription.id },
+        data: { status: "canceled" },
+      })
+      .catch(() => undefined);
+    latestSubscription = { ...latestSubscription, status: "canceled" };
+  }
+
   const coachHasActivePlan = isActiveCoachSubscription(latestSubscription?.status);
-  const coachHasPendingActivation = isPendingCoachActivation(latestSubscription?.status);
+  const coachHasPendingActivation = isRecentPendingCoachActivation(latestSubscription?.status, latestSubscription?.updatedAt);
   const plans = await listMembershipPlansForPublic();
 
   return (
@@ -131,6 +163,14 @@ export default async function MembershipPage() {
         description="Solo los coaches pagan para tener su perfil activo en la plataforma. Sin comisiones por contacto."
       />
       <PageShell className="pt-8">
+        {checkout === "cancel" ? (
+          <div className="mb-6 rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm">
+            <p className="text-sm font-semibold text-zinc-900">
+              Pago cancelado. No se ha activado ninguna membresía. Puedes volver a intentarlo cuando quieras.
+            </p>
+          </div>
+        ) : null}
+
         {coachHasPendingActivation ? (
           <div className="mb-6 rounded-3xl border border-amber-200 bg-gradient-to-r from-amber-50 to-white p-5 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-3">

@@ -2,6 +2,7 @@ import type Stripe from "stripe";
 import { z } from "zod";
 import { jsonError, jsonOk } from "@/lib/api-handlers";
 import { requireApiRole } from "@/lib/api-auth";
+import { listMembershipPlansForPublic } from "@/lib/membership-plan-service";
 import { prisma } from "@/lib/prisma";
 import { getStripeServer, resolveStripePlanPriceConfig } from "@/lib/stripe-server";
 import { absoluteUrl, slugify } from "@/lib/utils";
@@ -19,7 +20,7 @@ function isActiveishSubscription(status?: string | null) {
 function isRecentPendingCheckout(status?: string | null, updatedAt?: Date | null) {
   if (status !== "incomplete" || !updatedAt) return false;
   const ageMs = Date.now() - updatedAt.getTime();
-  return ageMs >= 0 && ageMs < 15 * 60 * 1000;
+  return ageMs >= 0 && ageMs < 3 * 60 * 1000;
 }
 
 async function uniqueCoachSlug(base: string) {
@@ -94,7 +95,11 @@ export async function POST(request: Request) {
 
     const body = await request.json().catch(() => ({}));
     const parsed = schema.safeParse(body);
-    if (!parsed.success) return jsonError("Payload invalido", 400, { issues: parsed.error.flatten() });
+    if (!parsed.success) return jsonError("Payload inválido", 400, { issues: parsed.error.flatten() });
+
+    const publicPlans = await listMembershipPlansForPublic();
+    const publicPlan = publicPlans.find((plan) => plan.code === parsed.data.planCode);
+    if (!publicPlan) return jsonError("Plan de membresía no encontrado o inactivo", 404);
 
     const priceConfig = resolveStripePlanPriceConfig(parsed.data.planCode);
     if (!priceConfig) {
@@ -109,6 +114,7 @@ export async function POST(request: Request) {
       select: { id: true, email: true, displayName: true, coachProfiles: { select: { id: true, slug: true, name: true } } },
     });
     if (!user) return jsonError("Usuario no encontrado", 404);
+
     const coachProfile =
       user.coachProfiles.find((p) => p.id === auth.user.coachProfileId) ||
       user.coachProfiles[0] ||
@@ -133,11 +139,9 @@ export async function POST(request: Request) {
     });
     if (latestSubscription && isActiveishSubscription(latestSubscription.status)) {
       return jsonError(
-        `Ya tienes una suscripcion ${latestSubscription.status} (${latestSubscription.planCode}). No puedes crear otra hasta cancelarla o que termine.`,
+        `Ya tienes una suscripción ${latestSubscription.status} (${latestSubscription.planCode}). No puedes crear otra hasta cancelarla o que termine.`,
         409,
-        {
-          subscription: latestSubscription,
-        },
+        { subscription: latestSubscription },
       );
     }
     if (latestSubscription && isRecentPendingCheckout(latestSubscription.status, latestSubscription.updatedAt)) {
@@ -168,13 +172,13 @@ export async function POST(request: Request) {
         code: parsed.data.planCode,
         name: parsed.data.planCode === "monthly" ? "Plan mensual" : "Plan anual",
         intervalLabel: parsed.data.planCode === "monthly" ? "mensual" : "anual",
-        priceCents: priceConfig.unitAmountCents ?? 0,
+        priceCents: publicPlan.priceCents,
         currency: "EUR",
         stripePriceId: priceConfig.stripePriceId,
         isActive: true,
       },
       update: {
-        priceCents: priceConfig.unitAmountCents ?? undefined,
+        priceCents: publicPlan.priceCents,
         stripePriceId: priceConfig.stripePriceId,
         isActive: true,
       },
@@ -184,19 +188,25 @@ export async function POST(request: Request) {
     const successUrl = absoluteUrl(parsed.data.successPath || "/membresia/confirmacion?checkout=success");
     const cancelUrl = absoluteUrl(parsed.data.cancelPath || "/membresia?checkout=cancel");
 
+    const hasActiveDiscount = publicPlan.discountActive && publicPlan.effectivePriceCents < publicPlan.priceCents;
+    const fallbackInlineAmount = priceConfig.unitAmountCents ?? publicPlan.priceCents;
+    const unitAmountForCheckout = hasActiveDiscount ? publicPlan.effectivePriceCents : fallbackInlineAmount;
+
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] =
-      priceConfig.mode === "price_id"
+      !hasActiveDiscount && priceConfig.mode === "price_id"
         ? [{ price: priceConfig.stripePriceId, quantity: 1 }]
         : [
             {
               quantity: 1,
               price_data: {
                 currency: "eur",
-                unit_amount: priceConfig.unitAmountCents,
+                unit_amount: unitAmountForCheckout,
                 recurring: { interval: parsed.data.planCode === "monthly" ? "month" : "year" },
                 product_data: {
                   name: parsed.data.planCode === "monthly" ? "Membresía coach mensual" : "Membresía coach anual",
-                  description: "Perfil activo en el directorio de coaches de EncuentraTuCoach",
+                  description: hasActiveDiscount
+                    ? "Perfil activo en el directorio de coaches de EncuentraTuCoach · Descuento aplicado"
+                    : "Perfil activo en el directorio de coaches de EncuentraTuCoach",
                 },
               },
             },
@@ -224,28 +234,30 @@ export async function POST(request: Request) {
       },
     });
 
-    // Placeholder local snapshot to help UI before webhook finalizes state.
-    await prisma.coachSubscription.create({
-      data: {
-        coachProfileId: coachProfile.id,
-        planId: plan.id,
-        planCode: parsed.data.planCode,
-        status: "incomplete",
-        stripeSubscriptionId: typeof session.subscription === "string" ? session.subscription : null,
-        currentPeriodStart: periodStart,
-        currentPeriodEnd: periodEnd,
-      },
-    }).catch(() => undefined);
+    await prisma.coachSubscription
+      .create({
+        data: {
+          coachProfileId: coachProfile.id,
+          planId: plan.id,
+          planCode: parsed.data.planCode,
+          status: "incomplete",
+          stripeSubscriptionId: typeof session.subscription === "string" ? session.subscription : null,
+          currentPeriodStart: periodStart,
+          currentPeriodEnd: periodEnd,
+        },
+      })
+      .catch(() => undefined);
 
     return jsonOk({
       sessionId: session.id,
       checkoutUrl: session.url,
-      message: "Sesion de checkout creada",
+      message: "Sesión de checkout creada",
     });
   } catch (error) {
     console.error("[stripe/checkout-session] error", error);
-    return jsonError(error instanceof Error ? `No se pudo crear la sesion de pago: ${error.message}` : "No se pudo crear la sesion de pago", 500);
+    return jsonError(
+      error instanceof Error ? `No se pudo crear la sesión de pago: ${error.message}` : "No se pudo crear la sesión de pago",
+      500,
+    );
   }
 }
-
-
