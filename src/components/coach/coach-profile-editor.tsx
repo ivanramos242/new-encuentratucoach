@@ -47,6 +47,7 @@ type EditorProfile = {
 };
 
 type UploadScope = "coach_gallery" | "coach_hero" | "coach_video";
+const MAX_COACH_CATEGORIES = 4;
 
 async function postJson(url: string, payload: unknown) {
   const res = await fetch(url, {
@@ -206,6 +207,80 @@ function SeoHelpPanel({
   );
 }
 
+function ProfileLivePreview({
+  form,
+}: {
+  form: {
+    name: string;
+    headline: string;
+    city: string;
+    modeOnline: boolean;
+    modePresencial: boolean;
+    basePriceEur: string;
+    categorySlugs: string[];
+    whatsapp: string;
+    email: string;
+    phone: string;
+    web: string;
+  };
+}) {
+  const categoryLabels = COACH_CATEGORY_CATALOG.filter((item) => form.categorySlugs.includes(item.slug)).map(
+    (item) => item.name,
+  );
+
+  return (
+    <section className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-zinc-500">Vista previa</p>
+          <h3 className="mt-1 text-lg font-black tracking-tight text-zinc-950">
+            {form.name.trim() || "Tu nombre de perfil"}
+          </h3>
+          <p className="mt-1 text-sm text-zinc-700">
+            {[form.city.trim(), form.modeOnline ? "online" : "", form.modePresencial ? "presencial" : ""]
+              .filter(Boolean)
+              .join(" · ") || "Anade ciudad y modalidad"}
+          </p>
+        </div>
+        <span className="rounded-xl border border-black/10 bg-zinc-50 px-3 py-1 text-xs font-semibold text-zinc-700">
+          {form.basePriceEur && Number(form.basePriceEur) > 0 ? `Desde ${form.basePriceEur} EUR` : "Precio pendiente"}
+        </span>
+      </div>
+
+      <div className="mt-4 grid gap-3">
+        <div className="rounded-2xl border border-black/10 bg-zinc-50 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Titular</p>
+          <p className="mt-1 text-sm text-zinc-800">
+            {form.headline.trim() || "Resume en una frase a quien ayudas y como lo haces."}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-black/10 bg-zinc-50 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Categorias elegidas</p>
+          <p className="mt-1 text-sm text-zinc-800">
+            {categoryLabels.length ? categoryLabels.join(", ") : "Todavia no has marcado categorias."}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-black/10 bg-zinc-50 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Canales de contacto</p>
+          <p className="mt-1 text-sm text-zinc-800">
+            {[
+              form.whatsapp.trim() ? "WhatsApp" : "",
+              form.email.trim() ? "Email" : "",
+              form.phone.trim() ? "Telefono" : "",
+              form.web.trim() ? "Web" : "",
+            ]
+              .filter(Boolean)
+              .join(" · ") || "Anade al menos un canal para recibir contactos"}
+          </p>
+        </div>
+        <p className="text-xs leading-5 text-zinc-500">
+          Esta vista previa es orientativa. El perfil publico final puede mostrar bloques adicionales.
+        </p>
+      </div>
+    </section>
+  );
+}
+
 function UploadDropzone({
   label,
   hint,
@@ -324,7 +399,7 @@ export function CoachProfileEditor({
     categorySlugs: (initialProfile?.categories || [])
       .map((item) => item.category?.slug || "")
       .filter(Boolean)
-      .slice(0, 12),
+      .slice(0, MAX_COACH_CATEGORIES),
     modeOnline: (initialProfile?.sessionModes || []).some((m) => m.mode === "online"),
     modePresencial: (initialProfile?.sessionModes || []).some((m) => m.mode === "presencial"),
     profileStatus: (initialProfile?.profileStatus as ProfileStatusValue) || "draft",
@@ -635,7 +710,7 @@ export function CoachProfileEditor({
     const current = new Set(form.categorySlugs);
     if (checked) current.add(slug);
     else current.delete(slug);
-    setField("categorySlugs", Array.from(current).slice(0, 12));
+    setField("categorySlugs", Array.from(current).slice(0, MAX_COACH_CATEGORIES));
   }
 
   function removeHero() {
@@ -751,7 +826,7 @@ export function CoachProfileEditor({
         </section>
       ) : null}
 
-      <section className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
+      <section className="hidden rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-xl font-black tracking-tight text-zinc-950">
@@ -774,7 +849,7 @@ export function CoachProfileEditor({
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1.05fr_.95fr]">
+      <section className="hidden grid gap-4 xl:grid-cols-[1.05fr_.95fr]">
         <SeoHelpPanel
           form={{
             name: form.name,
@@ -841,6 +916,8 @@ export function CoachProfileEditor({
         </section>
       </section>
 
+      <section className="grid gap-5 xl:grid-cols-[1.45fr_.75fr] xl:items-start">
+        <div className="space-y-4">
       {showStep(0) ? (
         <section className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
           <h3 className="text-lg font-black tracking-tight text-zinc-950">Paso 1 · Datos basicos</h3>
@@ -933,7 +1010,7 @@ export function CoachProfileEditor({
                         type="checkbox"
                         checked={checked}
                         onChange={(e) => toggleCategorySlug(category.slug, e.target.checked)}
-                        disabled={!checked && form.categorySlugs.length >= 12}
+                        disabled={!checked && form.categorySlugs.length >= MAX_COACH_CATEGORIES}
                       />
                       <span>{category.name}</span>
                     </label>
@@ -941,8 +1018,12 @@ export function CoachProfileEditor({
                 })}
               </div>
               <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-normal text-zinc-500">Elige las categorias que mejor describen tu ayuda.</span>
-                <span className="text-xs font-semibold text-zinc-700">{form.categorySlugs.length}/12</span>
+                <span className="text-xs font-normal text-zinc-500">
+                  Elige hasta {MAX_COACH_CATEGORIES} categorias que mejor describen tu ayuda.
+                </span>
+                <span className="text-xs font-semibold text-zinc-700">
+                  {form.categorySlugs.length}/{MAX_COACH_CATEGORIES}
+                </span>
               </div>
               {showValidation && (currentStepErrors as { categories?: string }).categories ? (
                 <span className="text-xs font-normal text-red-600">
@@ -1196,6 +1277,65 @@ export function CoachProfileEditor({
           </div>
         </section>
       ) : null}
+        </div>
+        <div className="xl:sticky xl:top-6">
+          <ProfileLivePreview
+            form={{
+              name: form.name,
+              headline: form.headline,
+              city: form.city,
+              modeOnline: form.modeOnline,
+              modePresencial: form.modePresencial,
+              basePriceEur: form.basePriceEur,
+              categorySlugs: form.categorySlugs,
+              whatsapp: form.whatsapp,
+              email: form.email,
+              phone: form.phone,
+              web: form.web,
+            }}
+          />
+        </div>
+      </section>
+
+      <SeoHelpPanel
+        form={{
+          name: form.name,
+          headline: form.headline,
+          bio: form.bio,
+          city: form.city,
+          specialtiesText: form.specialtiesText,
+          categorySlugs: form.categorySlugs,
+          basePriceEur: form.basePriceEur,
+          heroImageUrl: form.heroImageUrl,
+          web: form.web,
+        }}
+      />
+
+      <section className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-zinc-500">
+              {adminMode ? "Gestion interna" : "Mi perfil"}
+            </p>
+            <h2 className="mt-1 text-xl font-black tracking-tight text-zinc-950">
+              {adminMode ? "Editor de perfil de coach (admin)" : "Editor de perfil de coach"}
+            </h2>
+            <p className="mt-1 text-sm text-zinc-600">
+              {adminMode
+                ? "Revisa el perfil publico y, si hace falta, ajusta datos internos no visibles para clientes."
+                : "Guarda los cambios y vuelve a tu perfil cuando quieras."}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2 text-xs">
+            <span className="rounded-full border border-black/10 bg-zinc-50 px-3 py-1">
+              Estado: {form.profileStatus || initialProfile?.profileStatus || "draft"}
+            </span>
+            <span className="rounded-full border border-black/10 bg-zinc-50 px-3 py-1">
+              Visibilidad: {form.visibilityStatus || initialProfile?.visibilityStatus || "inactive"}
+            </span>
+          </div>
+        </div>
+      </section>
 
       {adminMode ? (
         <section className="rounded-3xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-5 shadow-sm sm:p-6">

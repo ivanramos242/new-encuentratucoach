@@ -22,7 +22,7 @@ export default async function AdminCoachProfileEditorPage({ params }: { params: 
         title={`Editar coach: ${profile.name}`}
         description="Edicion del perfil publico y de datos internos que no se muestran a clientes."
       />
-      <PageShell className="pt-8">
+      <PageShell className="pt-8" containerClassName="w-[94%] xl:w-[80%] max-w-[1700px]">
         <div className="mb-4 flex flex-wrap gap-2">
           <Link
             href="/admin/coaches"

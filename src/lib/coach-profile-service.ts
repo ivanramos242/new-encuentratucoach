@@ -274,7 +274,7 @@ export async function saveCoachProfile(sessionUser: SessionUser, input: CoachPro
     }
 
     if (input.categorySlugs) {
-      const slugs = Array.from(new Set(input.categorySlugs.map((s) => s.trim()).filter(Boolean))).slice(0, 12);
+      const slugs = Array.from(new Set(input.categorySlugs.map((s) => s.trim()).filter(Boolean))).slice(0, 4);
       await tx.coachProfileCategory.deleteMany({ where: { coachProfileId } });
       if (slugs.length) {
         const categories = await tx.coachCategory.findMany({
