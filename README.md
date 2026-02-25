@@ -31,10 +31,4 @@ Rebuild desde cero de `EncuentraTuCoach` con enfoque SEO para España, directori
 - `npm run prisma:migrate:dev`
 - `npm run db:studio`
 
-## Próximos pasos (sprints)
-- Auth real (email/password + sesiones + reset)
-- CRUD de perfil coach con Prisma
-- Stripe Billing (mensual/anual) + webhooks
-- Reseñas + certificación + admin real
-- Métricas persistidas (visitas/retención/clics)
-- Migración WordPress (coaches + usuarios)
+
