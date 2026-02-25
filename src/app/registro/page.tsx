@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata = buildMetadata({
   title: "Registro",
-  description: "Crea tu cuenta para usar la plataforma. Si quieres publicar como coach, activaras la membresia despues.",
+  description: "Crea tu cuenta para usar la plataforma. Si quieres publicar como coach, activarás la membresía después.",
   path: "/registro",
 });
 
