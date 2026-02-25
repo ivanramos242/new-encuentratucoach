@@ -30,6 +30,7 @@ export function CoachMessageBottomCta({ coachName, coachSlug, sourcePath, isAuth
   const [isPending, startTransition] = useTransition();
   const [unauthState, setUnauthState] = useState<UnauthState>("idle");
   const timerRef = useRef<number | null>(null);
+  const isCoachViewer = isAuthenticated && viewerRole === "coach";
 
   useEffect(() => {
     return () => {
@@ -42,19 +43,17 @@ export function CoachMessageBottomCta({ coachName, coachSlug, sourcePath, isAuth
       coachSlug,
       source: sourcePath,
     });
-    return `/mi-cuenta/cliente/mensajes/nuevo?${q.toString()}`;
-  }, [coachSlug, sourcePath]);
+    const base = isCoachViewer ? "/mi-cuenta/coach/mensajes/nuevo" : "/mi-cuenta/cliente/mensajes/nuevo";
+    return `${base}?${q.toString()}`;
+  }, [coachSlug, isCoachViewer, sourcePath]);
 
   const loginHref = useMemo(() => {
     const q = new URLSearchParams({ returnTo: sourcePath });
     return `/iniciar-sesion?${q.toString()}`;
   }, [sourcePath]);
 
-  const isCoachViewer = isAuthenticated && viewerRole === "coach";
-
   const buttonLabel = (() => {
     if (isPending) return "Abriendo chat...";
-    if (isCoachViewer) return "Ir a mi inbox de mensajes";
     if (!isAuthenticated) {
       if (unauthState === "login_required") return "Debes iniciar sesión";
       if (unauthState === "login_cta") return "Iniciar sesión";
@@ -63,7 +62,6 @@ export function CoachMessageBottomCta({ coachName, coachSlug, sourcePath, isAuth
   })();
 
   const helperText = (() => {
-    if (isCoachViewer) return "La apertura desde perfiles está pensada para clientes. Te llevamos a tu inbox.";
     if (!isAuthenticated && unauthState !== "idle") return "Inicia sesión y volverás a este perfil automáticamente.";
     return null;
   })();
@@ -76,11 +74,6 @@ export function CoachMessageBottomCta({ coachName, coachSlug, sourcePath, isAuth
 
   function handleClick() {
     if (isPending) return;
-
-    if (isCoachViewer) {
-      goTo("/mi-cuenta/coach/mensajes");
-      return;
-    }
 
     if (isAuthenticated) {
       goTo(chatHref);

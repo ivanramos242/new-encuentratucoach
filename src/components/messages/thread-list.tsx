@@ -23,13 +23,13 @@ export function ThreadList({
     const q = query.trim().toLowerCase();
     if (!q) return threads;
     return threads.filter((thread) => {
-      const counterpart = role === "coach" ? thread.clientName : thread.coachName;
+      const counterpart = thread.viewerRole === "coach" ? thread.clientName : thread.coachName;
       return (
         counterpart.toLowerCase().includes(q) ||
         thread.lastMessagePreview.toLowerCase().includes(q)
       );
     });
-  }, [query, role, threads]);
+  }, [query, threads]);
 
   return (
     <section className="flex h-[calc(100dvh-10.5rem)] min-h-[28rem] flex-col rounded-2xl border border-black/10 bg-white shadow-sm sm:h-[clamp(34rem,68vh,56rem)] sm:rounded-3xl">

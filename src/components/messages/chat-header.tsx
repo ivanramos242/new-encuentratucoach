@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -6,18 +6,20 @@ import { faArrowLeft, faUser, faTrashCan } from "@fortawesome/free-solid-svg-ico
 import type { MessageThreadDetailDto, MessagingRole } from "@/types/messages";
 
 export function ChatHeader({
-  role,
+  inboxRole,
+  viewerRole,
   thread,
   onDeleteChat,
   deleting,
 }: {
-  role: MessagingRole;
+  inboxRole: MessagingRole;
+  viewerRole: MessagingRole;
   thread: MessageThreadDetailDto;
   onDeleteChat?: () => void;
   deleting?: boolean;
 }) {
-  const counterpart = role === "coach" ? thread.clientName : thread.coachName;
-  const backHref = role === "coach" ? "/mi-cuenta/coach/mensajes" : "/mi-cuenta/cliente/mensajes";
+  const counterpart = viewerRole === "coach" ? thread.clientName : thread.coachName;
+  const backHref = inboxRole === "coach" ? "/mi-cuenta/coach/mensajes" : "/mi-cuenta/cliente/mensajes";
 
   return (
     <header className="sticky top-0 z-10 border-b border-black/5 bg-white/95 px-3 py-3 backdrop-blur sm:px-4">
@@ -43,15 +45,15 @@ export function ChatHeader({
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-bold text-zinc-950">{counterpart}</p>
           <p className="truncate text-xs text-zinc-500">
-            {role === "client"
+            {viewerRole === "client"
               ? thread.coachMembershipActive
                 ? "Coach disponible"
                 : "Coach inactivo (solo lectura)"
-              : "Conversación privada"}
+              : "ConversaciÃ³n privada"}
           </p>
         </div>
 
-        {role === "client" ? (
+        {viewerRole === "client" ? (
           <Link
             href={`/coaches/${thread.coachSlug}`}
             className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-black/10 bg-white text-zinc-700 hover:bg-zinc-50"
@@ -78,4 +80,3 @@ export function ChatHeader({
     </header>
   );
 }
-
