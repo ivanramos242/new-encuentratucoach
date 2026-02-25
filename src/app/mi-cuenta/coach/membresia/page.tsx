@@ -3,9 +3,26 @@ import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
 import { requireRole } from "@/lib/auth-server";
 import { getCoachProfileForEditor } from "@/lib/coach-profile-service";
+import { prisma } from "@/lib/prisma";
+
+const PENDING_ACTIVATION_WINDOW_MS = 3 * 60 * 1000;
 
 function isActiveish(status?: string | null) {
   return status === "active" || status === "trialing";
+}
+
+function isRecentPendingActivation(status?: string | null, updatedAt?: Date | null) {
+  if (status !== "incomplete" || !updatedAt) return false;
+  const ageMs = Date.now() - updatedAt.getTime();
+  return ageMs >= 0 && ageMs < PENDING_ACTIVATION_WINDOW_MS;
+}
+
+function pick(input: string | string[] | undefined) {
+  return Array.isArray(input) ? input[0] : input;
+}
+
+function isPlanCode(value: string | undefined): value is "monthly" | "annual" {
+  return value === "monthly" || value === "annual";
 }
 
 function getProfileCompletionSummary(profile: Awaited<ReturnType<typeof getCoachProfileForEditor>>) {
@@ -32,10 +49,36 @@ export default async function CoachMembershipPage({
 }) {
   const user = await requireRole(["coach", "admin"], { returnTo: "/mi-cuenta/coach/membresia" });
   const profile = await getCoachProfileForEditor(user);
-  const sub = profile?.subscriptions?.[0];
   const params = (await searchParams) || {};
-  const checkoutStatus = typeof params.checkout === "string" ? params.checkout : undefined;
+  const checkoutStatus = pick(params.checkout);
+  const checkoutPlan = pick(params.plan);
   const completion = getProfileCompletionSummary(profile);
+
+  let sub = profile?.subscriptions?.[0] ?? null;
+  if (
+    checkoutStatus === "cancel" &&
+    sub &&
+    sub.status === "incomplete" &&
+    isRecentPendingActivation(sub.status, sub.updatedAt)
+  ) {
+    await prisma.coachSubscription
+      .update({
+        where: { id: sub.id },
+        data: { status: "canceled" },
+      })
+      .catch(() => undefined);
+    sub = { ...sub, status: "canceled" } as typeof sub;
+  }
+
+  const pendingActivation = isRecentPendingActivation(sub?.status, sub?.updatedAt);
+  const subPlanCode = sub?.planCode ?? undefined;
+  const pendingPlanCode: "monthly" | "annual" = isPlanCode(checkoutPlan)
+    ? checkoutPlan
+    : isPlanCode(subPlanCode)
+      ? subPlanCode
+      : "monthly";
+  const pendingUntilEpochMs = sub?.updatedAt ? sub.updatedAt.getTime() + PENDING_ACTIVATION_WINDOW_MS : null;
+
   const shouldShowOnboardingCta =
     checkoutStatus === "success" &&
     isActiveish(sub?.status) &&
@@ -61,9 +104,25 @@ export default async function CoachMembershipPage({
                   planCode: sub.planCode,
                   currentPeriodEnd: sub.currentPeriodEnd?.toISOString() || null,
                   cancelAtPeriodEnd: sub.cancelAtPeriodEnd,
+                  updatedAt: sub.updatedAt?.toISOString?.() || null,
                 }
               : null
           }
+          checkoutPaths={{
+            successPath: "/mi-cuenta/coach/membresia?checkout=success",
+            cancelPath: "/mi-cuenta/coach/membresia?checkout=cancel",
+          }}
+          pendingActivation={
+            pendingActivation && pendingUntilEpochMs
+              ? {
+                  active: true,
+                  pendingUntilEpochMs,
+                  retryCheckoutHref: `/membresia/checkout?plan=${pendingPlanCode}`,
+                  planCode: pendingPlanCode,
+                }
+              : null
+          }
+          checkoutStatus={checkoutStatus}
           showOnboardingCta={shouldShowOnboardingCta}
           onboardingStepSummary={onboardingStepSummary}
         />
