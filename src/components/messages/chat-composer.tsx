@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPaperclip, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import { AttachmentPreview, type PendingAttachmentPreview } from "@/components/messages/attachment-preview";
 import { AudioRecorder, type RecordedAudio } from "@/components/messages/audio-recorder";
 import type { ComposerAttachmentInput } from "@/components/messages/use-send-queue";
@@ -10,6 +12,10 @@ function attachmentTypeFromFile(file: File): "image" | "pdf" | null {
   if (file.type.startsWith("image/")) return "image";
   if (file.type === "application/pdf") return "pdf";
   return null;
+}
+
+function normalizeMime(mimeType: string) {
+  return mimeType.split(";")[0]?.trim().toLowerCase() || mimeType.trim().toLowerCase();
 }
 
 export function ChatComposer({
@@ -51,20 +57,21 @@ export function ChatComposer({
       event.target.value = "";
       return;
     }
+    const normalized = normalizeMime(file.type || (type === "pdf" ? "application/pdf" : "image/jpeg"));
     const previewUrl = type === "image" ? URL.createObjectURL(file) : undefined;
     setAttachmentState(
       {
         blob: file,
         type,
         fileName: file.name,
-        mimeType: file.type || (type === "pdf" ? "application/pdf" : "image/jpeg"),
+        mimeType: normalized,
         sizeBytes: file.size,
         previewUrl,
       },
       {
         type,
         fileName: file.name,
-        mimeType: file.type || (type === "pdf" ? "application/pdf" : "image/jpeg"),
+        mimeType: normalized,
         sizeBytes: file.size,
         previewUrl,
       },
@@ -74,12 +81,13 @@ export function ChatComposer({
 
   function onRecorded(audio: RecordedAudio) {
     setError(null);
+    const normalized = normalizeMime(audio.mimeType);
     setAttachmentState(
       {
         blob: audio.blob,
         type: "audio",
         fileName: audio.fileName,
-        mimeType: audio.mimeType,
+        mimeType: normalized,
         sizeBytes: audio.blob.size,
         durationMs: audio.durationMs,
         previewUrl: audio.previewUrl,
@@ -87,7 +95,7 @@ export function ChatComposer({
       {
         type: "audio",
         fileName: audio.fileName,
-        mimeType: audio.mimeType,
+        mimeType: normalized,
         sizeBytes: audio.blob.size,
         durationMs: audio.durationMs,
         previewUrl: audio.previewUrl,
@@ -129,8 +137,9 @@ export function ChatComposer({
           onClick={() => fileInputRef.current?.click()}
           aria-label="Adjuntar archivo"
           className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-black/10 bg-white text-zinc-700 disabled:opacity-50"
+          title="Adjuntar archivo"
         >
-          📎
+          <FontAwesomeIcon icon={faPaperclip} className="h-4 w-4" />
         </button>
         <input
           ref={fileInputRef}
@@ -165,15 +174,14 @@ export function ChatComposer({
           disabled={!canReply}
           aria-label="Enviar mensaje"
           className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-cyan-600 text-white shadow-sm disabled:opacity-50"
+          title="Enviar mensaje"
         >
-          ➤
+          <FontAwesomeIcon icon={faPaperPlane} className="h-4 w-4" />
         </button>
       </div>
 
       <div className="mt-2 flex items-center justify-between gap-3">
-        <p className="text-xs text-zinc-500">
-          Imágenes, PDF y audio (MVP) · una pieza por mensaje
-        </p>
+        <p className="text-xs text-zinc-500">Imágenes, PDF y audio (MVP) · una pieza por mensaje</p>
         {pendingCount > 0 ? (
           <p className="text-xs font-semibold text-cyan-700">
             {pendingCount} pendiente{pendingCount > 1 ? "s" : ""} en cola

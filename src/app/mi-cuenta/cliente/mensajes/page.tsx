@@ -16,10 +16,9 @@ export default async function ClientMessagesInboxPage() {
         title="Mensajes"
         description="Conversaciones con coaches en un chat privado con adjuntos, notas de audio (MVP) y polling adaptativo."
       />
-      <PageShell className="pt-8">
+      <PageShell className="pt-8" containerClassName="max-w-[110rem]">
         <MessagingShell role="client" initialThreads={threads} initialThread={null} />
       </PageShell>
     </>
   );
 }
-

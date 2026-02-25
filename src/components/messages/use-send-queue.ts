@@ -47,6 +47,10 @@ function queueStorageKey(threadId: string) {
   return `etc:message-send-queue:v1:${threadId}`;
 }
 
+function normalizeMime(mimeType: string) {
+  return mimeType.split(";")[0]?.trim().toLowerCase() || mimeType.trim().toLowerCase();
+}
+
 export function useSendQueue({
   threadId,
   role,
@@ -105,7 +109,7 @@ export function useSendQueue({
       body: JSON.stringify({
         threadId,
         fileName: attachment.fileName,
-        mimeType: attachment.mimeType,
+        mimeType: normalizeMime(attachment.mimeType),
         sizeBytes: attachment.sizeBytes,
       }),
     });
@@ -122,11 +126,11 @@ export function useSendQueue({
 
     const uploadRes = await fetch(presignPayload.upload.uploadUrl, {
       method: presignPayload.upload.method || "PUT",
-      headers: { "content-type": attachment.mimeType },
+      headers: { "content-type": normalizeMime(attachment.mimeType) },
       body: attachment.blob,
     });
     if (!uploadRes.ok) {
-      throw new Error("No se pudo subir el archivo.");
+      throw new Error(`No se pudo subir el archivo (${uploadRes.status}).`);
     }
 
     return {
@@ -134,7 +138,7 @@ export function useSendQueue({
       type: attachment.type,
       status: "validated",
       fileName: attachment.fileName,
-      mimeType: attachment.mimeType,
+      mimeType: normalizeMime(attachment.mimeType),
       sizeBytes: attachment.sizeBytes,
       storageKey: presignPayload.upload.storageKey,
       downloadUrl: presignPayload.upload.publicObjectUrl ?? undefined,

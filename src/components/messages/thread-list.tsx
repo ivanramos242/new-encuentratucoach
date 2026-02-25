@@ -32,7 +32,7 @@ export function ThreadList({
   }, [query, role, threads]);
 
   return (
-    <section className="flex h-full min-h-[60vh] flex-col rounded-3xl border border-black/10 bg-white shadow-sm">
+    <section className="flex h-[clamp(34rem,68vh,56rem)] min-h-0 flex-col rounded-3xl border border-black/10 bg-white shadow-sm">
       <div className="border-b border-black/5 p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -60,7 +60,7 @@ export function ThreadList({
         </label>
       </div>
 
-      <div className="flex-1 space-y-2 overflow-y-auto p-3">
+      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
         {filtered.length ? (
           filtered.map((thread) => (
             <ThreadListItem
@@ -79,4 +79,3 @@ export function ThreadList({
     </section>
   );
 }
-

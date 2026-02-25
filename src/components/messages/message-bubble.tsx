@@ -39,7 +39,7 @@ export function MessageBubble({
     <div className={cn("flex w-full", own ? "justify-end" : "justify-start")}>
       <div
         className={cn(
-          "max-w-[86%] rounded-2xl border px-3 py-2 shadow-sm sm:max-w-[75%]",
+          "max-w-[92%] rounded-2xl border px-3 py-2 shadow-sm sm:max-w-[82%]",
           own ? "border-cyan-300 bg-cyan-500 text-white" : "border-black/10 bg-white text-zinc-900",
         )}
       >
@@ -48,9 +48,20 @@ export function MessageBubble({
 
         {attachment ? (
           <div className={cn("mt-2 rounded-xl p-2", own ? "bg-white/15" : "bg-zinc-50")}>
-            {attachment.type === "audio" && attachment.downloadUrl ? (
-              <AudioMessagePlayer src={attachment.downloadUrl} />
-            ) : (
+            {attachment.type === "audio" && attachment.downloadUrl ? <AudioMessagePlayer src={attachment.downloadUrl} /> : null}
+
+            {attachment.type === "image" && attachment.downloadUrl ? (
+              <a href={attachment.downloadUrl} target="_blank" rel="noreferrer" className="block">
+                <img
+                  src={attachment.downloadUrl}
+                  alt={attachment.fileName}
+                  className="max-h-64 w-full rounded-lg border border-black/10 object-cover"
+                  loading="lazy"
+                />
+              </a>
+            ) : null}
+
+            {(attachment.type !== "audio" || !attachment.downloadUrl) && (attachment.type !== "image" || !attachment.downloadUrl) ? (
               <div className="text-sm">
                 <p className="font-semibold">{attachment.fileName}</p>
                 <p className={cn("text-xs", own ? "text-white/85" : "text-zinc-500")}>
@@ -67,7 +78,21 @@ export function MessageBubble({
                   </a>
                 ) : null}
               </div>
-            )}
+            ) : null}
+
+            {attachment.type === "image" && attachment.downloadUrl ? (
+              <div className="mt-1 flex items-center justify-between gap-2">
+                <p className={cn("truncate text-xs", own ? "text-white/85" : "text-zinc-500")}>{attachment.fileName}</p>
+                <a
+                  href={attachment.downloadUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={cn("shrink-0 text-xs font-semibold underline", own ? "text-white" : "text-cyan-700")}
+                >
+                  Ver
+                </a>
+              </div>
+            ) : null}
           </div>
         ) : null}
 
@@ -77,7 +102,7 @@ export function MessageBubble({
           {own && message.deliveryState === "failed" && message.clientRequestId && onRetry ? (
             <button
               type="button"
-              onClick={() => onRetry(message.clientRequestId!)}
+              onClick={() => message.clientRequestId && onRetry(message.clientRequestId)}
               className="rounded-md border border-white/40 px-1.5 py-0.5 text-[11px] font-semibold"
             >
               Reintentar
@@ -88,4 +113,3 @@ export function MessageBubble({
     </div>
   );
 }
-

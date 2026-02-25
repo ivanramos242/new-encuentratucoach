@@ -30,7 +30,7 @@ export function useMessagePolling({
   const timeoutRef = useRef<number | null>(null);
   const stoppedRef = useRef(false);
   const inFlightRef = useRef(false);
-  const suggestedPollMsRef = useRef(1800);
+  const suggestedPollMsRef = useRef(15_000);
   const onItemsRef = useRef(onItems);
   const onServerHintsRef = useRef(onServerHints);
   const pollNowRef = useRef<() => Promise<void>>(async () => undefined);
@@ -42,7 +42,7 @@ export function useMessagePolling({
 
   useEffect(() => {
     cursorRef.current = null;
-    suggestedPollMsRef.current = 1800;
+    suggestedPollMsRef.current = 15_000;
     setLastError(null);
   }, [threadId]);
 
@@ -85,7 +85,7 @@ export function useMessagePolling({
         const retryAfterHeader = Number(res.headers.get("Retry-After") || 0);
         const retryMs =
           Number(payload.serverHints?.retryAfterMs) ||
-          (Number.isFinite(retryAfterHeader) && retryAfterHeader > 0 ? retryAfterHeader * 1000 : 3000);
+          (Number.isFinite(retryAfterHeader) && retryAfterHeader > 0 ? retryAfterHeader * 1000 : 15000);
         setLastError(payload.message || "No se pudo actualizar el chat.");
         if (payload.serverHints) {
           suggestedPollMsRef.current = payload.serverHints.suggestedPollMs;
@@ -108,7 +108,7 @@ export function useMessagePolling({
       schedule(suggestedPollMsRef.current);
     } catch {
       setLastError("Error de red al actualizar mensajes.");
-      schedule(Math.max(3000, suggestedPollMsRef.current));
+      schedule(Math.max(15000, suggestedPollMsRef.current));
     } finally {
       inFlightRef.current = false;
       setPolling(false);
