@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import type { CoachProfileStatus, CoachVisibilityStatus, UserRole } from "@prisma/client";
 
@@ -385,6 +386,12 @@ export function CoachUserLinker({
                   ) : null}
 
                   <div className="flex flex-wrap gap-2">
+                    <Link
+                      href={`/admin/coaches/${coach.id}`}
+                      className="rounded-xl border border-cyan-300 bg-white px-4 py-2 text-sm font-bold text-cyan-900"
+                    >
+                      Editar perfil
+                    </Link>
                     <button
                       type="button"
                       disabled={isBusy}

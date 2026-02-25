@@ -151,8 +151,8 @@ export default async function AdminCoachesPage() {
     <>
       <PageHero
         badge="Admin"
-        title="Coaches Â· Vincular perfiles"
-        description="Asigna manualmente cada perfil de coach importado a un usuario existente de la plataforma."
+        title="Coaches · Gestion y edicion"
+        description="Vincula perfiles con usuarios y abre el editor admin para revisar datos publicos y campos internos."
       />
       <PageShell className="pt-8">
         <CoachUserLinker coaches={coaches} users={users} />
@@ -160,3 +160,4 @@ export default async function AdminCoachesPage() {
     </>
   );
 }
+
