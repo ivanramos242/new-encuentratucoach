@@ -123,7 +123,7 @@ function AuthSplitShell({
             </div>
             <div className="rounded-3xl border border-black/10 bg-white/70 p-4">
               <p className="text-sm text-zinc-600">Coaches online y presencial</p>
-              <p className="mt-1 text-3xl font-black tracking-tight text-zinc-950">Espa?a</p>
+              <p className="mt-1 text-3xl font-black tracking-tight text-zinc-950">España</p>
             </div>
           </div>
 
