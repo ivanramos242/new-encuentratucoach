@@ -129,7 +129,7 @@ function AuthSplitShell({
 
           <ul className="mt-5 grid gap-3 text-zinc-600">
             {[
-              "Perfiles verificados y rese?as",
+              "Perfiles verificados y reseñas",
               "Filtros por ciudad, especialidad y precio",
               "Mensajer?a directa",
             ].map((item) => (
