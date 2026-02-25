@@ -16,6 +16,12 @@ function isActiveishSubscription(status?: string | null) {
   return status === "active" || status === "trialing";
 }
 
+function isRecentPendingCheckout(status?: string | null, updatedAt?: Date | null) {
+  if (status !== "incomplete" || !updatedAt) return false;
+  const ageMs = Date.now() - updatedAt.getTime();
+  return ageMs >= 0 && ageMs < 15 * 60 * 1000;
+}
+
 async function uniqueCoachSlug(base: string) {
   const normalized = slugify(base) || "coach";
   let slug = normalized;
@@ -122,6 +128,7 @@ export async function POST(request: Request) {
         planCode: true,
         currentPeriodEnd: true,
         cancelAtPeriodEnd: true,
+        updatedAt: true,
       },
     });
     if (latestSubscription && isActiveishSubscription(latestSubscription.status)) {
@@ -130,6 +137,16 @@ export async function POST(request: Request) {
         409,
         {
           subscription: latestSubscription,
+        },
+      );
+    }
+    if (latestSubscription && isRecentPendingCheckout(latestSubscription.status, latestSubscription.updatedAt)) {
+      return jsonError(
+        "Ya hay una activación de membresía en proceso. Espera unos segundos y revisa /membresia/confirmacion antes de reintentar.",
+        409,
+        {
+          subscription: latestSubscription,
+          nextStep: "/membresia/confirmacion",
         },
       );
     }

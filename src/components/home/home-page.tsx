@@ -282,7 +282,7 @@ export async function HomePage() {
                 Ver membresía
               </Link>
               <Link
-                href="/registro/coach"
+                href="/registro?intent=coach"
                 className="rounded-xl border border-black/10 bg-white px-4 py-2.5 text-center text-sm font-semibold text-zinc-900"
               >
                 Crear cuenta de coach

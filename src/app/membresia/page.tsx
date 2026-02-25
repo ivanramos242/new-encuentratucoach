@@ -2,8 +2,8 @@
 import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
 import { getOptionalSessionUser } from "@/lib/auth-server";
-import { getCoachProfileForEditor } from "@/lib/coach-profile-service";
 import { listMembershipPlansForPublic } from "@/lib/membership-plan-service";
+import { prisma } from "@/lib/prisma";
 import { buildMetadata } from "@/lib/seo";
 import { formatEuro } from "@/lib/utils";
 
@@ -31,17 +31,52 @@ function isActiveCoachSubscription(status?: string | null) {
   return status === "active" || status === "trialing";
 }
 
+function isPendingCoachActivation(status?: string | null) {
+  return status === "incomplete";
+}
+
+async function getMembershipCoachSubscriptionSummary(sessionUser: Awaited<ReturnType<typeof getOptionalSessionUser>>) {
+  if (!sessionUser) return null;
+
+  const whereOr = [
+    ...(sessionUser.coachProfileId ? [{ id: sessionUser.coachProfileId }] : []),
+    { userId: sessionUser.id },
+  ];
+
+  return prisma.coachProfile.findFirst({
+    where: { OR: whereOr },
+    orderBy: { createdAt: "asc" },
+    select: {
+      id: true,
+      subscriptions: {
+        orderBy: { updatedAt: "desc" },
+        take: 1,
+        select: { id: true, status: true, planCode: true, updatedAt: true },
+      },
+    },
+  });
+}
+
 function getPlanAction(
   sessionUser: Awaited<ReturnType<typeof getOptionalSessionUser>>,
   planCode: "monthly" | "annual",
-  options?: { coachHasActivePlan?: boolean },
+  options?: { coachHasActivePlan?: boolean; coachHasPendingActivation?: boolean },
 ) {
   if (!sessionUser) {
     return {
-      primaryHref: "/registro/coach",
+      primaryHref: "/registro?intent=coach",
       primaryLabel: "Crear cuenta de coach",
       secondaryHref: "/iniciar-sesion",
       secondaryLabel: "Ya tengo cuenta",
+    };
+  }
+
+  if (options?.coachHasPendingActivation) {
+    return {
+      primaryHref: "/membresia/confirmacion",
+      primaryLabel: "Procesando activación",
+      secondaryHref: sessionUser.role === "client" ? "/mi-cuenta/cliente" : "/mi-cuenta/coach/membresia",
+      secondaryLabel: "Ver estado",
     };
   }
 
@@ -73,7 +108,7 @@ function getPlanAction(
   }
 
   return {
-    primaryHref: "/registro/coach",
+    primaryHref: "/registro?intent=coach",
     primaryLabel: "Crear cuenta de coach",
     secondaryHref: "/mi-cuenta/cliente",
     secondaryLabel: "Ir a mi cuenta",
@@ -82,11 +117,10 @@ function getPlanAction(
 
 export default async function MembershipPage() {
   const sessionUser = await getOptionalSessionUser();
-  const coachProfile =
-    sessionUser && (sessionUser.role === "coach" || sessionUser.role === "admin")
-      ? await getCoachProfileForEditor(sessionUser)
-      : null;
-  const coachHasActivePlan = isActiveCoachSubscription(coachProfile?.subscriptions?.[0]?.status);
+  const membershipCoachProfile = await getMembershipCoachSubscriptionSummary(sessionUser);
+  const latestSubscription = membershipCoachProfile?.subscriptions?.[0];
+  const coachHasActivePlan = isActiveCoachSubscription(latestSubscription?.status);
+  const coachHasPendingActivation = isPendingCoachActivation(latestSubscription?.status);
   const plans = await listMembershipPlansForPublic();
 
   return (
@@ -97,9 +131,35 @@ export default async function MembershipPage() {
         description="Solo los coaches pagan para tener su perfil activo en la plataforma. Sin comisiones por contacto."
       />
       <PageShell className="pt-8">
+        {coachHasPendingActivation ? (
+          <div className="mb-6 rounded-3xl border border-amber-200 bg-gradient-to-r from-amber-50 to-white p-5 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-white px-3 py-1 text-xs font-black tracking-wide text-amber-800">
+                  <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-amber-500" aria-hidden="true" />
+                  Procesando activación
+                </p>
+                <h2 className="mt-2 text-lg font-black tracking-tight text-zinc-950">
+                  Estamos confirmando tu pago y activando tu cuenta coach
+                </h2>
+                <p className="mt-1 text-sm text-zinc-700">
+                  Stripe está terminando de procesar la suscripción. En cuanto llegue la confirmación, te activaremos
+                  automáticamente como coach.
+                </p>
+              </div>
+              <Link
+                href="/membresia/confirmacion"
+                className="rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800"
+              >
+                Ver estado de activación
+              </Link>
+            </div>
+          </div>
+        ) : null}
+
         <div className="grid gap-6 lg:grid-cols-2">
           {plans.map((plan) => {
-            const cta = getPlanAction(sessionUser, plan.code, { coachHasActivePlan });
+            const cta = getPlanAction(sessionUser, plan.code, { coachHasActivePlan, coachHasPendingActivation });
             const highlighted = plan.code === "annual";
             const hasDiscount = plan.discountActive && plan.effectivePriceCents < plan.priceCents;
             const original = formatEuro(plan.priceCents / 100);
@@ -154,7 +214,11 @@ export default async function MembershipPage() {
                 <div className="mt-6 flex flex-wrap gap-3">
                   <Link
                     href={cta.primaryHref}
-                    className="rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800"
+                    className={
+                      coachHasPendingActivation
+                        ? "rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-500"
+                        : "rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800"
+                    }
                   >
                     {cta.primaryLabel}
                   </Link>
