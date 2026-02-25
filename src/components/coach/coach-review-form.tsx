@@ -51,7 +51,6 @@ export function CoachReviewForm({ coachId, coachSlug, coachName, isAuthenticated
     const fd = new FormData(form);
     const rating = Number(fd.get("rating") || 0);
     const body = String(fd.get("body") || "").trim();
-    const title = String(fd.get("title") || "").trim();
 
     if (!rating || rating < 1 || rating > 5) {
       setState({ kind: "error", message: "Selecciona una valoracion de 1 a 5." });
@@ -71,7 +70,6 @@ export function CoachReviewForm({ coachId, coachSlug, coachName, isAuthenticated
           body: JSON.stringify({
             coachId,
             rating,
-            title,
             body,
           }),
         });
@@ -95,7 +93,7 @@ export function CoachReviewForm({ coachId, coachSlug, coachName, isAuthenticated
       <div>
         <h3 className="text-base font-black tracking-tight text-zinc-950">Dejar una reseña</h3>
         <p className="mt-1 text-sm text-zinc-700">
-          Tu reseña se publica automaticamente. Si ya escribiste una para {coachName}, se actualiza.
+          Solo puedes tener una reseña por perfil. Si ya escribiste una para {coachName}, se actualiza.
         </p>
       </div>
 
@@ -113,16 +111,6 @@ export function CoachReviewForm({ coachId, coachSlug, coachName, isAuthenticated
           <option value="2">2 - Mejorable</option>
           <option value="1">1 - Mala</option>
         </select>
-      </label>
-
-      <label className="grid gap-1 text-sm font-medium text-zinc-800">
-        Titulo (opcional)
-        <input
-          name="title"
-          maxLength={120}
-          placeholder="Ej: Me ayudo a ordenar mis objetivos"
-          className="rounded-xl border border-black/10 bg-white px-3 py-2 outline-none focus:border-cyan-400"
-        />
       </label>
 
       <label className="grid gap-1 text-sm font-medium text-zinc-800">

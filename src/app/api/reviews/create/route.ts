@@ -7,7 +7,6 @@ const schema = z.object({
   coachId: z.string().min(1),
   rating: z.number().int().min(1).max(5),
   body: z.string().trim().min(5).max(2000),
-  title: z.string().trim().max(120).optional().or(z.literal("")),
 });
 
 export async function POST(request: Request) {
@@ -60,7 +59,7 @@ export async function POST(request: Request) {
       create: {
         coachProfileId: coach.id,
         clientUserId: auth.user.id,
-        title: parsed.data.title?.trim() || null,
+        title: null,
         body: parsed.data.body,
         coachDecision: "approved",
         adminDecision: "approved",
@@ -72,7 +71,7 @@ export async function POST(request: Request) {
         },
       },
       update: {
-        title: parsed.data.title?.trim() || null,
+        title: null,
         body: parsed.data.body,
         coachDecision: "approved",
         adminDecision: "approved",
@@ -106,7 +105,6 @@ export async function POST(request: Request) {
         coachSlug: coach.slug,
         coachName: coach.name,
         rating: review.rating?.overall ?? parsed.data.rating,
-        title: review.title,
         body: review.body,
         createdAt: review.createdAt.toISOString(),
         updatedAt: review.updatedAt.toISOString(),
