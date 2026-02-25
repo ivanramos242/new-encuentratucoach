@@ -1,8 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { CoachCard } from "@/components/directory/coach-card";
+import { LatestCoachesSlider } from "@/components/home/latest-coaches-slider";
 import { PageShell } from "@/components/layout/page-shell";
-import { listHomeLatestCoaches } from "@/lib/public-coaches";
+import { listPublicCoachesMerged } from "@/lib/public-coaches";
 import { coachCategories, cities } from "@/lib/mock-data";
 
 const quickSearches = [
@@ -15,7 +15,9 @@ const quickSearches = [
 ];
 
 export async function HomePage() {
-  const latest = await listHomeLatestCoaches(6);
+  const latest = (await listPublicCoachesMerged())
+    .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))
+    .slice(0, 10);
 
   return (
     <PageShell className="pt-6">
@@ -141,11 +143,7 @@ export async function HomePage() {
             Ver todos
           </Link>
         </div>
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {latest.map((coach) => (
-            <CoachCard key={coach.id} coach={coach} />
-          ))}
-        </div>
+        <LatestCoachesSlider coaches={latest} />
       </section>
 
       <section className="mt-12 grid gap-8 lg:grid-cols-2">
