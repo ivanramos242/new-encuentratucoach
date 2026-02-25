@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+﻿import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { SessionUser } from "@/lib/auth-session";
 import { buildPublicObjectUrl } from "@/lib/s3-storage";
@@ -64,17 +64,15 @@ function actorDisplayName(user: SessionUser) {
 }
 
 function inferMessagingRoleForThread(user: SessionUser, thread: { clientUserId: string; coachUserId: string }): MessagingRole | null {
-  if (user.role === "client" && thread.clientUserId === user.id) return "client";
-  if (user.role === "coach" && thread.coachUserId === user.id) return "coach";
   if (user.role === "admin") return null;
+  if (thread.clientUserId === user.id) return "client";
+  if (thread.coachUserId === user.id) return "coach";
   return null;
 }
 
 function hasThreadAccess(user: SessionUser, thread: { clientUserId: string; coachUserId: string }) {
   if (user.role === "admin") return true;
-  if (user.role === "client") return thread.clientUserId === user.id;
-  if (user.role === "coach") return thread.coachUserId === user.id;
-  return false;
+  return inferMessagingRoleForThread(user, thread) !== null;
 }
 
 function getOtherRole(role: MessagingRole) {
@@ -134,7 +132,7 @@ function messageDto(message: MessageWithRelations, thread: ThreadWithRelations |
 }
 
 function previewFromMessage(message?: Pick<MessageItemDto, "body" | "attachment">) {
-  if (!message) return "Conversación iniciada. Envía tu primer mensaje.";
+  if (!message) return "ConversaciÃ³n iniciada. EnvÃ­a tu primer mensaje.";
   if (message.body?.trim()) return message.body.trim();
   if (message.attachment) {
     if (message.attachment.type === "audio") return "Nota de audio";
@@ -179,7 +177,11 @@ async function computeUnreadCounts(threadId: string, readCursors: ThreadWithRela
   return { unreadForCoach, unreadForClient };
 }
 
-async function threadSummaryDto(thread: ThreadWithRelations, latestMessage?: MessageWithRelations): Promise<MessageThreadSummaryDto> {
+async function threadSummaryDto(
+  thread: ThreadWithRelations,
+  user: SessionUser,
+  latestMessage?: MessageWithRelations,
+): Promise<MessageThreadSummaryDto> {
   const [unread, messagesCount, latest] = await Promise.all([
     computeUnreadCounts(thread.id, thread.readCursors),
     prisma.conversationMessage.count({ where: { threadId: thread.id, deletedAt: null } }),
@@ -193,8 +195,10 @@ async function threadSummaryDto(thread: ThreadWithRelations, latestMessage?: Mes
   ]);
 
   const latestDto = latest ? messageDto(latest, thread) : undefined;
+  const viewerRole = inferMessagingRoleForThread(user, thread) ?? "coach";
   return {
     id: thread.id,
+    viewerRole,
     clientUserId: thread.clientUserId,
     clientName: thread.clientUser.displayName || thread.clientUser.email,
     coachUserId: thread.coachUserId,
@@ -230,20 +234,19 @@ async function loadThreadForUser(
       },
     },
   });
-  if (!thread) return { error: "Conversación no encontrada.", code: "NOT_FOUND" as const };
-  if (!hasThreadAccess(user, thread)) return { error: "No tienes acceso a esta conversación.", code: "FORBIDDEN" as const };
+  if (!thread) return { error: "ConversaciÃ³n no encontrada.", code: "NOT_FOUND" as const };
+  if (!hasThreadAccess(user, thread)) return { error: "No tienes acceso a esta conversaciÃ³n.", code: "FORBIDDEN" as const };
   return { thread };
 }
 
 function canReply(user: SessionUser, thread: ThreadWithRelations | ThreadWithMessages) {
   if (thread.status !== "open") return false;
-  if (user.role === "admin") return false;
-  if (user.role === "client") return thread.clientUserId === user.id;
-  if (user.role === "coach") {
-    if (thread.coachUserId !== user.id) return false;
+  const threadRole = inferMessagingRoleForThread(user, thread);
+  if (!threadRole) return false;
+  if (threadRole === "coach") {
     return thread.coachProfile.visibilityStatus === "active" && thread.coachProfile.messagingEnabled;
   }
-  return false;
+  return true;
 }
 
 function encodeCursor(input: { createdAt: Date; id: string }) {
@@ -290,13 +293,15 @@ async function upsertParticipantsAndCursors(thread: { id: string; clientUserId: 
 
 export async function listThreadsForUser(user: SessionUser): Promise<MessageThreadListResult | ServiceError> {
   if (user.role !== "client" && user.role !== "coach") {
-    return { error: "Solo clientes y coaches pueden usar la mensajería.", code: "FORBIDDEN" };
+    return { error: "Solo clientes y coaches pueden usar la mensajerÃ­a.", code: "FORBIDDEN" };
   }
 
   const where =
     user.role === "client"
       ? ({ clientUserId: user.id } satisfies Prisma.ConversationThreadWhereInput)
-      : ({ coachUserId: user.id } satisfies Prisma.ConversationThreadWhereInput);
+      : ({
+          OR: [{ coachUserId: user.id }, { clientUserId: user.id }],
+        } satisfies Prisma.ConversationThreadWhereInput);
 
   const threads = await prisma.conversationThread.findMany({
     where,
@@ -322,7 +327,7 @@ export async function listThreadsForUser(user: SessionUser): Promise<MessageThre
     if (!latestByThread.has(msg.threadId)) latestByThread.set(msg.threadId, msg);
   }
 
-  const summaries = await Promise.all(threads.map((thread) => threadSummaryDto(thread, latestByThread.get(thread.id))));
+  const summaries = await Promise.all(threads.map((thread) => threadSummaryDto(thread, user, latestByThread.get(thread.id))));
 
   return {
     threads: summaries,
@@ -334,7 +339,7 @@ export async function getThreadForUser(threadId: string, user: SessionUser): Pro
   const loaded = await loadThreadForUser(threadId, user);
   if (!("thread" in loaded)) return loaded;
   const thread = loaded.thread;
-  const summary = await threadSummaryDto(thread);
+  const summary = await threadSummaryDto(thread, user);
   return {
     thread: {
       ...summary,
@@ -349,11 +354,11 @@ export async function startOrGetThread(input: {
   coachProfileId?: string;
   source?: string;
 }): Promise<{ thread: MessageThreadDetailDto; created: boolean } | ServiceError> {
-  if (input.user.role !== "client") {
-    return { error: "Solo clientes autenticados pueden iniciar conversaciones.", code: "FORBIDDEN" };
+  if (input.user.role !== "client" && input.user.role !== "coach") {
+    return { error: "Solo clientes y coaches autenticados pueden iniciar conversaciones.", code: "FORBIDDEN" };
   }
   if (!input.coachSlug && !input.coachProfileId) {
-    return { error: "Debes indicar un coach para iniciar la conversación.", code: "VALIDATION" };
+    return { error: "Debes indicar un coach para iniciar la conversaciÃ³n.", code: "VALIDATION" };
   }
 
   const coachProfile = await prisma.coachProfile.findFirst({
@@ -375,10 +380,10 @@ export async function startOrGetThread(input: {
     return { error: "El coach no tiene el perfil activo.", code: "FORBIDDEN" };
   }
   if (!coachProfile.messagingEnabled) {
-    return { error: "El coach no tiene la mensajería activa.", code: "FORBIDDEN" };
+    return { error: "El coach no tiene la mensajerÃ­a activa.", code: "FORBIDDEN" };
   }
   if (!coachProfile.userId) {
-    return { error: "El coach aún no tiene usuario vinculado para recibir mensajes.", code: "CONFLICT" };
+    return { error: "El coach aÃºn no tiene usuario vinculado para recibir mensajes.", code: "CONFLICT" };
   }
   const coachUserId = coachProfile.userId;
   if (coachUserId === input.user.id) {
@@ -444,10 +449,13 @@ export async function sendMessage(input: {
     return { error: "Debes enviar texto o un adjunto.", code: "VALIDATION" };
   }
   if (body.length > 4000) {
-    return { error: "El mensaje supera el máximo de 4000 caracteres.", code: "VALIDATION" };
+    return { error: "El mensaje supera el mÃ¡ximo de 4000 caracteres.", code: "VALIDATION" };
   }
 
-  const senderType = input.user.role === "coach" ? "coach" : "client";
+  const senderType = inferMessagingRoleForThread(input.user, thread);
+  if (!senderType) {
+    return { error: "No tienes acceso a esta conversacion.", code: "FORBIDDEN" };
+  }
 
   if (input.clientRequestId?.trim()) {
     try {
@@ -526,7 +534,7 @@ export async function sendMessage(input: {
     if (/clientRequestId/i.test(message) || /durationMs/i.test(message) || /enum/i.test(message)) {
       return {
         error:
-          "La base de datos de mensajería necesita migración para soportar deduplicación/audio. Ejecuta las migraciones de Prisma.",
+          "La base de datos de mensajerÃ­a necesita migraciÃ³n para soportar deduplicaciÃ³n/audio. Ejecuta las migraciones de Prisma.",
         code: "UNSUPPORTED",
       };
     }
@@ -556,7 +564,7 @@ export async function markThreadRead(input: {
 
   const role = inferMessagingRoleForThread(input.user, thread);
   if (!role && input.user.role !== "admin") {
-    return { error: "No tienes acceso a esta conversación.", code: "FORBIDDEN" };
+    return { error: "No tienes acceso a esta conversaciÃ³n.", code: "FORBIDDEN" };
   }
 
   const targetMessage =
@@ -634,23 +642,13 @@ export async function closeThreadForUser(input: {
   if (!("thread" in loaded)) return loaded;
   const thread = loaded.thread;
 
-  if (input.user.role === "client") {
-    if (thread.clientUserId !== input.user.id) return { error: "No tienes acceso a esta conversación.", code: "FORBIDDEN" };
-    await prisma.conversationThread.update({
-      where: { id: input.threadId },
-      data: { status: "closed_by_client" },
-    });
-    return { threadId: input.threadId, status: "closed_by_client", closedAt: nowIso() };
-  }
+  const threadRole = inferMessagingRoleForThread(input.user, thread);
+  if (!threadRole) return { error: "Accion no permitida.", code: "FORBIDDEN" };
 
-  if (input.user.role === "coach") {
-    if (thread.coachUserId !== input.user.id) return { error: "No tienes acceso a esta conversación.", code: "FORBIDDEN" };
-    await prisma.conversationThread.update({
-      where: { id: input.threadId },
-      data: { status: "closed_by_coach" },
-    });
-    return { threadId: input.threadId, status: "closed_by_coach", closedAt: nowIso() };
-  }
-
-  return { error: "Acción no permitida.", code: "FORBIDDEN" };
+  const status = threadRole === "coach" ? "closed_by_coach" : "closed_by_client";
+  await prisma.conversationThread.update({
+    where: { id: input.threadId },
+    data: { status },
+  });
+  return { threadId: input.threadId, status, closedAt: nowIso() };
 }

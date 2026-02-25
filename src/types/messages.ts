@@ -41,6 +41,7 @@ export interface MessageItemDto {
 
 export interface MessageThreadSummaryDto {
   id: string;
+  viewerRole: MessagingRole;
   clientUserId: string;
   clientName: string;
   coachUserId: string;
@@ -78,4 +79,3 @@ export interface MessageThreadListResult {
   threads: MessageThreadSummaryDto[];
   serverHints: MessageServerHints;
 }
-

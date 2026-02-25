@@ -23,8 +23,9 @@ export function ThreadListItem({
   thread: MessageThreadSummaryDto;
   selected?: boolean;
 }) {
-  const unread = role === "coach" ? thread.unreadForCoach : thread.unreadForClient;
-  const name = role === "coach" ? thread.clientName : thread.coachName;
+  const viewerRole = thread.viewerRole;
+  const unread = viewerRole === "coach" ? thread.unreadForCoach : thread.unreadForClient;
+  const name = viewerRole === "coach" ? thread.clientName : thread.coachName;
   const href = role === "coach" ? `/mi-cuenta/coach/mensajes/${thread.id}` : `/mi-cuenta/cliente/mensajes/${thread.id}`;
 
   return (
@@ -55,7 +56,7 @@ export function ThreadListItem({
           <p className="mt-1 truncate text-xs sm:text-[13px] text-zinc-600">{thread.lastMessagePreview}</p>
           <div className="mt-2 flex items-center justify-between gap-2">
             <span className="truncate text-[11px] text-zinc-500">
-              {role === "coach" ? "Cliente" : thread.coachMembershipActive ? "Coach activo" : "Coach inactivo"}
+              {viewerRole === "coach" ? "Cliente" : thread.coachMembershipActive ? "Coach activo" : "Coach inactivo"}
             </span>
             {unread > 0 ? (
               <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-cyan-600 px-1.5 py-0.5 text-[11px] font-bold text-white">

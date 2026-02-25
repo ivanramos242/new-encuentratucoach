@@ -11,7 +11,7 @@ const schema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const auth = await requireApiRole(request, "client");
+    const auth = await requireApiRole(request, ["client", "coach"]);
     if (!auth.ok) return auth.response;
     const body = await request.json();
     const parsed = schema.safeParse(body);

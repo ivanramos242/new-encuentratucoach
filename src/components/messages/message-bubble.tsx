@@ -20,15 +20,16 @@ function DeliveryLabel({ message, own }: { message: MessageItemDto; own: boolean
 }
 
 export function MessageBubble({
-  role,
+  viewerRole,
   message,
   onRetry,
 }: {
-  role: MessagingRole;
+  viewerRole: MessagingRole;
   message: MessageItemDto;
   onRetry?: (clientRequestId: string) => void;
 }) {
-  const own = (role === "coach" && message.senderType === "coach") || (role === "client" && message.senderType === "client");
+  const own =
+    (viewerRole === "coach" && message.senderType === "coach") || (viewerRole === "client" && message.senderType === "client");
   const attachment = message.attachment;
   const failed = own && message.deliveryState === "failed";
 
@@ -115,4 +116,3 @@ export function MessageBubble({
     </div>
   );
 }
-

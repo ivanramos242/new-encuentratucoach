@@ -111,6 +111,7 @@ export function MessagingShell({
               setSelectedThread(updatedThread);
               const summary: MessageThreadSummaryDto = {
                 id: updatedThread.id,
+                viewerRole: updatedThread.viewerRole,
                 clientUserId: updatedThread.clientUserId,
                 clientName: updatedThread.clientName,
                 coachUserId: updatedThread.coachUserId,

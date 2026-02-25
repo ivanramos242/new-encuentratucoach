@@ -55,8 +55,9 @@ export function ChatThread({
   const [closingThread, setClosingThread] = useState(false);
   const listRef = useRef<HTMLDivElement | null>(null);
   const lastMarkedMessageIdRef = useRef<string | null>(null);
+  const viewerRole = thread.viewerRole;
 
-  const canReply = role === "client" || (role === "coach" && thread.coachMembershipActive && thread.status === "open");
+  const canReply = viewerRole === "client" || (viewerRole === "coach" && thread.coachMembershipActive && thread.status === "open");
 
   function setMessages(updater: (prev: MessageItemDto[]) => MessageItemDto[]) {
     setThread((prev) => {
@@ -67,7 +68,7 @@ export function ChatThread({
         messagesCount: nextMessages.length,
         lastMessageAt: nextMessages.at(-1)?.createdAt ?? prev.lastMessageAt,
         lastMessagePreview: lastPreview(nextMessages),
-        ...(role === "coach" ? { unreadForCoach: 0 } : { unreadForClient: 0 }),
+        ...(prev.viewerRole === "coach" ? { unreadForCoach: 0 } : { unreadForClient: 0 }),
       };
       onThreadUpdate?.(next);
       return next;
@@ -88,7 +89,7 @@ export function ChatThread({
 
   const sendQueue = useSendQueue({
     threadId: thread.id,
-    role,
+    role: viewerRole,
     canReply,
     onServerHints(hints) {
       setComposerHints(hints);
@@ -140,9 +141,9 @@ export function ChatThread({
   const latestIncomingId = useMemo(() => {
     const lastIncoming = [...thread.messages]
       .reverse()
-      .find((m) => (role === "coach" ? m.senderType === "client" : m.senderType === "coach"));
+      .find((m) => (viewerRole === "coach" ? m.senderType === "client" : m.senderType === "coach"));
     return lastIncoming?.id ?? null;
-  }, [role, thread.messages]);
+  }, [viewerRole, thread.messages]);
 
   useEffect(() => {
     if (!latestIncomingId || lastMarkedMessageIdRef.current === latestIncomingId) return;
@@ -173,7 +174,7 @@ export function ChatThread({
 
   return (
     <section className="flex h-[calc(100dvh-10.5rem)] min-h-[32rem] flex-col overflow-hidden rounded-2xl border border-black/10 bg-[linear-gradient(180deg,#f8fafc_0%,#ffffff_100%)] shadow-sm sm:h-[clamp(36rem,72vh,60rem)] sm:rounded-3xl">
-      <ChatHeader role={role} thread={thread} onDeleteChat={closeChat} deleting={closingThread} />
+      <ChatHeader inboxRole={role} viewerRole={viewerRole} thread={thread} onDeleteChat={closeChat} deleting={closingThread} />
 
       <div ref={listRef} className="min-h-0 flex-1 space-y-2 overflow-y-auto bg-zinc-50/40 px-2 py-2 sm:space-y-3 sm:px-4 sm:py-4">
         {sendQueue.recoveredDraftCount > 0 ? (
@@ -189,7 +190,7 @@ export function ChatThread({
         ) : null}
 
         {thread.messages.map((message) => (
-          <MessageBubble key={message.id} role={role} message={message} onRetry={sendQueue.retryFailed} />
+          <MessageBubble key={message.id} viewerRole={viewerRole} message={message} onRetry={sendQueue.retryFailed} />
         ))}
       </div>
 
