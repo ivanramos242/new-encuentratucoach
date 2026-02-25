@@ -1,15 +1,36 @@
+import { z } from "zod";
 import { jsonError, jsonOk } from "@/lib/api-handlers";
-import { resolveApiActorFromRequest } from "@/lib/mock-auth-context";
-import { markThreadRead } from "@/lib/v2-service";
+import { requireApiRole } from "@/lib/api-auth";
+import { markThreadRead } from "@/lib/conversation-service";
 
 type ParamsInput = Promise<{ threadId: string }>;
 
+const schema = z.object({
+  lastReadMessageId: z.string().min(1).optional(),
+});
+
 export async function POST(request: Request, { params }: { params: ParamsInput }) {
-  const actorResolved = await resolveApiActorFromRequest(request, "client");
-  if (!actorResolved.ok) return actorResolved.response;
-  const actor = actorResolved.actor;
+  const auth = await requireApiRole(request, ["client", "coach"]);
+  if (!auth.ok) return auth.response;
   const { threadId } = await params;
-  const result = markThreadRead({ threadId, actor });
-  if ("error" in result) return jsonError(String(result.error), 404);
-  return jsonOk({ actor, ...result });
+  let payload: { lastReadMessageId?: string } = {};
+  try {
+    if (request.headers.get("content-type")?.includes("application/json")) {
+      const body = await request.json();
+      const parsed = schema.safeParse(body);
+      if (!parsed.success) return jsonError("Payload invalido", 400, { issues: parsed.error.flatten() });
+      payload = parsed.data;
+    }
+  } catch {
+    // body optional
+  }
+  const result = await markThreadRead({ threadId, user: auth.user, lastReadMessageId: payload.lastReadMessageId });
+  if ("error" in result) {
+    const status = result.code === "NOT_FOUND" ? 404 : 403;
+    return jsonError(result.error, status);
+  }
+  return jsonOk({
+    actor: { role: auth.user.role, userId: auth.user.id, displayName: auth.user.displayName ?? auth.user.email },
+    ...result,
+  });
 }

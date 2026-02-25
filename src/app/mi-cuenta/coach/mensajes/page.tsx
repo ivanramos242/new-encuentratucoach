@@ -1,23 +1,25 @@
 import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
-import { MessageInboxView } from "@/components/v2/message-inbox-view";
-import { getV2CoachPageActor } from "@/lib/v2-page-actors";
-import { listThreadsForActor } from "@/lib/v2-service";
+import { MessagingShell } from "@/components/messages/messaging-shell";
+import { requireRole } from "@/lib/auth-server";
+import { listThreadsForUser } from "@/lib/conversation-service";
 
 export default async function CoachMessagesInboxPage() {
-  const actor = await getV2CoachPageActor();
-  const threads = listThreadsForActor(actor);
+  const user = await requireRole(["coach", "admin"], { returnTo: "/mi-cuenta/coach/mensajes" });
+  const result = user.role === "coach" ? await listThreadsForUser(user) : null;
+  const threads = result && !("error" in result) ? result.threads : [];
 
   return (
     <>
       <PageHero
-        badge="Mi cuenta · Coach · V2"
+        badge="Mi cuenta · Coach"
         title="Mensajes"
-        description="Inbox interno cliente -> coach con hilo unico por cliente+coach, polling cada 5 minutos y adjuntos (imagen/PDF, 5 MB max)."
+        description="Inbox interno estilo chat con clientes, adjuntos e intervalos de polling adaptativos para no saturar el servidor."
       />
       <PageShell className="pt-8">
-        <MessageInboxView role="coach" threads={threads} />
+        <MessagingShell role="coach" initialThreads={threads} initialThread={null} />
       </PageShell>
     </>
   );
 }
+

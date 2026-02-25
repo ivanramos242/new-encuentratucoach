@@ -1,23 +1,25 @@
 import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
-import { MessageInboxView } from "@/components/v2/message-inbox-view";
-import { getV2ClientPageActor } from "@/lib/v2-page-actors";
-import { listThreadsForActor } from "@/lib/v2-service";
+import { MessagingShell } from "@/components/messages/messaging-shell";
+import { requireRole } from "@/lib/auth-server";
+import { listThreadsForUser } from "@/lib/conversation-service";
 
 export default async function ClientMessagesInboxPage() {
-  const actor = await getV2ClientPageActor();
-  const threads = listThreadsForActor(actor);
+  const user = await requireRole(["client", "admin"], { returnTo: "/mi-cuenta/cliente/mensajes" });
+  const result = user.role === "client" ? await listThreadsForUser(user) : null;
+  const threads = result && !("error" in result) ? result.threads : [];
 
   return (
     <>
       <PageHero
-        badge="Mi cuenta · Cliente · V2"
+        badge="Mi cuenta · Cliente"
         title="Mensajes"
-        description="Conversaciones con coaches desde perfiles o Q&A. Un hilo por coach, con historial y estado de lectura."
+        description="Conversaciones con coaches en un chat privado con adjuntos, notas de audio (MVP) y polling adaptativo."
       />
       <PageShell className="pt-8">
-        <MessageInboxView role="client" threads={threads} />
+        <MessagingShell role="client" initialThreads={threads} initialThread={null} />
       </PageShell>
     </>
   );
 }
+
