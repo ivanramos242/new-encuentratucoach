@@ -59,7 +59,7 @@ function PasswordInput({
           type="button"
           onClick={() => setShow((v) => !v)}
           className="rounded-xl p-2 text-zinc-500 hover:bg-zinc-100"
-          aria-label={show ? "Ocultar contraseÃ±a" : "Mostrar contraseÃ±a"}
+          aria-label={show ? "Ocultar contraseña" : "Mostrar contraseña"}
         >
           <i className={`fa-solid ${show ? "fa-eye-slash" : "fa-eye"}`} aria-hidden="true" />
         </button>
@@ -131,7 +131,7 @@ function AuthSplitShell({
             {[
               "Perfiles verificados y reseñas",
               "Filtros por ciudad, especialidad y precio",
-              "MensajerÃ­a directa",
+              "Mensajería directa",
             ].map((item) => (
               <li key={item} className="flex items-start gap-3">
                 <span className="mt-2 h-2 w-2 rounded-full bg-gradient-to-r from-cyan-500 to-emerald-500" aria-hidden="true" />
@@ -144,11 +144,11 @@ function AuthSplitShell({
             <Link className="border-b border-zinc-300 hover:border-zinc-500 hover:text-zinc-900" href="/coaches">
               Ver directorio
             </Link>
-            <span aria-hidden="true">Â·</span>
+            <span aria-hidden="true">·</span>
             <Link className="border-b border-zinc-300 hover:border-zinc-500 hover:text-zinc-900" href="/pregunta-a-un-coach">
               Pregunta a un coach
             </Link>
-            <span aria-hidden="true">Â·</span>
+            <span aria-hidden="true">·</span>
             <Link className="border-b border-zinc-300 hover:border-zinc-500 hover:text-zinc-900" href={ctaHref}>
               {ctaLabel}
             </Link>
@@ -187,13 +187,13 @@ function GoogleButtonPlaceholder({ mode }: { mode: "login" | "register" }) {
       disabled
       className="mx-auto inline-flex w-full max-w-sm items-center justify-center gap-3 rounded-2xl border border-black/10 bg-zinc-950 px-4 py-3 font-semibold text-white opacity-95"
       aria-disabled="true"
-      title="Lo configuraremos mÃ¡s adelante"
+      title="Lo configuraremos más adelante"
     >
       <span className="grid h-7 w-7 place-items-center rounded-full bg-white text-zinc-900">
         <i className="fa-brands fa-google" aria-hidden="true" />
       </span>
-      {mode === "login" ? "Iniciar sesiÃ³n con Google" : "Registrarme con Google"}
-      <span className="text-xs font-medium text-zinc-300">(prÃ³ximamente)</span>
+      {mode === "login" ? "Iniciar sesión con Google" : "Registrarme con Google"}
+      <span className="text-xs font-medium text-zinc-300">(próximamente)</span>
     </button>
   );
 }
@@ -227,7 +227,7 @@ function ForgotPasswordModal({
       <div className="relative w-full max-w-xl overflow-hidden rounded-3xl border border-black/10 bg-white shadow-2xl">
         <div className="flex items-start justify-between gap-4 border-b border-black/10 bg-gradient-to-b from-cyan-50/80 to-white px-5 py-4">
           <div>
-            <p className="text-lg font-black tracking-tight text-zinc-950">Restablecer contraseÃ±a</p>
+            <p className="text-lg font-black tracking-tight text-zinc-950">Restablecer contraseña</p>
             <p className="mt-1 text-sm text-zinc-600">Introduce tu correo y te enviaremos un enlace para recuperar el acceso.</p>
           </div>
           <button
@@ -247,7 +247,7 @@ function ForgotPasswordModal({
             const formData = new FormData(event.currentTarget);
             const email = String(formData.get("email") || "").trim();
             if (!email) {
-              setStatus({ type: "error", text: "Introduce tu correo electrÃ³nico." });
+              setStatus({ type: "error", text: "Introduce tu correo electrónico." });
               return;
             }
             startTransition(async () => {
@@ -257,7 +257,7 @@ function ForgotPasswordModal({
                 const json = await postJson("/api/auth/password/forgot", { email });
                 setStatus({
                   type: "ok",
-                  text: json.message || "Si el email existe, recibirÃ¡s instrucciones para recuperar la contraseÃ±a.",
+                  text: json.message || "Si el email existe, recibirás instrucciones para recuperar la contraseña.",
                 });
                 setDebugLink(json.debugResetUrl || null);
               } catch (error) {
@@ -270,7 +270,7 @@ function ForgotPasswordModal({
           }}
         >
           <label className="grid gap-2 text-sm font-medium text-zinc-800">
-            Correo electrÃ³nico
+            Correo electrónico
             <InputWithIcon iconClass="fa-solid fa-envelope" type="email" name="email" required placeholder="tu@email.com" />
           </label>
           <div className="mt-4 flex justify-end gap-2">
@@ -310,14 +310,14 @@ export function LoginCard({ returnTo = "/mi-cuenta", userCount = 602 }: { return
   const [status, setStatus] = useState<{ type: "idle" | "ok" | "error"; text: string }>({ type: "idle", text: "" });
   const [forgotOpen, setForgotOpen] = useState(false);
 
-  const title = "Iniciar sesiÃ³n";
-  const subtitle = "Accede para guardar coaches, enviar mensajes y participar en âPregunta a un coachâ.";
+  const title = "Iniciar sesión";
+  const subtitle = "Accede para guardar coaches, enviar mensajes y participar en “Pregunta a un coach”.";
 
   const rightCard = (
     <>
       <CardHeader
-        title="Iniciar sesiÃ³n"
-        hint="Inicia sesiÃ³n con Google (recomendado) o introduce tus datos para continuar."
+        title="Iniciar sesión"
+        hint="Inicia sesión con Google (recomendado) o introduce tus datos para continuar."
       />
       <div className="px-5 py-5">
         <div className="text-center">
@@ -336,29 +336,29 @@ export function LoginCard({ returnTo = "/mi-cuenta", userCount = 602 }: { return
               setStatus({ type: "idle", text: "" });
               try {
                 const json = await postJson("/api/auth/login", { email, password });
-                setStatus({ type: "ok", text: "SesiÃ³n iniciada. Redirigiendo..." });
+                setStatus({ type: "ok", text: "Sesión iniciada. Redirigiendo..." });
                 router.push(returnTo || (json.user?.role === "admin" ? "/admin" : "/mi-cuenta"));
                 router.refresh();
               } catch (error) {
-                setStatus({ type: "error", text: error instanceof Error ? error.message : "No se pudo iniciar sesiÃ³n" });
+                setStatus({ type: "error", text: error instanceof Error ? error.message : "No se pudo iniciar sesión" });
               }
             });
           }}
           className="grid gap-4"
         >
           <div className="grid gap-1">
-            <label className="text-sm font-medium text-zinc-700">Correo electrÃ³nico</label>
+            <label className="text-sm font-medium text-zinc-700">Correo electrónico</label>
             <InputWithIcon iconClass="fa-solid fa-envelope" type="email" name="email" required placeholder="tu@email.com" />
           </div>
 
           <div className="grid gap-1">
-            <label className="text-sm font-medium text-zinc-700">ContraseÃ±a</label>
-            <PasswordInput name="password" placeholder="Tu contraseÃ±a" />
+            <label className="text-sm font-medium text-zinc-700">Contraseña</label>
+            <PasswordInput name="password" placeholder="Tu contraseña" />
           </div>
 
           <label className="mt-1 inline-flex items-center gap-2 text-sm text-zinc-600">
             <input type="checkbox" disabled className="h-4 w-4 rounded border-black/20" />
-            AcuÃ©rdate de mÃ­ (prÃ³ximamente)
+            Acuérdate de mí (próximamente)
           </label>
 
           <button
@@ -366,11 +366,11 @@ export function LoginCard({ returnTo = "/mi-cuenta", userCount = 602 }: { return
             disabled={pending}
             className="mt-2 rounded-2xl border border-cyan-200 bg-white px-4 py-3 text-base font-semibold text-zinc-900 shadow-sm transition hover:bg-cyan-50 disabled:opacity-60"
           >
-            {pending ? "Entrando..." : "Iniciar sesiÃ³n"}
+            {pending ? "Entrando..." : "Iniciar sesión"}
           </button>
 
           <p className="mt-1 text-center text-sm text-zinc-600">
-            Â¿No tienes una cuenta?{" "}
+            ¿No tienes una cuenta?{" "}
             <Link href="/registro" className="font-semibold text-cyan-700 hover:text-cyan-800">
               Registrarse
             </Link>
@@ -382,7 +382,7 @@ export function LoginCard({ returnTo = "/mi-cuenta", userCount = 602 }: { return
               onClick={() => setForgotOpen(true)}
               className="border-b border-zinc-300 text-sm text-zinc-600 hover:border-zinc-500 hover:text-zinc-900"
             >
-              He olvidado la contraseÃ±a
+              He olvidado la contraseña
             </button>
           </div>
 
@@ -391,7 +391,7 @@ export function LoginCard({ returnTo = "/mi-cuenta", userCount = 602 }: { return
             <p className="text-sm text-zinc-700">
               Ve a{" "}
               <button type="button" onClick={() => setForgotOpen(true)} className="font-semibold text-cyan-700 underline">
-                Recuperar contraseÃ±a
+                Recuperar contraseña
               </button>{" "}
               y usa ese mismo email.
             </p>
@@ -420,17 +420,17 @@ export function RegisterCard({
     if (role === "coach") {
       return {
         title: "Crear cuenta de coach",
-        subtitle: "Crea tu cuenta (empieza como cliente) y activa la membresia para publicar tu perfil como coach.",
+        subtitle: "Crea tu cuenta (empieza como cliente) y activa la membresía para publicar tu perfil como coach.",
         cardTitle: "Alta de coach",
-        cardHint: "Crearas una cuenta unica. Tras el pago de la membresia, tu cuenta se activara como coach.",
+        cardHint: "Crearás una cuenta única. Tras el pago de la membresía, tu cuenta se activará como coach.",
         redirect: "/membresia",
       };
     }
     return {
       title: "Crear cuenta",
-      subtitle: "Crea tu cuenta para guardar coaches, enviar mensajes y participar en âPregunta a un coachâ.",
+      subtitle: "Crea tu cuenta para guardar coaches, enviar mensajes y participar en “Pregunta a un coach”.",
       cardTitle: "Registro de cliente",
-      cardHint: "Google estara disponible mas adelante. Mientras tanto, completa tus datos para continuar.",
+      cardHint: "Google estará disponible más adelante. Mientras tanto, completa tus datos para continuar.",
       redirect: "/mi-cuenta/cliente",
     };
   }, [role]);
@@ -473,12 +473,12 @@ export function RegisterCard({
             <InputWithIcon iconClass="fa-solid fa-user" type="text" name="displayName" required minLength={2} placeholder="Tu nombre" />
           </div>
           <div className="grid gap-1">
-            <label className="text-sm font-medium text-zinc-700">Correo electrÃ³nico</label>
+            <label className="text-sm font-medium text-zinc-700">Correo electrónico</label>
             <InputWithIcon iconClass="fa-solid fa-envelope" type="email" name="email" required placeholder="tu@email.com" />
           </div>
           <div className="grid gap-1">
-            <label className="text-sm font-medium text-zinc-700">ContraseÃ±a</label>
-            <PasswordInput name="password" placeholder="MÃ­nimo 8 caracteres" />
+            <label className="text-sm font-medium text-zinc-700">Contraseña</label>
+            <PasswordInput name="password" placeholder="Mínimo 8 caracteres" />
           </div>
 
           <button
@@ -490,9 +490,9 @@ export function RegisterCard({
           </button>
 
           <p className="mt-1 text-center text-sm text-zinc-600">
-            Â¿Ya tienes cuenta?{" "}
+            ¿Ya tienes cuenta?{" "}
             <Link href="/iniciar-sesion" className="font-semibold text-cyan-700 hover:text-cyan-800">
-              Iniciar sesiÃ³n
+              Iniciar sesión
             </Link>
           </p>
 
@@ -529,7 +529,7 @@ export function ForgotPasswordCard() {
   const [debugLink, setDebugLink] = useState<string | null>(null);
 
   return (
-    <SimpleCardShell title="Recuperar contraseÃ±a" subtitle="Te enviaremos un enlace para restablecer tu contraseÃ±a.">
+    <SimpleCardShell title="Recuperar contraseña" subtitle="Te enviaremos un enlace para restablecer tu contraseña.">
       <form
         onSubmit={(event) => {
           event.preventDefault();
@@ -581,7 +581,7 @@ export function ResetPasswordCard({ token }: { token: string }) {
   const [status, setStatus] = useState<{ type: "idle" | "ok" | "error"; text: string }>({ type: "idle", text: "" });
 
   return (
-    <SimpleCardShell title="Restablecer contraseÃ±a" subtitle="Introduce tu nueva contraseÃ±a para completar el acceso a tu cuenta.">
+    <SimpleCardShell title="Restablecer contraseña" subtitle="Introduce tu nueva contraseña para completar el acceso a tu cuenta.">
       <form
         onSubmit={(event) => {
           event.preventDefault();
@@ -590,7 +590,7 @@ export function ResetPasswordCard({ token }: { token: string }) {
           const passwordConfirm = String(formData.get("passwordConfirm") || "");
 
           if (password !== passwordConfirm) {
-            setStatus({ type: "error", text: "Las contraseÃ±as no coinciden." });
+            setStatus({ type: "error", text: "Las contraseñas no coinciden." });
             return;
           }
 
@@ -598,7 +598,7 @@ export function ResetPasswordCard({ token }: { token: string }) {
             setStatus({ type: "idle", text: "" });
             try {
               await postJson("/api/auth/password/reset", { token, password });
-              setStatus({ type: "ok", text: "ContraseÃ±a actualizada. Redirigiendo a login..." });
+              setStatus({ type: "ok", text: "Contraseña actualizada. Redirigiendo a login..." });
               setTimeout(() => {
                 router.push("/iniciar-sesion");
                 router.refresh();
@@ -606,7 +606,7 @@ export function ResetPasswordCard({ token }: { token: string }) {
             } catch (error) {
               setStatus({
                 type: "error",
-                text: error instanceof Error ? error.message : "No se pudo restablecer la contraseÃ±a",
+                text: error instanceof Error ? error.message : "No se pudo restablecer la contraseña",
               });
             }
           });
@@ -614,19 +614,19 @@ export function ResetPasswordCard({ token }: { token: string }) {
         className="grid gap-4"
       >
         <label className="grid gap-1 text-sm font-medium text-zinc-800">
-          Nueva contraseÃ±a
-          <PasswordInput name="password" placeholder="Nueva contraseÃ±a" />
+          Nueva contraseña
+          <PasswordInput name="password" placeholder="Nueva contraseña" />
         </label>
         <label className="grid gap-1 text-sm font-medium text-zinc-800">
-          Repite la contraseÃ±a
-          <PasswordInput name="passwordConfirm" placeholder="Repite la contraseÃ±a" />
+          Repite la contraseña
+          <PasswordInput name="passwordConfirm" placeholder="Repite la contraseña" />
         </label>
         <button
           type="submit"
           disabled={pending}
           className="rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800 disabled:opacity-60"
         >
-          {pending ? "Actualizando..." : "Actualizar contraseÃ±a"}
+          {pending ? "Actualizando..." : "Actualizar contraseña"}
         </button>
         <StatusLine type={status.type} text={status.text} />
       </form>

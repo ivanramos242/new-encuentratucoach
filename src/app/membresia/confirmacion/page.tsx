@@ -25,7 +25,7 @@ function isRecentPendingActivation(status?: string | null, updatedAt?: Date | nu
 export const dynamic = "force-dynamic";
 
 export const metadata = buildMetadata({
-  title: "Confirmacion de membresia",
+  title: "Confirmación de membresía",
   description: "Procesando el pago y activando tu cuenta coach.",
   path: "/membresia/confirmacion",
   noindex: true,

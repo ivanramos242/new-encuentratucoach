@@ -155,11 +155,11 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
               <div className="mt-4 flex flex-wrap gap-2">
                 {coach.certifiedStatus === "approved" ? <Chip tone="success">Coach certificado</Chip> : null}
                 {coach.sessionModes.map((mode) => (
-                  <Chip key={mode}>{mode === "online" ? "Sesion Online" : "Sesion Presencial"}</Chip>
+                  <Chip key={mode}>{mode === "online" ? "Sesión Online" : "Sesión Presencial"}</Chip>
                 ))}
                 <Chip>{coach.cityLabel}</Chip>
                 {coach.languages.length ? <Chip>{coach.languages.join(" y ")}</Chip> : null}
-                <Chip>{coach.basePriceEur ? `Desde ${formatEuro(coach.basePriceEur)} · sesion` : "Precio a consultar"}</Chip>
+                <Chip>{coach.basePriceEur ? `Desde ${formatEuro(coach.basePriceEur)} · sesión` : "Precio a consultar"}</Chip>
               </div>
 
               <div className="mt-4 rounded-2xl border border-black/10 bg-zinc-50 p-4">
@@ -213,7 +213,7 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
         <CoachProfileSectionNav
           sections={[
             { id: "inicio", label: "Inicio" },
-            { id: "sobre-mi", label: "Sobre Mi" },
+            { id: "sobre-mi", label: "Sobre mí" },
             { id: "galeria", label: "Galería" },
             { id: "precios", label: "Precios" },
             { id: "resenas", label: "Reseñas" },

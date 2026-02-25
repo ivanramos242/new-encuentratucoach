@@ -7,7 +7,7 @@ type ApiAuthErr = { ok: false; response: Response };
 
 export async function requireApiSession(request: Request): Promise<ApiAuthOk | ApiAuthErr> {
   const user = await getSessionUserFromRequest(request);
-  if (!user) return { ok: false, response: unauthorized("Debes iniciar sesion.") };
+  if (!user) return { ok: false, response: unauthorized("Debes iniciar sesión.") };
   return { ok: true, user };
 }
 
@@ -19,8 +19,7 @@ export async function requireApiRole(
   if (!session.ok) return session;
   const allowed = Array.isArray(roles) ? roles : [roles];
   if (!allowed.includes(session.user.role)) {
-    return { ok: false, response: forbidden("No tienes permisos para esta accion.") };
+    return { ok: false, response: forbidden("No tienes permisos para esta acción.") };
   }
   return session;
 }
-

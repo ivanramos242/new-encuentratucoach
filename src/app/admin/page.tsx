@@ -31,7 +31,7 @@ const cards = [
   {
     href: "/admin/importaciones",
     title: "Importaciones",
-    desc: "Sube un JSON de WordPress y ejecuta dry-run o importaciÃ³n de coaches desde la web.",
+    desc: "Sube un JSON de WordPress y ejecuta dry-run o importación de coaches desde la web.",
   },
 ] as const;
 

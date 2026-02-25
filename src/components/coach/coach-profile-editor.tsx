@@ -155,7 +155,7 @@ function SeoHelpPanel({
     { label: "Categorias marcadas", ok: form.categorySlugs.length > 0 },
     { label: "Precio orientativo puesto", ok: Number(form.basePriceEur) > 0 },
     { label: "Foto principal subida", ok: Boolean(form.heroImageUrl.trim()) },
-    { label: "Canal propio (web) anadido", ok: Boolean(form.web.trim()) },
+    { label: "Canal propio (web) añadido", ok: Boolean(form.web.trim()) },
   ];
   const score = seoChecks.filter((item) => item.ok).length;
 
@@ -490,7 +490,7 @@ export function CoachProfileEditor({
       languagesText: form.languagesText || null,
       heroImageUrl: form.heroImageUrl || null,
       videoPresentationUrl: form.videoPresentationUrl || null,
-      location: form.city ? { city: form.city, province: form.province || null, country: "Espana" } : null,
+      location: form.city ? { city: form.city, province: form.province || null, country: "España" } : null,
       sessionModes,
       pricing: {
         basePriceEur: form.basePriceEur ? Number(form.basePriceEur) : null,
@@ -760,7 +760,7 @@ export function CoachProfileEditor({
             <p className="mt-1 text-sm text-zinc-600">
               {adminMode
                 ? "Puedes editar el perfil publico y tambien los datos internos que no se ven en la ficha publica."
-                : "Guarda tus datos y publica cuando tengas membresia activa."}
+                : "Guarda tus datos y publica cuando tengas membresía activa."}
             </p>
           </div>
           <div className="flex gap-2 text-xs">
@@ -895,7 +895,7 @@ export function CoachProfileEditor({
                 onChange={(e) => setField("aboutHtml", e.target.value)}
                 rows={5}
                 className={fieldInputClass()}
-                placeholder="Amplia tu historia, tu metodo o como es una primera sesion."
+                placeholder="Amplía tu historia, tu método o cómo es una primera sesión."
               />
               <span className="text-xs font-normal text-zinc-500">
                 Si lo dejas vacio, se mostrara la bio corta en tu perfil.
@@ -907,7 +907,7 @@ export function CoachProfileEditor({
                 value={form.specialtiesText}
                 onChange={(e) => setField("specialtiesText", e.target.value)}
                 className={fieldInputClass()}
-                placeholder="Ej: liderazgo, autoestima, habitos"
+                placeholder="Ej: liderazgo, autoestima, hábitos"
               />
             </label>
             <label className="grid gap-1 text-sm font-medium text-zinc-800">
@@ -1235,13 +1235,13 @@ export function CoachProfileEditor({
               </select>
             </label>
             <label className="grid gap-1 text-sm font-medium text-zinc-800">
-              Certificacion
+              Certificación
               <select
                 value={form.certifiedStatus}
                 onChange={(e) => setField("certifiedStatus", e.target.value as CertifiedStatusValue)}
                 className={fieldInputClass()}
               >
-                <option value="none">Sin certificacion</option>
+                <option value="none">Sin certificación</option>
                 <option value="pending">Pendiente</option>
                 <option value="approved">Aprobada</option>
                 <option value="rejected">Rechazada</option>

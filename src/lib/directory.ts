@@ -22,7 +22,7 @@ export function getCategoryBySlug(slug: string) {
     id: slug,
     slug,
     name: label,
-    shortDescription: `Encuentra coaches especializados en ${label.toLowerCase()} en Espana.`,
+    shortDescription: `Encuentra coaches especializados en ${label.toLowerCase()} en España.`,
     icon: "sparkles",
   };
 }

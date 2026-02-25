@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       message: "Reporte registrado y enviado a moderacion admin.",
     });
   } catch {
-    return jsonError("No se pudo reportar la conversacion", 400);
+    return jsonError("No se pudo reportar la conversación", 400);
   }
 }
 
