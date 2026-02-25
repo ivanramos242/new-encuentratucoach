@@ -8,6 +8,14 @@ import { buildMetadata } from "@/lib/seo";
 type SearchParamsInput = Promise<Record<string, string | string[] | undefined>>;
 const PENDING_ACTIVATION_WINDOW_MS = 3 * 60 * 1000;
 
+function pick(input: string | string[] | undefined) {
+  return Array.isArray(input) ? input[0] : input;
+}
+
+function isPlanCode(value: string | undefined): value is "monthly" | "annual" {
+  return value === "monthly" || value === "annual";
+}
+
 function isRecentPendingActivation(status?: string | null, updatedAt?: Date | null) {
   if (status !== "incomplete" || !updatedAt) return false;
   const ageMs = Date.now() - updatedAt.getTime();
@@ -35,7 +43,8 @@ export default async function MembershipConfirmationPage({ searchParams }: { sea
     redirect("/mi-cuenta/coach/membresia?checkout=success");
   }
 
-  const checkout = Array.isArray(sp.checkout) ? sp.checkout[0] : sp.checkout;
+  const checkout = pick(sp.checkout);
+  const requestedPlan = pick(sp.plan);
   if (checkout === "cancel") redirect("/membresia?checkout=cancel");
 
   const coachProfile = await prisma.coachProfile.findFirst({
@@ -47,7 +56,7 @@ export default async function MembershipConfirmationPage({ searchParams }: { sea
       subscriptions: {
         orderBy: { updatedAt: "desc" },
         take: 1,
-        select: { status: true, updatedAt: true },
+        select: { status: true, updatedAt: true, planCode: true },
       },
     },
   });
@@ -58,9 +67,13 @@ export default async function MembershipConfirmationPage({ searchParams }: { sea
     redirect("/membresia");
   }
 
+  const planCode = isPlanCode(requestedPlan) ? requestedPlan : latestSubscription?.planCode;
+  const retryPaymentHref = planCode ? `/membresia/checkout?plan=${planCode}` : "/membresia";
+  const pendingUntilEpochMs = latestSubscription!.updatedAt!.getTime() + PENDING_ACTIVATION_WINDOW_MS;
+
   return (
     <PageShell className="pt-10">
-      <MembershipConfirmationWaiter />
+      <MembershipConfirmationWaiter retryPaymentHref={retryPaymentHref} pendingUntilEpochMs={pendingUntilEpochMs} />
     </PageShell>
   );
 }

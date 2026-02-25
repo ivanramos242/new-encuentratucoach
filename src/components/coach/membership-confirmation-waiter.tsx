@@ -1,8 +1,10 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+
+const DEFAULT_PENDING_WINDOW_MS = 3 * 60 * 1000;
 
 type SessionPayload = {
   ok?: boolean;
@@ -10,20 +12,62 @@ type SessionPayload = {
   user?: { role?: "admin" | "coach" | "client" } | null;
 };
 
-export function MembershipConfirmationWaiter() {
+function formatTimer(ms: number) {
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+export function MembershipConfirmationWaiter({
+  retryPaymentHref = "/membresia",
+  pendingUntilEpochMs,
+}: {
+  retryPaymentHref?: string;
+  pendingUntilEpochMs: number;
+}) {
   const router = useRouter();
   const [state, setState] = useState<"checking" | "waiting" | "ready" | "error">("checking");
   const [message, setMessage] = useState("Comprobando el estado del pago y la activación de tu cuenta de coach...");
   const [ticks, setTicks] = useState(0);
   const [retryKey, setRetryKey] = useState(0);
+  const [remainingMs, setRemainingMs] = useState(DEFAULT_PENDING_WINDOW_MS);
 
   const canShowRetry = useMemo(() => ticks >= 12, [ticks]);
+  const deadlineMs = pendingUntilEpochMs;
+
+  useEffect(() => {
+    const updateRemaining = () => {
+      setRemainingMs(Math.max(0, deadlineMs - Date.now()));
+    };
+    const firstTick = window.setTimeout(updateRemaining, 0);
+    const timer = window.setInterval(() => {
+      updateRemaining();
+    }, 1000);
+    return () => {
+      window.clearTimeout(firstTick);
+      window.clearInterval(timer);
+    };
+  }, [deadlineMs]);
 
   useEffect(() => {
     let cancelled = false;
     let interval: number | null = null;
 
+    const hasTimedOut = () => Date.now() >= deadlineMs;
+
+    const timeoutToAction = () => {
+      setState("error");
+      setMessage("La activación está tardando más de 3 minutos. Puedes volver a intentar el pago.");
+      if (interval) window.clearInterval(interval);
+    };
+
     const check = async () => {
+      if (hasTimedOut()) {
+        if (!cancelled) timeoutToAction();
+        return;
+      }
+
       try {
         const res = await fetch("/api/auth/session", {
           method: "GET",
@@ -64,6 +108,10 @@ export function MembershipConfirmationWaiter() {
 
     void check();
     interval = window.setInterval(() => {
+      if (hasTimedOut()) {
+        if (!cancelled) timeoutToAction();
+        return;
+      }
       setTicks((v) => v + 1);
       void check();
     }, 2500);
@@ -72,7 +120,7 @@ export function MembershipConfirmationWaiter() {
       cancelled = true;
       if (interval) window.clearInterval(interval);
     };
-  }, [retryKey, router]);
+  }, [deadlineMs, retryKey, router]);
 
   return (
     <div className="mx-auto max-w-2xl rounded-3xl border border-black/10 bg-white p-6 shadow-sm sm:p-8">
@@ -80,28 +128,43 @@ export function MembershipConfirmationWaiter() {
       <p className="mt-3 text-zinc-700">{message}</p>
 
       <div className="mt-5 rounded-2xl border border-black/10 bg-zinc-50 p-4">
-        <div className="flex items-center gap-3">
-          <span
-            className={
-              state === "error"
-                ? "inline-flex h-3 w-3 rounded-full bg-rose-500"
-                : "inline-flex h-3 w-3 animate-pulse rounded-full bg-cyan-500"
-            }
-            aria-hidden="true"
-          />
-          <p className="text-sm font-medium text-zinc-700">
-            {state === "ready"
-              ? "Listo"
-              : state === "error"
-                ? "Necesita acción"
-                : state === "waiting"
-                  ? "Webhook Stripe en proceso"
-                  : "Comprobando estado"}
-          </p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span
+              className={
+                state === "error"
+                  ? "inline-flex h-3 w-3 rounded-full bg-rose-500"
+                  : "inline-flex h-3 w-3 animate-pulse rounded-full bg-cyan-500"
+              }
+              aria-hidden="true"
+            />
+            <p className="text-sm font-medium text-zinc-700">
+              {state === "ready"
+                ? "Listo"
+                : state === "error"
+                  ? "Necesita acción"
+                  : state === "waiting"
+                    ? "Webhook Stripe en proceso"
+                    : "Comprobando estado"}
+            </p>
+          </div>
+          <div className="rounded-xl border border-black/10 bg-white px-3 py-1.5 text-sm font-semibold tabular-nums text-zinc-900">
+            {formatTimer(remainingMs)}
+          </div>
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+      <p className="mt-3 text-xs text-zinc-500">
+        Tiempo máximo estimado de activación: 3 minutos. Si se agota, podrás volver a intentar el pago.
+      </p>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <Link
+          href={retryPaymentHref}
+          className="rounded-xl bg-zinc-950 px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-zinc-800"
+        >
+          Volver a intentar pago
+        </Link>
         <button
           type="button"
           onClick={() => {

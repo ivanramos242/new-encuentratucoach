@@ -185,8 +185,10 @@ export async function POST(request: Request) {
     });
 
     const stripe = getStripeServer();
-    const successUrl = absoluteUrl(parsed.data.successPath || "/membresia/confirmacion?checkout=success");
-    const cancelUrl = absoluteUrl(parsed.data.cancelPath || "/membresia?checkout=cancel");
+    const successUrl = absoluteUrl(
+      parsed.data.successPath || `/membresia/confirmacion?checkout=success&plan=${parsed.data.planCode}`,
+    );
+    const cancelUrl = absoluteUrl(parsed.data.cancelPath || `/membresia?checkout=cancel&plan=${parsed.data.planCode}`);
 
     const hasActiveDiscount = publicPlan.discountActive && publicPlan.effectivePriceCents < publicPlan.priceCents;
     const fallbackInlineAmount = priceConfig.unitAmountCents ?? publicPlan.priceCents;
