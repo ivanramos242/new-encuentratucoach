@@ -91,7 +91,7 @@ export function MessagingShell({
   );
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[440px_minmax(0,1fr)]">
+    <div className="grid gap-3 sm:gap-4 xl:grid-cols-[440px_minmax(0,1fr)]">
       <div className={selectedThread ? "hidden xl:block" : ""}>
         <ThreadList
           role={role}
@@ -102,7 +102,7 @@ export function MessagingShell({
         />
       </div>
 
-      <div className="min-w-0">
+      <div className="min-w-0 xl:min-w-[42rem]">
         {selectedThread ? (
           <ChatThread
             role={role}
@@ -136,4 +136,3 @@ export function MessagingShell({
     </div>
   );
 }
-

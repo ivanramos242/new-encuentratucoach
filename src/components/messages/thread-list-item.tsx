@@ -31,14 +31,14 @@ export function ThreadListItem({
     <Link
       href={href}
       className={cn(
-        "block rounded-2xl border p-3 transition",
+        "block rounded-2xl border p-3.5 transition",
         selected
           ? "border-cyan-300 bg-cyan-50 shadow-sm"
           : "border-black/5 bg-white hover:border-black/10 hover:bg-zinc-50",
       )}
     >
       <div className="flex items-start gap-3">
-        <div className="grid h-11 w-11 place-items-center rounded-full bg-gradient-to-br from-cyan-100 to-emerald-100 text-sm font-black text-zinc-800">
+        <div className="grid h-12 w-12 place-items-center rounded-full bg-gradient-to-br from-cyan-100 to-emerald-100 text-sm font-black text-zinc-800">
           {name
             .split(" ")
             .filter(Boolean)
@@ -49,10 +49,10 @@ export function ThreadListItem({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
-            <p className="truncate text-sm font-bold text-zinc-900">{name}</p>
+            <p className="truncate text-sm sm:text-[15px] font-bold text-zinc-900">{name}</p>
             <p className="shrink-0 text-[11px] text-zinc-500">{formatTime(thread.lastMessageAt)}</p>
           </div>
-          <p className="mt-1 truncate text-xs text-zinc-600">{thread.lastMessagePreview}</p>
+          <p className="mt-1 truncate text-xs sm:text-[13px] text-zinc-600">{thread.lastMessagePreview}</p>
           <div className="mt-2 flex items-center justify-between gap-2">
             <span className="truncate text-[11px] text-zinc-500">
               {role === "coach" ? "Cliente" : thread.coachMembershipActive ? "Coach activo" : "Coach inactivo"}
@@ -68,4 +68,3 @@ export function ThreadListItem({
     </Link>
   );
 }
-

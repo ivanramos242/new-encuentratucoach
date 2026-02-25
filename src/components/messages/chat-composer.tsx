@@ -124,13 +124,7 @@ export function ChatComposer({
         </div>
       ) : null}
 
-      {serverHints?.queuePressure === "high" ? (
-        <p className="mb-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          Alta carga: los mensajes se enviarán de forma gradual para no saturar el servidor.
-        </p>
-      ) : null}
-
-      <div className="flex items-end gap-2">
+      <div className="flex items-end gap-2 sm:gap-2.5">
         <button
           type="button"
           disabled={!canReply}
@@ -156,7 +150,7 @@ export function ChatComposer({
             rows={1}
             disabled={!canReply}
             placeholder={canReply ? "Escribe un mensaje..." : "No puedes responder en este hilo."}
-            className="max-h-32 min-h-6 w-full resize-none bg-transparent text-sm outline-none placeholder:text-zinc-400"
+            className="max-h-28 min-h-6 w-full resize-none bg-transparent text-base sm:text-sm outline-none placeholder:text-zinc-400"
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.shiftKey) {
                 event.preventDefault();
@@ -180,8 +174,7 @@ export function ChatComposer({
         </button>
       </div>
 
-      <div className="mt-2 flex items-center justify-between gap-3">
-        <p className="text-xs text-zinc-500">Imágenes, PDF y audio (MVP) · una pieza por mensaje</p>
+      <div className="mt-2 flex items-center justify-end gap-3">
         {pendingCount > 0 ? (
           <p className="text-xs font-semibold text-cyan-700">
             {pendingCount} pendiente{pendingCount > 1 ? "s" : ""} en cola
@@ -192,4 +185,3 @@ export function ChatComposer({
     </div>
   );
 }
-

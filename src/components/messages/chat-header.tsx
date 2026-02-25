@@ -2,22 +2,26 @@
 
 import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowLeft, faUser } from "@fortawesome/free-solid-svg-icons";
+import { faArrowLeft, faUser, faTrashCan } from "@fortawesome/free-solid-svg-icons";
 import type { MessageThreadDetailDto, MessagingRole } from "@/types/messages";
 
 export function ChatHeader({
   role,
   thread,
+  onDeleteChat,
+  deleting,
 }: {
   role: MessagingRole;
   thread: MessageThreadDetailDto;
+  onDeleteChat?: () => void;
+  deleting?: boolean;
 }) {
   const counterpart = role === "coach" ? thread.clientName : thread.coachName;
   const backHref = role === "coach" ? "/mi-cuenta/coach/mensajes" : "/mi-cuenta/cliente/mensajes";
 
   return (
-    <header className="sticky top-0 z-10 border-b border-black/5 bg-white/95 px-4 py-3 backdrop-blur">
-      <div className="flex items-center gap-3">
+    <header className="sticky top-0 z-10 border-b border-black/5 bg-white/95 px-3 py-3 backdrop-blur sm:px-4">
+      <div className="flex items-center gap-2 sm:gap-3">
         <Link
           href={backHref}
           className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-black/10 bg-white text-zinc-700 md:hidden"
@@ -41,7 +45,7 @@ export function ChatHeader({
           <p className="truncate text-xs text-zinc-500">
             {role === "client"
               ? thread.coachMembershipActive
-                ? "Coach disponible por mensajería"
+                ? "Coach disponible"
                 : "Coach inactivo (solo lectura)"
               : "Conversación privada"}
           </p>
@@ -50,12 +54,25 @@ export function ChatHeader({
         {role === "client" ? (
           <Link
             href={`/coaches/${thread.coachSlug}`}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-black/10 bg-white text-zinc-700 hover:bg-zinc-50"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-black/10 bg-white text-zinc-700 hover:bg-zinc-50"
             aria-label="Ver perfil del coach"
             title="Ver perfil del coach"
           >
             <FontAwesomeIcon icon={faUser} className="h-4 w-4" />
           </Link>
+        ) : null}
+
+        {onDeleteChat ? (
+          <button
+            type="button"
+            onClick={onDeleteChat}
+            disabled={deleting}
+            aria-label="Borrar chat"
+            title="Borrar chat"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-black/10 bg-white text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+          >
+            <FontAwesomeIcon icon={faTrashCan} className="h-4 w-4" />
+          </button>
         ) : null}
       </div>
     </header>
