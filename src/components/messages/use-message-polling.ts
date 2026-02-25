@@ -29,7 +29,22 @@ export function useMessagePolling({
   const cursorRef = useRef<string | null>(null);
   const timeoutRef = useRef<number | null>(null);
   const stoppedRef = useRef(false);
+  const inFlightRef = useRef(false);
   const suggestedPollMsRef = useRef(1800);
+  const onItemsRef = useRef(onItems);
+  const onServerHintsRef = useRef(onServerHints);
+  const pollNowRef = useRef<() => Promise<void>>(async () => undefined);
+
+  useEffect(() => {
+    onItemsRef.current = onItems;
+    onServerHintsRef.current = onServerHints;
+  }, [onItems, onServerHints]);
+
+  useEffect(() => {
+    cursorRef.current = null;
+    suggestedPollMsRef.current = 1800;
+    setLastError(null);
+  }, [threadId]);
 
   const clearTimer = useCallback(() => {
     if (timeoutRef.current != null) {
@@ -44,7 +59,7 @@ export function useMessagePolling({
       if (stoppedRef.current || !enabled) return;
       const jitter = Math.round(ms * (Math.random() * 0.15));
       timeoutRef.current = window.setTimeout(() => {
-        void pollNow();
+        void pollNowRef.current();
       }, ms + jitter);
     },
     [clearTimer, enabled],
@@ -52,6 +67,8 @@ export function useMessagePolling({
 
   const pollNow = useCallback(async () => {
     if (!enabled || stoppedRef.current) return;
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
     setPolling(true);
     try {
       const mode = document.visibilityState === "hidden" ? "background" : "foreground";
@@ -72,7 +89,7 @@ export function useMessagePolling({
         setLastError(payload.message || "No se pudo actualizar el chat.");
         if (payload.serverHints) {
           suggestedPollMsRef.current = payload.serverHints.suggestedPollMs;
-          onServerHints?.(payload.serverHints);
+          onServerHintsRef.current?.(payload.serverHints);
         }
         schedule(Math.max(retryMs, suggestedPollMsRef.current));
         return;
@@ -83,19 +100,22 @@ export function useMessagePolling({
       if (payload.nextCursor !== undefined) cursorRef.current = payload.nextCursor ?? null;
       if (payload.serverHints) {
         suggestedPollMsRef.current = payload.serverHints.suggestedPollMs;
-        onServerHints?.(payload.serverHints);
+        onServerHintsRef.current?.(payload.serverHints);
       } else if (typeof payload.pollIntervalMs === "number" && payload.pollIntervalMs > 0) {
         suggestedPollMsRef.current = payload.pollIntervalMs;
       }
-      if (payload.items?.length) onItems(payload.items);
+      if (payload.items?.length) onItemsRef.current(payload.items);
       schedule(suggestedPollMsRef.current);
     } catch {
       setLastError("Error de red al actualizar mensajes.");
       schedule(Math.max(3000, suggestedPollMsRef.current));
     } finally {
+      inFlightRef.current = false;
       setPolling(false);
     }
-  }, [enabled, onItems, onServerHints, schedule, threadId]);
+  }, [enabled, schedule, threadId]);
+
+  pollNowRef.current = pollNow;
 
   useEffect(() => {
     stoppedRef.current = !enabled;
@@ -127,4 +147,3 @@ export function useMessagePolling({
     },
   };
 }
-
