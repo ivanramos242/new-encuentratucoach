@@ -64,6 +64,7 @@ function mapDbCoachToPublic(coach: DbCoachRecord): PublicCoachProfile {
         .filter(Boolean)
         .join(" · "),
     bio: coach.bio || stripHtml(coach.aboutHtml) || "Perfil de coach en proceso de completar.",
+    aboutHtml: coach.aboutHtml || undefined,
     categories: coach.categories.map((item) => item.category.slug),
     citySlug,
     cityLabel,

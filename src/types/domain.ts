@@ -50,6 +50,7 @@ export interface CoachProfile {
   name: string;
   headline: string;
   bio: string;
+  aboutHtml?: string;
   categories: string[];
   citySlug: string;
   cityLabel: string;
