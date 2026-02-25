@@ -59,7 +59,7 @@ const schema = z.object({
     })
     .optional(),
   galleryUrls: z.array(z.string().max(500)).max(8).optional(),
-  categorySlugs: z.array(z.string().min(1).max(120)).max(12).optional(),
+  categorySlugs: z.array(z.string().min(1).max(120)).max(4).optional(),
 });
 
 export async function GET(request: Request) {

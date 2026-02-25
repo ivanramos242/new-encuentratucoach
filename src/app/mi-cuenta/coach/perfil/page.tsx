@@ -28,7 +28,7 @@ export default async function CoachProfilePage({
         title="Mi perfil coach"
         description="Editor del perfil público: datos, precios, enlaces, galería y publicación."
       />
-      <PageShell className="pt-8">
+      <PageShell className="pt-8" containerClassName="w-[94%] xl:w-[80%] max-w-[1600px]">
         <CoachProfileEditor initialProfile={profile} wizardMode={wizardMode} />
       </PageShell>
     </>
