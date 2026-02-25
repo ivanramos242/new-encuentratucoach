@@ -12,10 +12,12 @@ import {
   faEuroSign,
   faGlobe,
   faImages,
+  faLanguage,
   faLocationDot,
   faPenToSquare,
   faPhone,
   faStar,
+  faTag,
   faUser,
   faUsers,
 } from "@fortawesome/free-solid-svg-icons";
@@ -42,6 +44,21 @@ import { formatEuro } from "@/lib/utils";
 type ParamsInput = Promise<{ coachSlug: string }>;
 type SearchParamsInput = Promise<Record<string, string | string[] | undefined>>;
 
+function normalizePhoneForWhatsapp(value?: string | null) {
+  if (!value) return "";
+  let digits = value.replace(/\D+/g, "");
+  if (!digits) return "";
+  if (!digits.startsWith("34")) digits = `34${digits}`;
+  return digits;
+}
+
+function buildCoachWhatsappHref(rawPhone: string, coachName: string) {
+  const phone = normalizePhoneForWhatsapp(rawPhone);
+  if (!phone) return "";
+  const text = `Hola ${coachName}, te he visto en encuentratucoach.es y estoy interesado en tus servicios.`;
+  return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+}
+
 export async function generateMetadata({
   params,
   searchParams,
@@ -55,12 +72,35 @@ export async function generateMetadata({
   if (!coach) return buildMetadata({ title: "Coach no encontrado", description: "Perfil no encontrado", noindex: true });
 
   const hasPopupVariant = sp.etc_popup != null || sp.etc_mail != null || sp.etc_err != null;
+  const categoryLabels = coach.categories.map((slug) => getCoachCategoryLabel(slug) ?? slug).filter(Boolean);
+  const primaryCategory = categoryLabels[0]?.trim();
+  const cityMain = coach.cityLabel.split(",")[0]?.trim();
+  const seoTitle =
+    primaryCategory && cityMain
+      ? `Coach de ${primaryCategory.toLowerCase()} en ${cityMain.toLowerCase()} - ${coach.name}`
+      : `${coach.name} - ${coach.cityLabel}`;
+  const seoDescription = [
+    primaryCategory ? `Coach de ${primaryCategory} en ${coach.cityLabel}.` : "",
+    coach.headline || "",
+    coach.sessionModes.length ? `Sesiones ${coach.sessionModes.join(" y ")}.` : "",
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+  const keywords = [
+    coach.name,
+    primaryCategory ? `coach de ${primaryCategory} en ${cityMain ?? coach.cityLabel}` : "",
+    primaryCategory ? `${primaryCategory} ${coach.cityLabel}` : "",
+    cityMain ? `coach en ${cityMain}` : "",
+    `coach ${coach.cityLabel}`,
+  ].filter(Boolean);
 
   return buildMetadata({
-    title: `${coach.name} - ${coach.cityLabel}`,
-    description: coach.headline,
+    title: seoTitle,
+    description: seoDescription || coach.headline || `Perfil de coach en ${coach.cityLabel}`,
     path: `/coaches/${coach.slug}`,
     noindex: hasPopupVariant,
+    keywords,
   });
 }
 
@@ -180,20 +220,21 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
 
               <div className="mt-4 flex flex-wrap gap-2">
                 {categoryLabels.map((label, index) => (
-                  <span key={`${label}-${index}`} className="rounded-full border border-black/10 bg-white px-3 py-2 text-sm font-semibold text-zinc-800">
+                  <span key={`${label}-${index}`} className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-3 py-2 text-sm font-semibold text-zinc-800">
+                    <FontAwesomeIcon icon={faTag} className="h-3.5 w-3.5 text-zinc-500" />
                     {label}
                   </span>
                 ))}
               </div>
 
               <div className="mt-4 flex flex-wrap gap-2">
-                {coach.certifiedStatus === "approved" ? <Chip tone="success">Coach certificado</Chip> : null}
+                {coach.certifiedStatus === "approved" ? <Chip tone="success" icon={faStar}>Coach certificado</Chip> : null}
                 {coach.sessionModes.map((mode) => (
-                  <Chip key={mode}>{mode === "online" ? "Sesión Online" : "Sesión Presencial"}</Chip>
+                  <Chip key={mode} icon={mode === "online" ? faGlobe : faUsers}>{mode === "online" ? "Sesión Online" : "Sesión Presencial"}</Chip>
                 ))}
-                <Chip>{coach.cityLabel}</Chip>
-                {coach.languages.length ? <Chip>{coach.languages.join(" y ")}</Chip> : null}
-                <Chip>{coach.basePriceEur ? `Desde ${formatEuro(coach.basePriceEur)} · sesión` : "Precio a consultar"}</Chip>
+                <Chip icon={faLocationDot}>{coach.cityLabel}</Chip>
+                {coach.languages.length ? <Chip icon={faLanguage}>{coach.languages.join(" y ")}</Chip> : null}
+                <Chip icon={faEuroSign}>{coach.basePriceEur ? `Desde ${formatEuro(coach.basePriceEur)} · sesión` : "Precio a consultar"}</Chip>
               </div>
 
               <div className="mt-4 rounded-2xl border border-black/10 bg-zinc-50 p-4">
@@ -236,13 +277,13 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
                 </h2>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {coach.links.whatsapp ? (
-                    <ContactLink coachId={coach.id} target="whatsapp" href={`https://wa.me/${coach.links.whatsapp.replace(/\D+/g, "")}`} label="WhatsApp" />
+                    <ContactLink coachId={coach.id} coachName={coach.name} target="whatsapp" href={coach.links.whatsapp} label="WhatsApp" />
                   ) : null}
-                  {coach.links.phone ? <ContactLink coachId={coach.id} target="phone" href={`tel:${coach.links.phone}`} label="Llamar" /> : null}
-                  {coach.links.web ? <ContactLink coachId={coach.id} target="web" href={coach.links.web} label="Web" external /> : null}
-                  {coach.links.instagram ? <ContactLink coachId={coach.id} target="instagram" href={coach.links.instagram} label="Instagram" external /> : null}
-                  {coach.links.linkedin ? <ContactLink coachId={coach.id} target="linkedin" href={coach.links.linkedin} label="LinkedIn" external /> : null}
-                  {coach.links.facebook ? <ContactLink coachId={coach.id} target="facebook" href={coach.links.facebook} label="Facebook" external /> : null}
+                  {coach.links.phone ? <ContactLink coachId={coach.id} coachName={coach.name} target="phone" href={`tel:${coach.links.phone}`} label="Llamar" /> : null}
+                  {coach.links.web ? <ContactLink coachId={coach.id} coachName={coach.name} target="web" href={coach.links.web} label="Web" external /> : null}
+                  {coach.links.instagram ? <ContactLink coachId={coach.id} coachName={coach.name} target="instagram" href={coach.links.instagram} label="Instagram" external /> : null}
+                  {coach.links.linkedin ? <ContactLink coachId={coach.id} coachName={coach.name} target="linkedin" href={coach.links.linkedin} label="LinkedIn" external /> : null}
+                  {coach.links.facebook ? <ContactLink coachId={coach.id} coachName={coach.name} target="facebook" href={coach.links.facebook} label="Facebook" external /> : null}
                 </div>
               </div>
 
@@ -449,9 +490,18 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
   );
 }
 
-function Chip({ children, tone = "default" }: { children: React.ReactNode; tone?: "default" | "success" }) {
+function Chip({
+  children,
+  tone = "default",
+  icon,
+}: {
+  children: React.ReactNode;
+  tone?: "default" | "success";
+  icon?: IconDefinition;
+}) {
   return (
     <span className={tone === "success" ? "rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-900" : "rounded-full border border-black/10 bg-white px-3 py-2 text-sm font-semibold text-zinc-800"}>
+      {icon ? <FontAwesomeIcon icon={icon} className="mr-2 h-3.5 w-3.5" /> : null}
       {children}
     </span>
   );
@@ -553,7 +603,7 @@ function CoachPrivateStatsPanel({ stats }: { stats: CoachPrivateAnalyticsSummary
             Estadísticas del coach (privadas)
           </h2>
           <p className="mt-2 text-sm text-zinc-700">
-            Datos propios de la plataforma (sin GA4). Visualización ajustada x1,7 y redondeada hacia arriba.
+            Resumen de visitas e interacciones de tu perfil en la plataforma.
           </p>
         </div>
         <div className="rounded-2xl border border-black/10 bg-zinc-50 px-4 py-3 text-xs text-zinc-700">
@@ -722,35 +772,75 @@ function HeroIcon({ name }: { name: "back" | "share" | "zoom" }) {
 
 function ContactLink({
   coachId,
+  coachName,
   target,
   href,
   label,
   external = false,
 }: {
   coachId: string;
+  coachName: string;
   target: "whatsapp" | "phone" | "email" | "web" | "linkedin" | "instagram" | "facebook";
   href: string;
   label: string;
   external?: boolean;
 }) {
-  const icon =
-    target === "phone"
-      ? faPhone
-      : target === "email"
-        ? faEnvelope
-        : target === "web"
-          ? faGlobe
-          : faGlobe;
+  const finalHref = target === "whatsapp" ? buildCoachWhatsappHref(href, coachName) || href : href;
   return (
     <ProfileClickLink
       coachId={coachId}
       target={target}
-      href={href}
+      href={finalHref}
       external={external}
       className="inline-flex items-center rounded-xl border border-black/10 bg-zinc-50 px-4 py-2.5 text-sm font-semibold text-zinc-900 hover:bg-white"
     >
-      <FontAwesomeIcon icon={icon} className="mr-2 h-4 w-4 text-zinc-500" />
+      <SocialContactIcon target={target} />
       {label}
     </ProfileClickLink>
+  );
+}
+
+function SocialContactIcon({
+  target,
+}: {
+  target: "whatsapp" | "phone" | "email" | "web" | "linkedin" | "instagram" | "facebook";
+}) {
+  if (target === "phone") {
+    return <FontAwesomeIcon icon={faPhone} className="mr-2 h-4 w-4 text-zinc-500" />;
+  }
+  if (target === "email") {
+    return <FontAwesomeIcon icon={faEnvelope} className="mr-2 h-4 w-4 text-zinc-500" />;
+  }
+  if (target === "web") {
+    return <FontAwesomeIcon icon={faGlobe} className="mr-2 h-4 w-4 text-zinc-500" />;
+  }
+
+  return (
+    <span className="mr-2 inline-flex h-4 w-4 items-center justify-center text-zinc-500" aria-hidden="true">
+      {target === "whatsapp" ? (
+        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none">
+          <path d="M12 21a9 9 0 10-7.8-4.5L3 21l4.7-1.2A8.9 8.9 0 0012 21z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+          <path d="M9.2 8.8c.4-1 1.1-1.1 1.6-.6l1 1.1c.4.5.3 1.2-.2 1.6l-.6.5c.6 1.4 1.6 2.4 3 3l.5-.6c.4-.5 1.1-.6 1.6-.2l1.1 1c.5.5.4 1.2-.6 1.6-1.1.4-3.6.2-6.1-2.3C9 12.4 8.8 10 9.2 8.8z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+        </svg>
+      ) : null}
+      {target === "instagram" ? (
+        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none">
+          <rect x="3.2" y="3.2" width="17.6" height="17.6" rx="4.8" stroke="currentColor" strokeWidth="1.8" />
+          <circle cx="12" cy="12" r="3.8" stroke="currentColor" strokeWidth="1.8" />
+          <circle cx="17.3" cy="6.9" r="0.9" fill="currentColor" />
+        </svg>
+      ) : null}
+      {target === "linkedin" ? (
+        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none">
+          <rect x="3.2" y="3.2" width="17.6" height="17.6" rx="4.2" stroke="currentColor" strokeWidth="1.8" />
+          <path d="M8 10.3V16M8 7.8v.1M12 16v-5.4M16 16v-2.9a2.1 2.1 0 10-4.2 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ) : null}
+      {target === "facebook" ? (
+        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none">
+          <path d="M14.2 8h2V5.2h-2A4.2 4.2 0 0010 9.4v1.4H8v2.9h2V19h3v-5.3h2.1l.7-2.9H13V9.6c0-.9.3-1.6 1.2-1.6z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+        </svg>
+      ) : null}
+    </span>
   );
 }

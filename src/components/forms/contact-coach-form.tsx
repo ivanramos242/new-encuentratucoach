@@ -8,7 +8,8 @@ export function ContactCoachForm({ coachId, coachName }: { coachId: string; coac
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
+    const formEl = event.currentTarget;
+    const formData = new FormData(formEl);
     setStatus("sending");
     setMessage("");
 
@@ -30,7 +31,7 @@ export function ContactCoachForm({ coachId, coachName }: { coachId: string; coac
 
       setStatus("success");
       setMessage("Mensaje enviado correctamente (relay V1 simulado).");
-      event.currentTarget.reset();
+      formEl.reset();
     } catch (error) {
       setStatus("error");
       setMessage(error instanceof Error ? error.message : "No se pudo enviar.");

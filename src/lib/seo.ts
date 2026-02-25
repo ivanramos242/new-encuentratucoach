@@ -8,6 +8,7 @@ export function buildMetadata(input: {
   description: string;
   path?: string;
   noindex?: boolean;
+  keywords?: string[];
 }): Metadata {
   const title = `${input.title} | ${siteConfig.name}`;
   const url = absoluteUrl(input.path ?? "/");
@@ -15,6 +16,7 @@ export function buildMetadata(input: {
   return {
     title,
     description: input.description,
+    keywords: input.keywords,
     metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? siteConfig.url),
     alternates: { canonical: url },
     robots: input.noindex

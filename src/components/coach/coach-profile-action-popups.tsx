@@ -143,6 +143,11 @@ function digitsPhone(value?: string) {
   return v;
 }
 
+function buildWhatsappHref(phone: string, coachName: string) {
+  const text = `Hola ${coachName}, te he visto en encuentratucoach.es y estoy interesado en tus servicios.`;
+  return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+}
+
 function BaseModal({
   open,
   onClose,
@@ -331,7 +336,7 @@ export function CoachProfileActionPopups({ coach }: { coach: CoachPopupData }) {
   }
 
   const socialLinks: Array<{ key: string; icon: SvgIconName; label: string; href: string }> = [];
-  if (wa) socialLinks.push({ key: "wa", icon: "wa", label: "WhatsApp", href: `https://wa.me/${wa}` });
+  if (wa) socialLinks.push({ key: "wa", icon: "wa", label: "WhatsApp", href: buildWhatsappHref(wa, coach.name) });
   if (phone) socialLinks.push({ key: "phone", icon: "phone", label: "Llamar", href: `tel:+${phone}` });
   if (coach.links.web) socialLinks.push({ key: "web", icon: "link", label: "Web", href: coach.links.web });
   if (coach.links.instagram) socialLinks.push({ key: "ig", icon: "ig", label: "Instagram", href: coach.links.instagram });
@@ -388,7 +393,7 @@ export function CoachProfileActionPopups({ coach }: { coach: CoachPopupData }) {
               Enviar mensaje
             </ActionButton>
             {wa ? (
-              <ActionButton icon="wa" tone="soft" href={`https://wa.me/${wa}`}>
+              <ActionButton icon="wa" tone="soft" href={buildWhatsappHref(wa, coach.name)}>
                 Escribir por WhatsApp
               </ActionButton>
             ) : null}
