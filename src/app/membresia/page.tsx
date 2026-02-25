@@ -1,7 +1,8 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
 import { getOptionalSessionUser } from "@/lib/auth-server";
+import { getCoachProfileForEditor } from "@/lib/coach-profile-service";
 import { listMembershipPlansForPublic } from "@/lib/membership-plan-service";
 import { buildMetadata } from "@/lib/seo";
 import { formatEuro } from "@/lib/utils";
@@ -26,7 +27,15 @@ function planFeatures(code: "monthly" | "annual") {
   return ["Perfil público activo", "SEO en directorio", "Reseñas y certificación", "Métricas básicas V1"];
 }
 
-function getPlanAction(sessionUser: Awaited<ReturnType<typeof getOptionalSessionUser>>, planCode: "monthly" | "annual") {
+function isActiveCoachSubscription(status?: string | null) {
+  return status === "active" || status === "trialing";
+}
+
+function getPlanAction(
+  sessionUser: Awaited<ReturnType<typeof getOptionalSessionUser>>,
+  planCode: "monthly" | "annual",
+  options?: { coachHasActivePlan?: boolean },
+) {
   if (!sessionUser) {
     return {
       primaryHref: "/registro/coach",
@@ -37,6 +46,15 @@ function getPlanAction(sessionUser: Awaited<ReturnType<typeof getOptionalSession
   }
 
   if (sessionUser.role === "coach" || sessionUser.role === "admin") {
+    if (options?.coachHasActivePlan) {
+      return {
+        primaryHref: "/mi-cuenta/coach/membresia",
+        primaryLabel: "Mi plan actual",
+        secondaryHref: undefined,
+        secondaryLabel: undefined,
+      };
+    }
+
     return {
       primaryHref: `/mi-cuenta/coach/membresia?plan=${planCode}`,
       primaryLabel: "Pagar membresía",
@@ -55,6 +73,11 @@ function getPlanAction(sessionUser: Awaited<ReturnType<typeof getOptionalSession
 
 export default async function MembershipPage() {
   const sessionUser = await getOptionalSessionUser();
+  const coachProfile =
+    sessionUser && (sessionUser.role === "coach" || sessionUser.role === "admin")
+      ? await getCoachProfileForEditor(sessionUser)
+      : null;
+  const coachHasActivePlan = isActiveCoachSubscription(coachProfile?.subscriptions?.[0]?.status);
   const plans = await listMembershipPlansForPublic();
 
   return (
@@ -67,7 +90,7 @@ export default async function MembershipPage() {
       <PageShell className="pt-8">
         <div className="grid gap-6 lg:grid-cols-2">
           {plans.map((plan) => {
-            const cta = getPlanAction(sessionUser, plan.code);
+            const cta = getPlanAction(sessionUser, plan.code, { coachHasActivePlan });
             const highlighted = plan.code === "annual";
             const hasDiscount = plan.discountActive && plan.effectivePriceCents < plan.priceCents;
             const original = formatEuro(plan.priceCents / 100);
@@ -126,12 +149,14 @@ export default async function MembershipPage() {
                   >
                     {cta.primaryLabel}
                   </Link>
-                  <Link
-                    href={cta.secondaryHref}
-                    className="rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
-                  >
-                    {cta.secondaryLabel}
-                  </Link>
+                  {cta.secondaryHref && cta.secondaryLabel ? (
+                    <Link
+                      href={cta.secondaryHref}
+                      className="rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
+                    >
+                      {cta.secondaryLabel}
+                    </Link>
+                  ) : null}
                 </div>
               </section>
             );
