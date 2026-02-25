@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { faArrowLeft, faEye } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { CoachProfileEditor } from "@/components/coach/coach-profile-editor";
 import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
@@ -28,6 +30,7 @@ export default async function AdminCoachProfileEditorPage({ params }: { params: 
             href="/admin/coaches"
             className="inline-flex rounded-xl border border-black/10 bg-white px-4 py-2 text-sm font-semibold text-zinc-900"
           >
+            <FontAwesomeIcon icon={faArrowLeft} className="mr-2 mt-0.5 h-3.5 w-3.5" />
             Volver a coaches
           </Link>
           {profile.slug ? (
@@ -36,6 +39,7 @@ export default async function AdminCoachProfileEditorPage({ params }: { params: 
               className="inline-flex rounded-xl border border-cyan-300 bg-cyan-50 px-4 py-2 text-sm font-semibold text-cyan-900"
               target="_blank"
             >
+              <FontAwesomeIcon icon={faEye} className="mr-2 mt-0.5 h-3.5 w-3.5" />
               Ver ficha publica
             </Link>
           ) : null}

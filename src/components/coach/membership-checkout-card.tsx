@@ -1,5 +1,7 @@
 "use client";
 
+import { faListCheck, faPen } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
 import { useEffect, useMemo, useState, useTransition } from "react";
 
@@ -250,7 +252,11 @@ export function MembershipCheckoutCard({
               href={showOnboardingCta ? `${profileHref}${profileHref.includes("?") ? "&" : "?"}wizard=1` : profileHref}
               className="inline-flex items-center justify-center rounded-xl bg-zinc-950 px-4 py-3 text-sm font-semibold text-white"
             >
-              {showOnboardingCta ? "Empezar wizard de perfil" : "Editar mi perfil coach"}
+              <FontAwesomeIcon
+                icon={showOnboardingCta ? faListCheck : faPen}
+                className="mr-2 h-3.5 w-3.5"
+              />
+              {showOnboardingCta ? "Empezar formulario de bienvenida" : "Editar mi perfil coach"}
             </Link>
             <Link
               href="/coaches"

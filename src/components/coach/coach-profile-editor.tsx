@@ -1,5 +1,18 @@
 "use client";
 
+import {
+  faArrowLeft,
+  faArrowRight,
+  faCheck,
+  faEye,
+  faFloppyDisk,
+  faImage,
+  faLightbulb,
+  faListCheck,
+  faPen,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { COACH_CATEGORY_CATALOG } from "@/lib/coach-category-catalog";
 
@@ -164,7 +177,10 @@ function SeoHelpPanel({
     <section className="rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-5 shadow-sm sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Consejos para que te encuentren mejor</p>
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">
+            <FontAwesomeIcon icon={faLightbulb} className="mr-2 h-3 w-3" />
+            Consejos para que te encuentren mejor
+          </p>
           <h3 className="mt-1 text-lg font-black tracking-tight text-zinc-950">Rellena el perfil pensando en personas reales</h3>
           <p className="mt-1 text-sm text-zinc-700">
             Escribe claro, como si estuvieras hablando con alguien que busca ayuda hoy.
@@ -213,6 +229,7 @@ function ProfileLivePreview({
   form: {
     name: string;
     headline: string;
+    heroImageSrc?: string | null;
     city: string;
     modeOnline: boolean;
     modePresencial: boolean;
@@ -232,7 +249,10 @@ function ProfileLivePreview({
     <section className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.16em] text-zinc-500">Vista previa</p>
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-zinc-500">
+            <FontAwesomeIcon icon={faEye} className="mr-2 h-3 w-3" />
+            Vista previa
+          </p>
           <h3 className="mt-1 text-lg font-black tracking-tight text-zinc-950">
             {form.name.trim() || "Tu nombre de perfil"}
           </h3>
@@ -248,6 +268,14 @@ function ProfileLivePreview({
       </div>
 
       <div className="mt-4 grid gap-3">
+        <div className="overflow-hidden rounded-2xl border border-black/10 bg-zinc-100">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={form.heroImageSrc?.trim() || "https://placehold.co/900x520/png?text=Imagen+principal"}
+            alt="Vista previa imagen principal"
+            className="h-44 w-full object-cover"
+          />
+        </div>
         <div className="rounded-2xl border border-black/10 bg-zinc-50 p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Titular</p>
           <p className="mt-1 text-sm text-zinc-800">
@@ -317,7 +345,10 @@ function UploadDropzone({
         dragOver ? "border-cyan-400 bg-cyan-50" : "border-black/15 bg-zinc-50"
       }`}
     >
-      <p className="font-semibold text-zinc-900">{label}</p>
+      <p className="font-semibold text-zinc-900">
+        <FontAwesomeIcon icon={faImage} className="mr-2 h-3.5 w-3.5 text-zinc-500" />
+        {label}
+      </p>
       <p className="mt-1 text-zinc-600">{hint}</p>
       <div className="mt-3 flex flex-wrap gap-2">
         <button
@@ -326,6 +357,7 @@ function UploadDropzone({
           onClick={() => inputRef.current?.click()}
           className="rounded-xl border border-black/10 bg-white px-3 py-2 font-semibold text-zinc-900 disabled:opacity-60"
         >
+          <FontAwesomeIcon icon={faImage} className="mr-2 h-3.5 w-3.5 text-zinc-500" />
           {uploading ? "Subiendo..." : multiple ? "Seleccionar archivos" : "Seleccionar archivo"}
         </button>
         <span className="self-center text-xs text-zinc-500">Arrastra y suelta aqui</span>
@@ -358,6 +390,7 @@ export function CoachProfileEditor({
   adminMode?: boolean;
   targetCoachProfileId?: string;
 }) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [uploading, setUploading] = useState<null | "hero" | "video" | "gallery">(null);
   const [status, setStatus] = useState<{ type: "idle" | "ok" | "error"; text: string }>({ type: "idle", text: "" });
@@ -621,12 +654,22 @@ export function CoachProfileEditor({
       try {
         if (wizardMode && !allDone) {
           setShowValidation(true);
-          setStatus({ type: "error", text: "Completa todos los pasos obligatorios del wizard antes de publicar." });
+          setStatus({ type: "error", text: "Completa todos los pasos obligatorios del formulario antes de publicar." });
           return;
         }
-        await postJson("/api/coach-profile/save", buildPayload());
+        const saved = (await postJson("/api/coach-profile/save", buildPayload())) as {
+          profile?: { slug?: string | null };
+        };
         setIsDirty(false);
-        await postJson("/api/coach-profile/publish", adminTargetProfileId ? { coachProfileId: adminTargetProfileId } : {});
+        const published = (await postJson("/api/coach-profile/publish", adminTargetProfileId ? { coachProfileId: adminTargetProfileId } : {})) as {
+          profile?: { slug?: string | null };
+        };
+        const publicSlug = published.profile?.slug || saved.profile?.slug || initialProfile?.slug || null;
+        if (!adminMode && publicSlug) {
+          router.push(`/coaches/${publicSlug}`);
+          router.refresh();
+          return;
+        }
         setStatus({ type: "ok", text: "Perfil publicado correctamente." });
       } catch (error) {
         setStatus({ type: "error", text: error instanceof Error ? error.message : "No se pudo publicar el perfil." });
@@ -778,7 +821,10 @@ export function CoachProfileEditor({
         <section className="rounded-3xl border border-cyan-200 bg-gradient-to-br from-cyan-50 to-white p-5 shadow-sm sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-700">Wizard de onboarding</p>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-700">
+                <FontAwesomeIcon icon={faListCheck} className="mr-2 h-3 w-3" />
+                Formulario de bienvenida
+              </p>
               <h2 className="mt-1 text-xl font-black tracking-tight text-zinc-950">Crea tu perfil coach paso a paso</h2>
               <p className="mt-1 text-sm text-zinc-700">Completa los pasos y luego publica tu perfil.</p>
             </div>
@@ -809,6 +855,7 @@ export function CoachProfileEditor({
               }}
               className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm font-semibold text-zinc-900 disabled:opacity-50"
             >
+              <FontAwesomeIcon icon={faArrowLeft} className="mr-2 h-3.5 w-3.5" />
               Paso anterior
             </button>
             <button
@@ -820,6 +867,7 @@ export function CoachProfileEditor({
               className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm font-semibold text-zinc-900 disabled:opacity-50"
             >
               Siguiente paso
+              <FontAwesomeIcon icon={faArrowRight} className="ml-2 h-3.5 w-3.5" />
             </button>
             {autoSavingStep !== null ? <span className="self-center text-sm text-zinc-600">Autoguardando paso {autoSavingStep + 1}...</span> : null}
           </div>
@@ -1283,6 +1331,7 @@ export function CoachProfileEditor({
             form={{
               name: form.name,
               headline: form.headline,
+              heroImageSrc: heroPreviewSrc || form.heroImageUrl,
               city: form.city,
               modeOnline: form.modeOnline,
               modePresencial: form.modePresencial,
@@ -1296,6 +1345,71 @@ export function CoachProfileEditor({
           />
         </div>
       </section>
+
+      {wizardMode ? (
+        <section className="rounded-3xl border border-black/10 bg-white p-4 shadow-sm sm:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="text-sm text-zinc-700">
+              <span className="font-semibold text-zinc-900">
+                Paso {currentStep + 1} de {steps.length}
+              </span>
+              <span className="mx-2 text-zinc-400">·</span>
+              <span>{steps[currentStep]?.label}</span>
+            </div>
+            {autoSavingStep !== null ? (
+              <span className="text-xs font-medium text-zinc-600">Autoguardando paso {autoSavingStep + 1}...</span>
+            ) : null}
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={pending || uploading !== null || wizardStep <= 0}
+              onClick={() => {
+                void goToWizardStep(wizardStep - 1);
+              }}
+              className="rounded-xl border border-black/10 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 disabled:opacity-50"
+            >
+              <FontAwesomeIcon icon={faArrowLeft} className="mr-2 h-3.5 w-3.5" />
+              Paso anterior
+            </button>
+            <button
+              type="button"
+              disabled={pending || uploading !== null || wizardStep >= steps.length - 1}
+              onClick={() => {
+                void goToWizardStep(wizardStep + 1);
+              }}
+              className="rounded-xl border border-black/10 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 disabled:opacity-50"
+            >
+              Siguiente paso
+              <FontAwesomeIcon icon={faArrowRight} className="ml-2 h-3.5 w-3.5" />
+            </button>
+
+            {allDone ? (
+              <>
+                <button
+                  type="button"
+                  disabled={pending || uploading !== null}
+                  onClick={onSave}
+                  className="rounded-xl bg-zinc-950 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                >
+                  <FontAwesomeIcon icon={faFloppyDisk} className="mr-2 h-3.5 w-3.5" />
+                  {pending ? "Guardando..." : "Guardar perfil"}
+                </button>
+                <button
+                  type="button"
+                  disabled={pending || uploading !== null}
+                  onClick={onPublish}
+                  className="rounded-xl border border-black/10 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 disabled:opacity-60"
+                >
+                  <FontAwesomeIcon icon={faCheck} className="mr-2 h-3.5 w-3.5" />
+                  Guardar y publicar
+                </button>
+              </>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
 
       <SeoHelpPanel
         form={{
@@ -1315,6 +1429,7 @@ export function CoachProfileEditor({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.16em] text-zinc-500">
+              <FontAwesomeIcon icon={faPen} className="mr-2 h-3 w-3" />
               {adminMode ? "Gestion interna" : "Mi perfil"}
             </p>
             <h2 className="mt-1 text-xl font-black tracking-tight text-zinc-950">
@@ -1489,6 +1604,7 @@ export function CoachProfileEditor({
             onClick={onSave}
             className="rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
           >
+            <FontAwesomeIcon icon={faFloppyDisk} className="mr-2 h-3.5 w-3.5" />
             {pending ? "Guardando..." : adminMode ? "Guardar cambios (admin)" : "Guardar perfil"}
           </button>
           <button
@@ -1497,11 +1613,12 @@ export function CoachProfileEditor({
             onClick={onPublish}
             className="rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-900 disabled:opacity-60"
           >
+            <FontAwesomeIcon icon={faCheck} className="mr-2 h-3.5 w-3.5" />
             {adminMode ? "Guardar y publicar ahora" : "Guardar y publicar"}
           </button>
           {wizardMode && !allDone ? (
             <span className="self-center text-sm text-zinc-600">
-              Completa todos los pasos del wizard para habilitar la publicacion.
+              Completa todos los pasos del formulario para habilitar la publicacion.
             </span>
           ) : null}
           {adminMode ? (
