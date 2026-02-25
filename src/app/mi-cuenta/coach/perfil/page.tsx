@@ -4,10 +4,6 @@ import { PageShell } from "@/components/layout/page-shell";
 import { requireRole } from "@/lib/auth-server";
 import { getCoachProfileForEditor } from "@/lib/coach-profile-service";
 
-function isActiveish(status?: string | null) {
-  return status === "active" || status === "trialing";
-}
-
 function pickOne(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
@@ -28,11 +24,9 @@ export default async function CoachProfilePage({
   const user = await requireRole(["coach", "admin"], { returnTo: "/mi-cuenta/coach/perfil" });
   const profile = await getCoachProfileForEditor(user);
   const params = (await searchParams) || {};
-  const wizardParam = typeof params.wizard === "string" ? params.wizard : undefined;
+  const wizardParam = pickOne(params.wizard);
   const returnToPath = sanitizeReturnToPath(pickOne(params.returnTo));
-  const fromCheckout = typeof params.checkout === "string" ? params.checkout === "success" : false;
-  const sub = profile?.subscriptions?.[0];
-  const wizardMode = wizardParam === "1" || (fromCheckout && isActiveish(sub?.status));
+  const wizardMode = wizardParam !== "0";
 
   return (
     <>

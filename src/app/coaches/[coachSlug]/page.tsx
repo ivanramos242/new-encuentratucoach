@@ -9,10 +9,17 @@ import {
   faCirclePlay,
   faClock,
   faEnvelope,
+  faEuroSign,
   faGlobe,
+  faImages,
+  faLocationDot,
   faPenToSquare,
   faPhone,
+  faStar,
+  faUser,
+  faUsers,
 } from "@fortawesome/free-solid-svg-icons";
+import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ProfileAnalyticsTracker } from "@/components/analytics/profile-analytics-tracker";
 import { ProfileClickLink } from "@/components/analytics/profile-click-link";
@@ -272,7 +279,10 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
 
         <div className="mt-4 space-y-6">
           <section id="sobre-mi" className="scroll-mt-[calc(var(--site-header-offset,96px)+5rem)] rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
-            <h2 className="text-2xl font-black tracking-tight text-zinc-950">Sobre mi</h2>
+            <h2 className="text-2xl font-black tracking-tight text-zinc-950">
+              <FontAwesomeIcon icon={faUser} className="mr-2 h-5 w-5 text-zinc-500" />
+              Sobre mi
+            </h2>
             <div className="mt-4 grid gap-4 xl:grid-cols-[1.05fr_.95fr]">
               <div>
                 {coach.aboutHtml ? (
@@ -290,7 +300,10 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
           </section>
 
           <section id="galeria" className="scroll-mt-[calc(var(--site-header-offset,96px)+5rem)] rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
-            <h2 className="text-2xl font-black tracking-tight text-zinc-950">Galería</h2>
+            <h2 className="text-2xl font-black tracking-tight text-zinc-950">
+              <FontAwesomeIcon icon={faImages} className="mr-2 h-5 w-5 text-zinc-500" />
+              Galería
+            </h2>
             <CoachGalleryLightbox coachName={coach.name} heroImageUrl={coach.heroImageUrl} galleryImageUrls={coach.galleryImageUrls} />
           </section>
 
@@ -324,7 +337,10 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
           ) : null}
 
           <section id="precios" className="scroll-mt-[calc(var(--site-header-offset,96px)+5rem)] rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
-            <h2 className="text-2xl font-black tracking-tight text-zinc-950">Precios</h2>
+            <h2 className="text-2xl font-black tracking-tight text-zinc-950">
+              <FontAwesomeIcon icon={faEuroSign} className="mr-2 h-5 w-5 text-zinc-500" />
+              Precios
+            </h2>
             <div className="mt-4">
               <p className="text-4xl font-black tracking-tight text-zinc-900">
                 {coach.basePriceEur ? formatEuro(coach.basePriceEur) : "Consultar"}
@@ -343,13 +359,16 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
             )}
             <div className="my-4 h-px bg-black/10" />
             <div className="grid gap-3 sm:grid-cols-2">
-              <MiniCard title="Modalidad" value={coach.sessionModes.join(" · ") || "A consultar"} />
-              <MiniCard title="Ubicación" value={coach.cityLabel} />
+              <MiniCard icon={faGlobe} title="Modalidad" value={coach.sessionModes.join(" · ") || "A consultar"} />
+              <MiniCard icon={faLocationDot} title="Ubicación" value={coach.cityLabel} />
             </div>
           </section>
 
           <section id="resenas" className="scroll-mt-[calc(var(--site-header-offset,96px)+5rem)] rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
-            <h2 className="text-2xl font-black tracking-tight text-zinc-950">Reseñas</h2>
+            <h2 className="text-2xl font-black tracking-tight text-zinc-950">
+              <FontAwesomeIcon icon={faStar} className="mr-2 h-5 w-5 text-zinc-500" />
+              Reseñas
+            </h2>
             <div className="mt-4 rounded-2xl border border-black/10 bg-zinc-50 p-4">
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="text-3xl font-black tracking-tight text-zinc-900">
@@ -399,7 +418,10 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
             <section className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
               <div className="mb-4 flex items-end justify-between gap-4">
                 <div>
-                  <h2 className="text-2xl font-black tracking-tight text-zinc-950">Coaches relacionados</h2>
+                  <h2 className="text-2xl font-black tracking-tight text-zinc-950">
+                    <FontAwesomeIcon icon={faUsers} className="mr-2 h-5 w-5 text-zinc-500" />
+                    Coaches relacionados
+                  </h2>
                   <p className="mt-1 text-sm text-zinc-700">Perfiles similares por encaje y especialidad.</p>
                 </div>
                 <Link href="/coaches" className="text-sm font-semibold text-cyan-700 hover:text-cyan-800">Ver todos</Link>
@@ -444,10 +466,13 @@ function InfoCard({ title, text }: { title: string; text: string }) {
   );
 }
 
-function MiniCard({ title, value }: { title: string; value: string }) {
+function MiniCard({ title, value, icon }: { title: string; value: string; icon?: IconDefinition }) {
   return (
     <div className="rounded-2xl border border-black/10 bg-zinc-50 p-4">
-      <p className="text-sm font-black uppercase tracking-wide text-zinc-500">{title}</p>
+      <p className="text-sm font-black uppercase tracking-wide text-zinc-500">
+        {icon ? <FontAwesomeIcon icon={icon} className="mr-2 h-3.5 w-3.5 text-zinc-500" /> : null}
+        {title}
+      </p>
       <p className="mt-2 text-xl font-semibold text-zinc-900">{value}</p>
     </div>
   );
