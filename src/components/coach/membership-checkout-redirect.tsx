@@ -1,16 +1,48 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 type PlanCode = "monthly" | "annual";
+
+const CHECKOUT_LOCK_WINDOW_MS = 20_000;
+
+function checkoutLockKey(planCode: PlanCode) {
+  return `etc-membership-checkout-lock:${planCode}`;
+}
+
+function acquireCheckoutLock(planCode: PlanCode) {
+  if (typeof window === "undefined") return true;
+  const key = checkoutLockKey(planCode);
+  const current = Number(window.sessionStorage.getItem(key) || "0");
+  const now = Date.now();
+  if (Number.isFinite(current) && current > 0 && now - current < CHECKOUT_LOCK_WINDOW_MS) {
+    return false;
+  }
+  window.sessionStorage.setItem(key, String(now));
+  return true;
+}
+
+function releaseCheckoutLock(planCode: PlanCode) {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.removeItem(checkoutLockKey(planCode));
+}
 
 export function MembershipCheckoutRedirect({ planCode }: { planCode: PlanCode }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string>("");
+  const inFlightRef = useRef(false);
 
-  async function startCheckout() {
+  async function startCheckout(options?: { force?: boolean }) {
+    if (inFlightRef.current) return;
+    if (!options?.force && !acquireCheckoutLock(planCode)) {
+      setError("Ya estamos iniciando tu checkout. Si no se abre Stripe, espera unos segundos y reintenta.");
+      return;
+    }
+
     startTransition(async () => {
+      let redirected = false;
+      inFlightRef.current = true;
       setError("");
       try {
         const res = await fetch("/api/stripe/checkout-session", {
@@ -22,9 +54,15 @@ export function MembershipCheckoutRedirect({ planCode }: { planCode: PlanCode })
         if (!res.ok || !json.ok || !json.checkoutUrl) {
           throw new Error(json.message || "No se pudo iniciar el pago.");
         }
+        redirected = true;
         window.location.href = json.checkoutUrl;
       } catch (e) {
         setError(e instanceof Error ? e.message : "No se pudo iniciar el pago.");
+      } finally {
+        inFlightRef.current = false;
+        if (!redirected) {
+          releaseCheckoutLock(planCode);
+        }
       }
     });
   }
@@ -32,6 +70,12 @@ export function MembershipCheckoutRedirect({ planCode }: { planCode: PlanCode })
   useEffect(() => {
     void startCheckout();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      inFlightRef.current = false;
+    };
   }, []);
 
   return (
@@ -54,7 +98,10 @@ export function MembershipCheckoutRedirect({ planCode }: { planCode: PlanCode })
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <button
             type="button"
-            onClick={() => void startCheckout()}
+            onClick={() => {
+              releaseCheckoutLock(planCode);
+              void startCheckout({ force: true });
+            }}
             disabled={pending}
             className="rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800 disabled:opacity-60"
           >

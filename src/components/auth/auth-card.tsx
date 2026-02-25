@@ -371,7 +371,7 @@ export function LoginCard({ returnTo = "/mi-cuenta", userCount = 602 }: { return
 
           <p className="mt-1 text-center text-sm text-zinc-600">
             No tienes una cuenta?{" "}
-            <Link href="/registro/cliente" className="font-semibold text-cyan-700 hover:text-cyan-800">
+            <Link href="/registro" className="font-semibold text-cyan-700 hover:text-cyan-800">
               Registrarse
             </Link>
           </p>
