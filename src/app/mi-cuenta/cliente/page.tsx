@@ -1,14 +1,6 @@
 import Link from "next/link";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import {
-  faArrowRight,
-  faChartColumn,
-  faEnvelope,
-  faPenToSquare,
-  faStar,
-  faUser,
-  faUsers,
-} from "@fortawesome/free-solid-svg-icons";
+import { faArrowRight, faChartColumn, faEnvelope, faUsers } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
@@ -28,30 +20,6 @@ export default async function ClientDashboardPage() {
       accent: "from-rose-500 to-pink-500",
       cta: "Abrir mensajes",
       pending: pendingMessagesCount,
-    },
-    {
-      href: "/mi-cuenta/cliente/notificaciones",
-      title: "Notificaciones",
-      desc: "Centro de avisos dentro de la plataforma.",
-      icon: faStar,
-      accent: "from-amber-500 to-orange-500",
-      cta: "Ver notificaciones",
-    },
-    {
-      href: "/mi-cuenta/cliente/notificaciones/preferencias",
-      title: "Preferencias",
-      desc: "Controla qué avisos recibes por email o en la app.",
-      icon: faPenToSquare,
-      accent: "from-cyan-500 to-sky-500",
-      cta: "Editar preferencias",
-    },
-    {
-      href: "/mi-cuenta/cliente/resenas",
-      title: "Mis reseñas",
-      desc: "Gestiona reseñas enviadas a coaches y su estado.",
-      icon: faUser,
-      accent: "from-violet-500 to-fuchsia-500",
-      cta: "Ver reseñas",
     },
     {
       href: "/pregunta-a-un-coach",

@@ -177,6 +177,13 @@ export function MembershipCheckoutCard({
 
   function changePlan(planCode: PlanCode) {
     if (!hasActiveSubscription || activePlanCode === planCode) return;
+    const targetPlanLabel = planCode === "monthly" ? "plan mensual" : "plan anual";
+    const currentPlanLabel =
+      activePlanCode === "monthly" ? "plan mensual" : activePlanCode === "annual" ? "plan anual" : "tu plan actual";
+    const ok = window.confirm(
+      `Vas a cambiar de ${currentPlanLabel} a ${targetPlanLabel}. Se cobrara el nuevo plan a la tarjeta asignada en Stripe. Quieres continuar?`,
+    );
+    if (!ok) return;
 
     startTransition(async () => {
       setStatus({ type: "idle", text: "" });
