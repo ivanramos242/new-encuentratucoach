@@ -120,7 +120,9 @@ async function updateSubscriptionPlanPrice(input: {
         quantity: input.quantity,
       },
     ],
-    proration_behavior: "create_prorations",
+    // Bill the prorated upgrade/downgrade immediately instead of carrying it to a future invoice.
+    proration_behavior: "always_invoice",
+    billing_cycle_anchor: "now",
     payment_behavior: "allow_incomplete",
     metadata: input.metadata,
   });
