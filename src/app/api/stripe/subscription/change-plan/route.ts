@@ -39,10 +39,6 @@ async function ensureTargetPriceId(input: {
   const { stripe, currentStripeSubscription, targetPlanCode, configuredPrice, publicPlan } = input;
   if (!configuredPrice) throw new Error("Configuracion de precio no disponible");
 
-  if (configuredPrice.mode === "price_id" && configuredPrice.stripePriceId) {
-    return configuredPrice.stripePriceId;
-  }
-
   const firstItem = currentStripeSubscription.items.data[0];
   const existingProductId =
     typeof firstItem?.price?.product === "string"
@@ -51,6 +47,31 @@ async function ensureTargetPriceId(input: {
         ? firstItem.price.product.id
         : null;
 
+  const hasActiveDiscount = publicPlan.discountActive && publicPlan.effectivePriceCents < publicPlan.priceCents;
+  const baseAmount = configuredPrice.unitAmountCents ?? publicPlan.priceCents;
+  const unitAmount = hasActiveDiscount ? publicPlan.effectivePriceCents : baseAmount;
+  if (!Number.isFinite(unitAmount) || unitAmount <= 0) {
+    throw new Error("Precio invalido para cambio de plan");
+  }
+
+  if (configuredPrice.mode === "price_id" && configuredPrice.stripePriceId) {
+    const configuredStripePrice = await stripe.prices.retrieve(configuredPrice.stripePriceId);
+    const configuredProductId =
+      typeof configuredStripePrice.product === "string"
+        ? configuredStripePrice.product
+        : configuredStripePrice.product?.id || null;
+
+    let configuredProductActive = true;
+    if (configuredProductId) {
+      const configuredProduct = await stripe.products.retrieve(configuredProductId);
+      configuredProductActive = Boolean(configuredProduct.active);
+    }
+
+    if (configuredStripePrice.active && configuredProductActive) {
+      return configuredPrice.stripePriceId;
+    }
+  }
+
   const productId =
     existingProductId ||
     (
@@ -58,13 +79,6 @@ async function ensureTargetPriceId(input: {
         name: targetPlanCode === "monthly" ? "Membresia coach mensual" : "Membresia coach anual",
       })
     ).id;
-
-  const hasActiveDiscount = publicPlan.discountActive && publicPlan.effectivePriceCents < publicPlan.priceCents;
-  const baseAmount = configuredPrice.unitAmountCents ?? publicPlan.priceCents;
-  const unitAmount = hasActiveDiscount ? publicPlan.effectivePriceCents : baseAmount;
-  if (!Number.isFinite(unitAmount) || unitAmount <= 0) {
-    throw new Error("Precio invalido para cambio de plan");
-  }
 
   const price = await stripe.prices.create({
     currency: "eur",
