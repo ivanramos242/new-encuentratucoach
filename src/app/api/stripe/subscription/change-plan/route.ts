@@ -29,14 +29,27 @@ function normalizeStripeStatus(status: string): "trialing" | "active" | "past_du
   }
 }
 
+function isProductInactiveStripeError(error: unknown) {
+  if (!(error instanceof Error)) return false;
+  return /product .*inactive|marked as inactive/i.test(error.message);
+}
+
+async function isStripeProductActive(stripe: Stripe, productId: string | null) {
+  if (!productId) return false;
+  const product = await stripe.products.retrieve(productId);
+  if ("deleted" in product && product.deleted) return false;
+  return Boolean(product.active);
+}
+
 async function ensureTargetPriceId(input: {
   stripe: Stripe;
   currentStripeSubscription: Stripe.Subscription;
   targetPlanCode: "monthly" | "annual";
   configuredPrice: ReturnType<typeof resolveStripePlanPriceConfig>;
   publicPlan: Awaited<ReturnType<typeof listMembershipPlansForPublic>>[number];
+  forceGeneratedPrice?: boolean;
 }) {
-  const { stripe, currentStripeSubscription, targetPlanCode, configuredPrice, publicPlan } = input;
+  const { stripe, currentStripeSubscription, targetPlanCode, configuredPrice, publicPlan, forceGeneratedPrice = false } = input;
   if (!configuredPrice) throw new Error("Configuracion de precio no disponible");
 
   const firstItem = currentStripeSubscription.items.data[0];
@@ -54,26 +67,23 @@ async function ensureTargetPriceId(input: {
     throw new Error("Precio invalido para cambio de plan");
   }
 
-  if (configuredPrice.mode === "price_id" && configuredPrice.stripePriceId) {
+  if (!forceGeneratedPrice && configuredPrice.mode === "price_id" && configuredPrice.stripePriceId) {
     const configuredStripePrice = await stripe.prices.retrieve(configuredPrice.stripePriceId);
     const configuredProductId =
       typeof configuredStripePrice.product === "string"
         ? configuredStripePrice.product
         : configuredStripePrice.product?.id || null;
 
-    let configuredProductActive = true;
-    if (configuredProductId) {
-      const configuredProduct = await stripe.products.retrieve(configuredProductId);
-      configuredProductActive = Boolean(configuredProduct.active);
-    }
+    const configuredProductActive = await isStripeProductActive(stripe, configuredProductId);
 
     if (configuredStripePrice.active && configuredProductActive) {
       return configuredPrice.stripePriceId;
     }
   }
 
+  const existingProductActive = await isStripeProductActive(stripe, existingProductId);
   const productId =
-    existingProductId ||
+    (existingProductActive ? existingProductId : null) ||
     (
       await stripe.products.create({
         name: targetPlanCode === "monthly" ? "Membresia coach mensual" : "Membresia coach anual",
@@ -92,6 +102,28 @@ async function ensureTargetPriceId(input: {
   });
 
   return price.id;
+}
+
+async function updateSubscriptionPlanPrice(input: {
+  stripe: Stripe;
+  stripeSubscriptionId: string;
+  firstItemId: string;
+  quantity: number;
+  targetPriceId: string;
+  metadata: Record<string, string>;
+}) {
+  return input.stripe.subscriptions.update(input.stripeSubscriptionId, {
+    items: [
+      {
+        id: input.firstItemId,
+        price: input.targetPriceId,
+        quantity: input.quantity,
+      },
+    ],
+    proration_behavior: "create_prorations",
+    payment_behavior: "allow_incomplete",
+    metadata: input.metadata,
+  });
 }
 
 export async function POST(request: Request) {
@@ -140,7 +172,7 @@ export async function POST(request: Request) {
     const firstItem = stripeSub.items.data[0];
     if (!firstItem?.id) return jsonError("La suscripcion de Stripe no tiene items editables", 400);
 
-    const targetPriceId = await ensureTargetPriceId({
+    let targetPriceId = await ensureTargetPriceId({
       stripe,
       currentStripeSubscription: stripeSub,
       targetPlanCode: parsed.data.planCode,
@@ -148,23 +180,47 @@ export async function POST(request: Request) {
       publicPlan,
     });
 
-    const updated = await stripe.subscriptions.update(localSub.stripeSubscriptionId, {
-      items: [
-        {
-          id: firstItem.id,
-          price: targetPriceId,
-          quantity: firstItem.quantity ?? 1,
-        },
-      ],
-      proration_behavior: "create_prorations",
-      payment_behavior: "allow_incomplete",
-      metadata: {
-        ...stripeSub.metadata,
-        userId: stripeSub.metadata?.userId || auth.user.id,
-        coachProfileId: stripeSub.metadata?.coachProfileId || auth.user.coachProfileId,
-        planCode: parsed.data.planCode,
-      },
-    });
+    const updateMetadata = {
+      ...stripeSub.metadata,
+      userId: stripeSub.metadata?.userId || auth.user.id,
+      coachProfileId: stripeSub.metadata?.coachProfileId || auth.user.coachProfileId,
+      planCode: parsed.data.planCode,
+    };
+
+    let updated: Stripe.Subscription;
+    try {
+      updated = await updateSubscriptionPlanPrice({
+        stripe,
+        stripeSubscriptionId: localSub.stripeSubscriptionId,
+        firstItemId: firstItem.id,
+        quantity: firstItem.quantity ?? 1,
+        targetPriceId,
+        metadata: updateMetadata,
+      });
+    } catch (error) {
+      const usedConfiguredPrice = configuredPrice.mode === "price_id" && targetPriceId === configuredPrice.stripePriceId;
+      if (!usedConfiguredPrice || !isProductInactiveStripeError(error)) {
+        throw error;
+      }
+
+      targetPriceId = await ensureTargetPriceId({
+        stripe,
+        currentStripeSubscription: stripeSub,
+        targetPlanCode: parsed.data.planCode,
+        configuredPrice,
+        publicPlan,
+        forceGeneratedPrice: true,
+      });
+
+      updated = await updateSubscriptionPlanPrice({
+        stripe,
+        stripeSubscriptionId: localSub.stripeSubscriptionId,
+        firstItemId: firstItem.id,
+        quantity: firstItem.quantity ?? 1,
+        targetPriceId,
+        metadata: updateMetadata,
+      });
+    }
 
     const firstUpdatedItem = updated.items.data[0];
     const status = normalizeStripeStatus(updated.status);
@@ -179,12 +235,12 @@ export async function POST(request: Request) {
         intervalLabel: parsed.data.planCode === "monthly" ? "mensual" : "anual",
         priceCents: publicPlan.priceCents,
         currency: "EUR",
-        stripePriceId: configuredPrice.mode === "price_id" ? configuredPrice.stripePriceId : targetPriceId,
+        stripePriceId: targetPriceId,
         isActive: true,
       },
       update: {
         priceCents: publicPlan.priceCents,
-        stripePriceId: configuredPrice.mode === "price_id" ? configuredPrice.stripePriceId : targetPriceId,
+        stripePriceId: targetPriceId,
         isActive: true,
       },
     });
