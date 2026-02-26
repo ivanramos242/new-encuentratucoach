@@ -450,7 +450,10 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
           </section>
 
           {canSeeCoachStats ? (
-            <section className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
+            <section
+              id="metricas-privadas"
+              className="scroll-mt-[calc(var(--site-header-offset,96px)+5rem)] rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6"
+            >
               <CoachPrivateStatsPanel stats={privateStats} />
             </section>
           ) : null}
