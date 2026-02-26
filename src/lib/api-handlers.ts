@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { publicErrorMessage } from "@/lib/error-safety";
 
 export function jsonOk<T extends Record<string, unknown>>(data: T, init?: ResponseInit) {
   return NextResponse.json({ ok: true, ...data }, init);
@@ -29,4 +30,12 @@ export function unauthorized(message = "Unauthorized") {
 
 export function forbidden(message = "Forbidden") {
   return jsonError(message, 403);
+}
+
+export function jsonServerError(
+  fallbackMessage = "Error interno del servidor",
+  error?: unknown,
+  init?: { status?: number; exposeInDevelopment?: boolean },
+) {
+  return jsonError(publicErrorMessage(error, fallbackMessage, { exposeInDevelopment: init?.exposeInDevelopment }), init?.status ?? 500);
 }

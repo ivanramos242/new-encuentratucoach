@@ -2,6 +2,7 @@ import { z } from "zod";
 import { jsonError, jsonOk } from "@/lib/api-handlers";
 import { sendMail } from "@/lib/mailer";
 import { prisma } from "@/lib/prisma";
+import { applyEndpointRateLimit } from "@/lib/rate-limit";
 
 const contactSchema = z.object({
   coachId: z.string().min(1),
@@ -28,8 +29,27 @@ function normalizeEmailList(input?: string | null) {
     .filter(Boolean);
 }
 
+function spamSignals(message: string) {
+  const text = message.toLowerCase();
+  const urlMatches = text.match(/https?:\/\//g) ?? [];
+  const suspiciousWords = ["crypto", "casino", "forex", "seo", "backlink", "viagra", "loan"];
+  const suspiciousHits = suspiciousWords.filter((word) => text.includes(word)).length;
+  return {
+    tooManyLinks: urlMatches.length >= 3,
+    suspiciousHits,
+  };
+}
+
 export async function POST(request: Request) {
   try {
+    const rateLimited = applyEndpointRateLimit(request, {
+      namespace: "contact-coach",
+      limit: 12,
+      windowMs: 10 * 60_000,
+      message: "Demasiados mensajes enviados. Inténtalo más tarde.",
+    });
+    if (rateLimited) return rateLimited;
+
     const body = await request.json();
     const parsed = contactSchema.safeParse(body);
 
@@ -39,6 +59,11 @@ export async function POST(request: Request) {
 
     if (parsed.data.honeypot.trim()) {
       return jsonOk({ message: "OK" });
+    }
+
+    const signals = spamSignals(parsed.data.message);
+    if (signals.tooManyLinks || signals.suspiciousHits >= 2) {
+      return jsonError("No se pudo procesar la solicitud", 429, { code: "SPAM_DETECTED" });
     }
 
     const coach = await prisma.coachProfile.findUnique({
@@ -162,4 +187,3 @@ export async function POST(request: Request) {
     return jsonError("No se pudo procesar la solicitud", 400);
   }
 }
-

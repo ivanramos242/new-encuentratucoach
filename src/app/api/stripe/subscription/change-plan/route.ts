@@ -1,10 +1,12 @@
 import type Stripe from "stripe";
 import { z } from "zod";
-import { jsonError, jsonOk } from "@/lib/api-handlers";
+import { jsonError, jsonOk, jsonServerError } from "@/lib/api-handlers";
 import { requireApiRole } from "@/lib/api-auth";
 import { listMembershipPlansForPublic } from "@/lib/membership-plan-service";
 import { prisma } from "@/lib/prisma";
+import { applyEndpointRateLimit } from "@/lib/rate-limit";
 import { getStripeServer, resolveStripePlanPriceConfig } from "@/lib/stripe-server";
+import { getStripeIdempotencyKey } from "@/lib/stripe-idempotency";
 
 const schema = z.object({
   planCode: z.enum(["monthly", "annual"]),
@@ -111,6 +113,7 @@ async function updateSubscriptionPlanPrice(input: {
   quantity: number;
   targetPriceId: string;
   metadata: Record<string, string>;
+  idempotencyKey?: string;
 }) {
   return input.stripe.subscriptions.update(input.stripeSubscriptionId, {
     items: [
@@ -125,11 +128,18 @@ async function updateSubscriptionPlanPrice(input: {
     billing_cycle_anchor: "now",
     payment_behavior: "allow_incomplete",
     metadata: input.metadata,
-  });
+  }, input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : undefined);
 }
 
 export async function POST(request: Request) {
   try {
+    const rateLimited = applyEndpointRateLimit(request, {
+      namespace: "stripe-subscription-change-plan",
+      limit: 8,
+      windowMs: 60_000,
+    });
+    if (rateLimited) return rateLimited;
+
     const auth = await requireApiRole(request, ["coach", "admin"]);
     if (!auth.ok) return auth.response;
     if (!auth.user.coachProfileId) return jsonError("No se encontro perfil de coach", 400);
@@ -188,6 +198,11 @@ export async function POST(request: Request) {
       coachProfileId: stripeSub.metadata?.coachProfileId || auth.user.coachProfileId,
       planCode: parsed.data.planCode,
     };
+    const idempotencyKey = getStripeIdempotencyKey(request, {
+      scope: "subscription-change-plan",
+      userId: auth.user.id,
+      entityId: `${localSub.stripeSubscriptionId}:${parsed.data.planCode}`,
+    });
 
     let updated: Stripe.Subscription;
     try {
@@ -198,6 +213,7 @@ export async function POST(request: Request) {
         quantity: firstItem.quantity ?? 1,
         targetPriceId,
         metadata: updateMetadata,
+        idempotencyKey,
       });
     } catch (error) {
       const usedConfiguredPrice = configuredPrice.mode === "price_id" && targetPriceId === configuredPrice.stripePriceId;
@@ -221,6 +237,7 @@ export async function POST(request: Request) {
         quantity: firstItem.quantity ?? 1,
         targetPriceId,
         metadata: updateMetadata,
+        idempotencyKey,
       });
     }
 
@@ -270,9 +287,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("[stripe/subscription/change-plan] error", error);
-    return jsonError(
-      error instanceof Error ? `No se pudo cambiar el plan: ${error.message}` : "No se pudo cambiar el plan",
-      500,
-    );
+    return jsonServerError("No se pudo cambiar el plan", error);
   }
 }

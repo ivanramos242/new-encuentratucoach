@@ -3,6 +3,7 @@ import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
 import { faqItems } from "@/lib/mock-data";
 import { buildMetadata } from "@/lib/seo";
+import { sanitizeRichHtml } from "@/lib/html-sanitize";
 
 export const metadata = buildMetadata({
   title: "FAQs",
@@ -37,7 +38,10 @@ export default function FaqsPage() {
           {faqItems.map((faq) => (
             <details key={faq.id} className="rounded-2xl border border-black/10 bg-white p-5 shadow-sm">
               <summary className="cursor-pointer text-base font-black tracking-tight text-zinc-950">{faq.question}</summary>
-              <div className="prose-lite mt-3 text-zinc-700" dangerouslySetInnerHTML={{ __html: faq.answerHtml }} />
+              <div
+                className="prose-lite mt-3 text-zinc-700"
+                dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(faq.answerHtml) }}
+              />
             </details>
           ))}
         </div>

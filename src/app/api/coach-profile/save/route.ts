@@ -3,6 +3,7 @@ import { CoachCertificationStatus, CoachProfileStatus, CoachVisibilityStatus, Se
 import { jsonError, jsonOk } from "@/lib/api-handlers";
 import { requireApiRole } from "@/lib/api-auth";
 import { getCoachProfileForEditor, saveCoachProfile } from "@/lib/coach-profile-service";
+import { sanitizeRichHtml } from "@/lib/html-sanitize";
 
 const urlField = z
   .string()
@@ -84,7 +85,20 @@ export async function POST(request: Request) {
       });
     }
 
-    const profile = await saveCoachProfile(auth.user, parsed.data);
+    const sanitizedInput = {
+      ...parsed.data,
+      aboutHtml: parsed.data.aboutHtml ? sanitizeRichHtml(parsed.data.aboutHtml) : parsed.data.aboutHtml,
+      pricing: parsed.data.pricing
+        ? {
+            ...parsed.data.pricing,
+            detailsHtml: parsed.data.pricing.detailsHtml
+              ? sanitizeRichHtml(parsed.data.pricing.detailsHtml)
+              : parsed.data.pricing.detailsHtml,
+          }
+        : parsed.data.pricing,
+    };
+
+    const profile = await saveCoachProfile(auth.user, sanitizedInput);
     return jsonOk({ profile, message: "Perfil guardado correctamente" });
   } catch (error) {
     console.error("[coach-profile/save] error", error);

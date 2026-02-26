@@ -1,7 +1,8 @@
 import { z } from "zod";
-import { jsonError, jsonOk } from "@/lib/api-handlers";
+import { jsonError, jsonOk, jsonServerError } from "@/lib/api-handlers";
 import { requireApiRole } from "@/lib/api-auth";
 import { deleteObjectFromStorage, parsePublicObjectUrl } from "@/lib/s3-storage";
+import { applyEndpointRateLimit } from "@/lib/rate-limit";
 
 const schema = z.object({
   url: z.string().url(),
@@ -9,6 +10,13 @@ const schema = z.object({
 
 export async function POST(request: Request) {
   try {
+    const rateLimited = applyEndpointRateLimit(request, {
+      namespace: "uploads-delete",
+      limit: 20,
+      windowMs: 60_000,
+    });
+    if (rateLimited) return rateLimited;
+
     const auth = await requireApiRole(request, ["coach", "admin"]);
     if (!auth.ok) return auth.response;
 
@@ -37,6 +45,6 @@ export async function POST(request: Request) {
     return jsonOk({ message: "Archivo eliminado", bucket, key });
   } catch (error) {
     console.error("[uploads/delete] error", error);
-    return jsonError(error instanceof Error ? error.message : "No se pudo eliminar el archivo", 500);
+    return jsonServerError("No se pudo eliminar el archivo", error);
   }
 }

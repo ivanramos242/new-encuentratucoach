@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { jsonError, jsonOk } from "@/lib/api-handlers";
+import { jsonError, jsonOk, jsonServerError } from "@/lib/api-handlers";
 import { requireApiRole } from "@/lib/api-auth";
 import {
   buildPublicObjectUrl,
@@ -8,6 +8,7 @@ import {
   isPrivateScope,
   resolveBucketByScope,
 } from "@/lib/s3-storage";
+import { applyEndpointRateLimit } from "@/lib/rate-limit";
 
 const schema = z.object({
   scope: z.enum(["coach_gallery", "coach_hero", "coach_video", "certification_document"]),
@@ -41,6 +42,13 @@ function getVideoMaxBytes() {
 
 export async function POST(request: Request) {
   try {
+    const rateLimited = applyEndpointRateLimit(request, {
+      namespace: "uploads-presign",
+      limit: 40,
+      windowMs: 60_000,
+    });
+    if (rateLimited) return rateLimited;
+
     const auth = await requireApiRole(request, ["coach", "admin"]);
     if (!auth.ok) return auth.response;
 
@@ -97,8 +105,7 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("[uploads/presign] error", error);
-    const message = error instanceof Error ? error.message : "No se pudo generar la URL de subida";
-    return jsonError(message, 500);
+    return jsonServerError("No se pudo generar la URL de subida", error);
   }
 }
 

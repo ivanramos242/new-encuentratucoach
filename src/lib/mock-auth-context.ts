@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { jsonError } from "@/lib/api-handlers";
 import type { SessionUser } from "@/lib/auth-session";
 import { getSessionUserFromRequest, getSessionUserFromServerCookies } from "@/lib/auth-session";
@@ -44,6 +45,31 @@ function isDevMockBypassEnabled() {
   if (process.env.NODE_ENV !== "development") return false;
   const flag = String(process.env.DEV_AUTH_BYPASS ?? "").trim().toLowerCase();
   return flag === "1" || flag === "true" || flag === "yes" || flag === "on";
+}
+
+function isV2MutationBlockedInProduction(request: Request) {
+  if (process.env.NODE_ENV !== "production") return false;
+  const method = request.method.toUpperCase();
+  if (!["POST", "PUT", "PATCH", "DELETE"].includes(method)) return false;
+
+  const pathname = new URL(request.url).pathname;
+  const blockedPrefixes = [
+    "/api/analytics/funnel-event",
+    "/api/messages/report",
+    "/api/notification-preferences",
+    "/api/notifications/",
+    "/api/notifications/read-all",
+    "/api/internal/jobs/retry/",
+    "/api/internal/jobs/cancel/",
+    "/api/qa/report",
+    "/api/qa/questions/",
+    "/api/qa/answers/",
+  ];
+  const blockedExact = new Set(["/api/qa/questions"]);
+
+  if (blockedExact.has(pathname)) return true;
+  if (pathname.startsWith("/api/qa/search") || pathname.startsWith("/api/qa/poll")) return false;
+  return blockedPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(prefix));
 }
 
 function actorFromSessionUser(sessionUser: SessionUser): MockActor {
@@ -98,6 +124,12 @@ export async function resolveApiActorFromRequest(
   request: Request,
   fallbackRole: MockActorRole = "client",
 ): Promise<ResolveActorOk | ResolveActorError> {
+  if (isV2MutationBlockedInProduction(request)) {
+    return {
+      ok: false,
+      response: jsonError("Esta ruta V2/mock de escritura está deshabilitada en producción.", 403),
+    };
+  }
   const sessionUser = await getSessionUserFromRequest(request);
   if (sessionUser) {
     return { ok: true, actor: actorFromSessionUser(sessionUser), source: "session" };
@@ -118,6 +150,10 @@ export async function resolvePageActorForRole(role: MockActorRole): Promise<Mock
     return { ...roleDefaults[role] };
   }
 
-  // Private layouts should already protect these routes. This is a defensive fallback.
+  if (process.env.NODE_ENV === "production") {
+    redirect("/iniciar-sesion");
+  }
+
+  // Private layouts should already protect these routes. This is a defensive fallback for local/dev.
   return { ...roleDefaults[role] };
 }

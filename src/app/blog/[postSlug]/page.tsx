@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { JsonLd } from "@/components/seo/json-ld";
 import { PageShell } from "@/components/layout/page-shell";
+import { sanitizeRichHtml } from "@/lib/html-sanitize";
 import { blogPosts } from "@/lib/mock-data";
 import { buildMetadata } from "@/lib/seo";
 
@@ -48,7 +49,7 @@ export default async function BlogPostPage({ params }: { params: ParamsInput }) 
           </div>
           <h1 className="mt-3 text-3xl font-black tracking-tight text-zinc-950 sm:text-4xl">{post.title}</h1>
           <p className="mt-3 text-lg text-zinc-700">{post.excerpt}</p>
-          <div className="prose-lite mt-6 text-zinc-800" dangerouslySetInnerHTML={{ __html: post.contentHtml }} />
+          <div className="prose-lite mt-6 text-zinc-800" dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(post.contentHtml) }} />
         </div>
       </article>
     </PageShell>

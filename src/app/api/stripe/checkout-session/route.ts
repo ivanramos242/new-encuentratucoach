@@ -1,17 +1,21 @@
 import type Stripe from "stripe";
 import { z } from "zod";
-import { jsonError, jsonOk } from "@/lib/api-handlers";
+import { jsonError, jsonOk, jsonServerError } from "@/lib/api-handlers";
 import { requireApiRole } from "@/lib/api-auth";
 import { listMembershipPlansForPublic } from "@/lib/membership-plan-service";
 import { prisma } from "@/lib/prisma";
+import { applyEndpointRateLimit } from "@/lib/rate-limit";
 import { getStripeServer, resolveStripePlanPriceConfig } from "@/lib/stripe-server";
-import { absoluteUrl, slugify } from "@/lib/utils";
+import { getStripeIdempotencyKey } from "@/lib/stripe-idempotency";
+import { absoluteUrl, isAllowedInternalReturnPath, slugify } from "@/lib/utils";
 
 const schema = z.object({
   planCode: z.enum(["monthly", "annual"]),
   successPath: z.string().optional(),
   cancelPath: z.string().optional(),
 });
+
+const ALLOWED_RETURN_PATHS = ["/membresia", "/membresia/confirmacion", "/mi-cuenta/coach/membresia"];
 
 function isActiveishSubscription(status?: string | null) {
   return status === "active" || status === "trialing";
@@ -90,12 +94,26 @@ async function ensureStripeCustomer(input: { userId: string; email: string; name
 
 export async function POST(request: Request) {
   try {
+    const rateLimited = applyEndpointRateLimit(request, {
+      namespace: "stripe-checkout-session",
+      limit: 8,
+      windowMs: 60_000,
+      message: "Demasiados intentos de crear checkout. Espera un minuto.",
+    });
+    if (rateLimited) return rateLimited;
+
     const auth = await requireApiRole(request, ["client", "coach", "admin"]);
     if (!auth.ok) return auth.response;
 
     const body = await request.json().catch(() => ({}));
     const parsed = schema.safeParse(body);
     if (!parsed.success) return jsonError("Payload inválido", 400, { issues: parsed.error.flatten() });
+    if (parsed.data.successPath && !isAllowedInternalReturnPath(parsed.data.successPath, ALLOWED_RETURN_PATHS)) {
+      return jsonError("successPath no permitido", 400);
+    }
+    if (parsed.data.cancelPath && !isAllowedInternalReturnPath(parsed.data.cancelPath, ALLOWED_RETURN_PATHS)) {
+      return jsonError("cancelPath no permitido", 400);
+    }
 
     const publicPlans = await listMembershipPlansForPublic();
     const publicPlan = publicPlans.find((plan) => plan.code === parsed.data.planCode);
@@ -214,27 +232,35 @@ export async function POST(request: Request) {
             },
           ];
 
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      customer: stripeCustomer.stripeCustomerId,
-      line_items: lineItems,
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-      client_reference_id: user.id,
-      allow_promotion_codes: true,
-      metadata: {
-        userId: user.id,
-        coachProfileId: coachProfile.id,
-        planCode: parsed.data.planCode,
-      },
-      subscription_data: {
+    const idempotencyKey = getStripeIdempotencyKey(request, {
+      scope: "checkout-session",
+      userId: user.id,
+      entityId: `${coachProfile.id}:${parsed.data.planCode}`,
+    });
+    const session = await stripe.checkout.sessions.create(
+      {
+        mode: "subscription",
+        customer: stripeCustomer.stripeCustomerId,
+        line_items: lineItems,
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        client_reference_id: user.id,
+        allow_promotion_codes: true,
         metadata: {
           userId: user.id,
           coachProfileId: coachProfile.id,
           planCode: parsed.data.planCode,
         },
+        subscription_data: {
+          metadata: {
+            userId: user.id,
+            coachProfileId: coachProfile.id,
+            planCode: parsed.data.planCode,
+          },
+        },
       },
-    });
+      { idempotencyKey },
+    );
 
     await prisma.coachSubscription
       .create({
@@ -257,9 +283,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("[stripe/checkout-session] error", error);
-    return jsonError(
-      error instanceof Error ? `No se pudo crear la sesión de pago: ${error.message}` : "No se pudo crear la sesión de pago",
-      500,
-    );
+    return jsonServerError("No se pudo crear la sesión de pago", error);
   }
 }

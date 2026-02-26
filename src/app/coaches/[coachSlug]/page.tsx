@@ -37,6 +37,7 @@ import { getOptionalSessionUser } from "@/lib/auth-server";
 import { getCoachPrivateAnalyticsSummary, type CoachPrivateAnalyticsSummary } from "@/lib/coach-profile-analytics";
 import { getCoachCategoryLabel } from "@/lib/coach-category-catalog";
 import { getCoachAverageRating, getRelatedCoachesFrom } from "@/lib/directory";
+import { sanitizeRichHtml } from "@/lib/html-sanitize";
 import { getPublicCoachBySlugMerged, listPublicCoachesMerged } from "@/lib/public-coaches";
 import { buildMetadata } from "@/lib/seo";
 import { formatEuro } from "@/lib/utils";
@@ -327,7 +328,10 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
             <div className="mt-4 grid gap-4 xl:grid-cols-[1.05fr_.95fr]">
               <div>
                 {coach.aboutHtml ? (
-                  <div className="prose prose-zinc max-w-none prose-a:text-cyan-700" dangerouslySetInnerHTML={{ __html: coach.aboutHtml }} />
+                  <div
+                    className="prose prose-zinc max-w-none prose-a:text-cyan-700"
+                    dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(coach.aboutHtml) }}
+                  />
                 ) : (
                   <p className="leading-7 text-zinc-700">{coach.bio}</p>
                 )}

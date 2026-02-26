@@ -5,7 +5,6 @@ type StoredBlob = {
 };
 
 declare global {
-  // eslint-disable-next-line no-var
   var __messageMockUploadStore: Map<string, StoredBlob> | undefined;
 }
 
@@ -18,6 +17,9 @@ function getKey(request: Request) {
 }
 
 export async function PUT(request: Request) {
+  if (process.env.NODE_ENV === "production") {
+    return new Response("Not found", { status: 404 });
+  }
   const key = getKey(request);
   if (!key) return new Response("Missing key", { status: 400 });
   const bytes = new Uint8Array(await request.arrayBuffer());
@@ -30,6 +32,9 @@ export async function PUT(request: Request) {
 }
 
 export async function GET(request: Request) {
+  if (process.env.NODE_ENV === "production") {
+    return new Response("Not found", { status: 404 });
+  }
   const key = getKey(request);
   if (!key) return new Response("Missing key", { status: 400 });
   const item = store.get(key);
