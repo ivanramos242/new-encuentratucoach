@@ -49,19 +49,19 @@ export default async function CoachDashboardPage() {
     {
       href: "/mi-cuenta/coach/perfil",
       title: "Perfil coach",
-      desc: "Editar datos p˙blicos, precios, enlaces y galerÌa.",
+      desc: "Editar datos p√∫blicos, precios, enlaces y galer√≠a.",
       icon: faPenToSquare,
       accent: "from-cyan-500 to-sky-500",
       cta: "Editar perfil",
     },
     {
       href: "/mi-cuenta/coach/membresia",
-      title: "MembresÌa",
-      desc: "Estado de suscripciÛn, plan actual y facturaciÛn.",
+      title: "Membres√≠a",
+      desc: "Estado de suscripci√≥n, plan actual y facturaci√≥n.",
       icon: faStar,
       accent: "from-amber-500 to-orange-500",
-      cta: "Ver membresÌa",
-      badge: sub?.status ? String(sub.status) : "sin suscripciÛn",
+      cta: "Ver membres√≠a",
+      badge: sub?.status ? String(sub.status) : "sin suscripci√≥n",
     },
     {
       href: "/mi-cuenta/coach/mensajes",
@@ -74,24 +74,24 @@ export default async function CoachDashboardPage() {
     },
     {
       href: "/mi-cuenta/coach/certificacion",
-      title: "CertificaciÛn",
-      desc: "Subir documentaciÛn y revisar estado de validaciÛn.",
+      title: "Certificaci√≥n",
+      desc: "Subir documentaci√≥n y revisar estado de validaci√≥n.",
       icon: faUser,
       accent: "from-violet-500 to-fuchsia-500",
-      cta: "Gestionar certificaciÛn",
+      cta: "Gestionar certificaci√≥n",
     },
     {
       href: "/mi-cuenta/coach/metricas",
-      title: "MÈtricas",
-      desc: "Visitas, retenciÛn y clics de tu perfil.",
+      title: "M√©tricas",
+      desc: "Visitas, retenci√≥n y clics de tu perfil.",
       icon: faChartColumn,
       accent: "from-emerald-500 to-teal-500",
-      cta: "Ver mÈtricas",
+      cta: "Ver m√©tricas",
     },
     {
       href: "/coaches",
       title: "Ver directorio",
-      desc: "Revisa cÛmo se muestran otros perfiles y detecta mejoras.",
+      desc: "Revisa c√≥mo se muestran otros perfiles y detecta mejoras.",
       icon: faUsers,
       accent: "from-zinc-700 to-zinc-900",
       cta: "Explorar",
@@ -103,9 +103,9 @@ export default async function CoachDashboardPage() {
   return (
     <>
       <PageHero
-        badge="Mi cuenta ∑ Coach"
+        badge="Mi cuenta ¬∑ Coach"
         title="Panel profesional"
-        description="Gestiona tu perfil, membresÌa, mensajes y mÈtricas desde un panel m·s completo."
+        description="Gestiona tu perfil, membres√≠a, mensajes y m√©tricas desde un panel m√°s completo."
       />
       <PageShell className="pt-8">
         <div className="grid gap-6">
@@ -114,17 +114,17 @@ export default async function CoachDashboardPage() {
               <div>
                 <div className="inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-cyan-900">
                   <span className="h-2 w-2 rounded-full bg-cyan-500" />
-                  ¡rea privada de coach
+                  √Årea privada de coach
                 </div>
                 <h2 className="mt-3 text-2xl font-black tracking-tight text-zinc-950 sm:text-3xl">
                   {profile?.name || user.displayName || "Tu perfil coach"}
                 </h2>
                 <p className="mt-2 text-sm text-zinc-700">
-                  Estado perfil: <strong>{profile?.profileStatus || "draft"}</strong> ∑ Visibilidad: <strong>{profile?.visibilityStatus || "inactive"}</strong>
+                  Estado perfil: <strong>{profile?.profileStatus || "draft"}</strong> ¬∑ Visibilidad: <strong>{profile?.visibilityStatus || "inactive"}</strong>
                 </p>
                 <p className="mt-1 text-sm text-zinc-700">
-                  MembresÌa: <strong>{sub?.status || "sin suscripciÛn"}</strong>
-                  {sub?.planCode ? ` ∑ ${sub.planCode}` : ""}
+                  Membres√≠a: <strong>{sub?.status || "sin suscripci√≥n"}</strong>
+                  {sub?.planCode ? ` ¬∑ ${sub.planCode}` : ""}
                 </p>
 
                 <div className="mt-4 flex flex-wrap gap-2">
@@ -152,7 +152,7 @@ export default async function CoachDashboardPage() {
 
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                 <StatMiniCard label="Progreso del perfil" value={`${c.done}/${c.total}`} helper={`${completionPct}% completado`} />
-                <StatMiniCard label="Mensajes pendientes" value={String(pendingMessagesCount)} helper={pendingMessagesCount > 0 ? "Pendientes por leer" : "Bandeja al dÌa"} />
+                <StatMiniCard label="Mensajes pendientes" value={String(pendingMessagesCount)} helper={pendingMessagesCount > 0 ? "Pendientes por leer" : "Bandeja al d√≠a"} />
               </div>
             </div>
 
@@ -165,24 +165,24 @@ export default async function CoachDashboardPage() {
                 />
               </div>
               <p className="mt-2 text-xs font-medium text-zinc-600">
-                Completa los datos base para publicar y mejorar la conversiÛn del perfil.
+                Completa los datos base para publicar y mejorar la conversi√≥n del perfil.
               </p>
             </div>
           </section>
 
           {!hasActiveMembership ? (
             <section className="rounded-3xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900 shadow-sm">
-              <p className="font-semibold">Activa tu membresÌa para publicar el perfil y responder en mensajes/Q&A.</p>
+              <p className="font-semibold">Activa tu membres√≠a para publicar el perfil y responder en mensajes/Q&A.</p>
               <Link href="/mi-cuenta/coach/membresia" className="mt-3 inline-flex items-center rounded-xl bg-zinc-950 px-4 py-2 font-semibold text-white">
                 <FontAwesomeIcon icon={faArrowRight} className="mr-2 h-3.5 w-3.5" />
-                Ir a membresÌa
+                Ir a membres√≠a
               </Link>
             </section>
           ) : null}
 
           {needsOnboarding ? (
             <section className="rounded-3xl border border-cyan-200 bg-cyan-50 p-5 text-sm text-cyan-900 shadow-sm">
-              <p className="font-semibold">Ya tienes una membresÌa activa. Completa el formulario para publicar tu perfil.</p>
+              <p className="font-semibold">Ya tienes una membres√≠a activa. Completa el formulario para publicar tu perfil.</p>
               <Link
                 href="/mi-cuenta/coach/perfil?wizard=1"
                 className="mt-3 inline-flex items-center rounded-xl border border-cyan-300 bg-white px-4 py-2 font-semibold text-zinc-900"
