@@ -16,6 +16,7 @@ export async function sendMail(input: {
   subject: string;
   html: string;
   text?: string;
+  replyTo?: string;
 }) {
   if (!hasSmtpConfig()) {
     console.warn("[mailer] SMTP no configurado; email no enviado", {
@@ -41,6 +42,7 @@ export async function sendMail(input: {
     const info = await transporter.sendMail({
       from: process.env.SMTP_FROM || process.env.EMAIL_FROM || "EncuentraTuCoach <no-reply@example.com>",
       to: input.to,
+      replyTo: input.replyTo,
       subject: input.subject,
       html: input.html,
       text: input.text,

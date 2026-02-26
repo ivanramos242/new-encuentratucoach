@@ -143,6 +143,7 @@ export async function POST(request: Request) {
         },
       ],
       proration_behavior: "create_prorations",
+      payment_behavior: "allow_incomplete",
       metadata: {
         ...stripeSub.metadata,
         userId: stripeSub.metadata?.userId || auth.user.id,
@@ -197,6 +198,9 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("[stripe/subscription/change-plan] error", error);
-    return jsonError("No se pudo cambiar el plan", 500);
+    return jsonError(
+      error instanceof Error ? `No se pudo cambiar el plan: ${error.message}` : "No se pudo cambiar el plan",
+      500,
+    );
   }
 }
