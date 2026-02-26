@@ -40,23 +40,23 @@ export default async function ClientDashboardPage() {
     {
       href: "/mi-cuenta/cliente/notificaciones/preferencias",
       title: "Preferencias",
-      desc: "Controla quÈ avisos recibes por email o en la app.",
+      desc: "Controla qu√© avisos recibes por email o en la app.",
       icon: faPenToSquare,
       accent: "from-cyan-500 to-sky-500",
       cta: "Editar preferencias",
     },
     {
       href: "/mi-cuenta/cliente/resenas",
-      title: "Mis reseÒas",
-      desc: "Gestiona reseÒas enviadas a coaches y su estado.",
+      title: "Mis rese√±as",
+      desc: "Gestiona rese√±as enviadas a coaches y su estado.",
       icon: faUser,
       accent: "from-violet-500 to-fuchsia-500",
-      cta: "Ver reseÒas",
+      cta: "Ver rese√±as",
     },
     {
       href: "/pregunta-a-un-coach",
       title: "Pregunta a un coach",
-      desc: "Crea preguntas p˙blicas y sigue respuestas de la comunidad.",
+      desc: "Crea preguntas p√∫blicas y sigue respuestas de la comunidad.",
       icon: faChartColumn,
       accent: "from-emerald-500 to-teal-500",
       cta: "Ir a preguntas",
@@ -74,9 +74,9 @@ export default async function ClientDashboardPage() {
   return (
     <>
       <PageHero
-        badge="Mi cuenta ∑ Cliente"
+        badge="Mi cuenta ¬∑ Cliente"
         title="Tu panel de cliente"
-        description="Sigue tus conversaciones, notificaciones y reseÒas desde un panel m·s completo."
+        description="Sigue tus conversaciones, notificaciones y rese√±as desde un panel m√°s completo."
       />
       <PageShell className="pt-8">
         <div className="grid gap-6">
@@ -85,16 +85,16 @@ export default async function ClientDashboardPage() {
               <div>
                 <div className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-rose-900">
                   <span className="h-2 w-2 rounded-full bg-rose-500" />
-                  ¡rea privada de cliente
+                  √Årea privada de cliente
                 </div>
                 <h2 className="mt-3 text-2xl font-black tracking-tight text-zinc-950 sm:text-3xl">
                   {user.displayName || "Tu cuenta"}
                 </h2>
                 <p className="mt-2 text-sm text-zinc-700">
-                  SesiÛn activa como <strong>{user.role}</strong> con el email <strong>{user.email}</strong>.
+                  Sesi√≥n activa como <strong>{user.role}</strong> con el email <strong>{user.email}</strong>.
                 </p>
                 <p className="mt-1 text-sm text-zinc-700">
-                  Usa este panel para seguir conversaciones, gestionar avisos y revisar tus reseÒas publicadas.
+                  Usa este panel para seguir conversaciones, gestionar avisos y revisar tus rese√±as publicadas.
                 </p>
 
                 <div className="mt-4 flex flex-wrap gap-2">
@@ -122,7 +122,7 @@ export default async function ClientDashboardPage() {
 
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                 <StatMiniCard label="Mensajes pendientes" value={String(pendingMessagesCount)} helper={pendingMessagesCount > 0 ? "Pendientes por leer" : "Sin pendientes"} />
-                <StatMiniCard label="Acceso r·pido" value="Mi cuenta" helper="Todo centralizado en este panel" />
+                <StatMiniCard label="Acceso r√°pido" value="Mi cuenta" helper="Todo centralizado en este panel" />
               </div>
             </div>
           </section>

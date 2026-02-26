@@ -17,9 +17,9 @@ export default async function Page() {
   return (
     <>
       <PageHero
-        badge="Mi cuenta · Coach"
-        title="Métricas del perfil"
-        description="Accede al panel de analítica privada de tu perfil y revisa visitas, clics y tendencia."
+        badge="Mi cuenta Â· Coach"
+        title="MÃ©tricas del perfil"
+        description="Accede al panel de analÃ­tica privada de tu perfil y revisa visitas, clics y tendencia."
       />
       <PageShell className="pt-8">
         <div className="grid gap-6">
@@ -28,13 +28,13 @@ export default async function Page() {
               <div>
                 <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-900">
                   <FontAwesomeIcon icon={faChartColumn} className="h-3.5 w-3.5" />
-                  Analítica privada
+                  AnalÃ­tica privada
                 </div>
                 <h2 className="mt-3 text-2xl font-black tracking-tight text-zinc-950 sm:text-3xl">
                   {profile?.name || "Tu perfil"}
                 </h2>
                 <p className="mt-2 text-sm text-zinc-700">
-                  Este apartado ya enlaza a las métricas reales del perfil. El bloque completo se muestra dentro de tu ficha pública (solo visible para ti y admin).
+                  Este apartado ya enlaza a las mÃ©tricas reales del perfil. El bloque completo se muestra dentro de tu ficha pÃºblica (solo visible para ti y admin).
                 </p>
 
                 <div className="mt-4 flex flex-wrap gap-2">
@@ -44,7 +44,7 @@ export default async function Page() {
                       className="inline-flex items-center rounded-xl bg-zinc-950 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800"
                     >
                       <FontAwesomeIcon icon={faGlobe} className="mr-2 h-4 w-4" />
-                      Abrir perfil con métricas
+                      Abrir perfil con mÃ©tricas
                     </Link>
                   ) : null}
                   <Link
@@ -58,29 +58,29 @@ export default async function Page() {
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                <MetricCard label="Visitas (30 días)" value={String(stats?.totals.last30Views ?? 0)} icon={faEye} />
-                <MetricCard label="Clics (30 días)" value={String(stats?.totals.last30Clicks ?? 0)} icon={faMousePointer} />
+                <MetricCard label="Visitas (30 dÃ­as)" value={String(stats?.totals.last30Views ?? 0)} icon={faEye} />
+                <MetricCard label="Clics (30 dÃ­as)" value={String(stats?.totals.last30Clicks ?? 0)} icon={faMousePointer} />
                 <MetricCard label="CTR aprox." value={`${stats?.totals.ctrPercent ?? 0}%`} icon={faEnvelope} />
               </div>
             </div>
           </section>
 
           <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-            <h3 className="text-lg font-black tracking-tight text-zinc-950">Dónde ver el detalle</h3>
+            <h3 className="text-lg font-black tracking-tight text-zinc-950">DÃ³nde ver el detalle</h3>
             <p className="mt-2 text-sm text-zinc-700">
-              El panel detallado (gráfico 14 días, tendencias y canales de clic) está integrado en la página pública del coach para que puedas validar cómo se ve tu perfil mientras revisas el rendimiento.
+              El panel detallado (grÃ¡fico 14 dÃ­as, tendencias y canales de clic) estÃ¡ integrado en la pÃ¡gina pÃºblica del coach para que puedas validar cÃ³mo se ve tu perfil mientras revisas el rendimiento.
             </p>
             {profileHref ? (
               <Link
                 href={profileHref}
                 className="mt-4 inline-flex items-center rounded-xl border border-cyan-300 bg-cyan-50 px-4 py-2 text-sm font-semibold text-cyan-900 hover:bg-cyan-100"
               >
-                Ir al bloque de métricas privadas del perfil
+                Ir al bloque de mÃ©tricas privadas del perfil
                 <FontAwesomeIcon icon={faArrowRight} className="ml-2 h-3.5 w-3.5" />
               </Link>
             ) : (
               <div className="mt-4 rounded-2xl border border-dashed border-black/15 bg-zinc-50 p-4 text-sm text-zinc-700">
-                Aún no hay un perfil publicado con URL para enlazar. Completa o guarda tu perfil desde <strong>Perfil coach</strong>.
+                AÃºn no hay un perfil publicado con URL para enlazar. Completa o guarda tu perfil desde <strong>Perfil coach</strong>.
               </div>
             )}
           </section>
