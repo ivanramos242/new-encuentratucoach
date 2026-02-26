@@ -25,7 +25,7 @@ export function CoachReviewForm({ coachId, coachSlug, coachName, isAuthenticated
   if (isOwnCoachProfile) {
     return (
       <div className="mt-4 rounded-2xl border border-black/10 bg-zinc-50 p-4 text-sm text-zinc-700">
-        No puedes dejar una resena en tu propio perfil.
+        No puedes dejar una reseña en tu propio perfil.
       </div>
     );
   }
@@ -34,12 +34,12 @@ export function CoachReviewForm({ coachId, coachSlug, coachName, isAuthenticated
     const loginHref = `/iniciar-sesion?${new URLSearchParams({ returnTo: `/coaches/${coachSlug}#resenas` }).toString()}`;
     return (
       <div className="mt-4 rounded-2xl border border-black/10 bg-zinc-50 p-4">
-        <p className="text-sm text-zinc-700">Para dejar una resena necesitas iniciar sesion.</p>
+        <p className="text-sm text-zinc-700">Para dejar una reseña necesitas iniciar sesión.</p>
         <Link
           href={loginHref}
           className="mt-3 inline-flex items-center rounded-xl border border-cyan-300 bg-cyan-50 px-4 py-2 text-sm font-semibold text-cyan-900"
         >
-          Iniciar sesion para reseñar
+          Iniciar sesión para reseñar
         </Link>
       </div>
     );
@@ -53,7 +53,7 @@ export function CoachReviewForm({ coachId, coachSlug, coachName, isAuthenticated
     const body = String(fd.get("body") || "").trim();
 
     if (!rating || rating < 1 || rating > 5) {
-      setState({ kind: "error", message: "Selecciona una valoracion de 1 a 5." });
+      setState({ kind: "error", message: "Selecciona una valoración de 1 a 5." });
       return;
     }
     if (body.length < 5) {
@@ -74,15 +74,15 @@ export function CoachReviewForm({ coachId, coachSlug, coachName, isAuthenticated
           }),
         });
         const payload = (await response.json()) as { ok?: boolean; message?: string };
-        if (!response.ok || !payload.ok) throw new Error(payload.message || "No se pudo guardar la resena.");
+        if (!response.ok || !payload.ok) throw new Error(payload.message || "No se pudo guardar la reseña.");
 
-        setState({ kind: "success", message: payload.message || "Resena publicada." });
+        setState({ kind: "success", message: payload.message || "Reseña publicada." });
         form.reset();
         router.refresh();
       } catch (error) {
         setState({
           kind: "error",
-          message: error instanceof Error ? error.message : "No se pudo guardar la resena.",
+          message: error instanceof Error ? error.message : "No se pudo guardar la reseña.",
         });
       }
     });
@@ -98,7 +98,7 @@ export function CoachReviewForm({ coachId, coachSlug, coachName, isAuthenticated
       </div>
 
       <label className="grid gap-1 text-sm font-medium text-zinc-800">
-        Valoracion
+        Valoración
         <select
           name="rating"
           defaultValue="5"
@@ -121,7 +121,7 @@ export function CoachReviewForm({ coachId, coachSlug, coachName, isAuthenticated
           required
           minLength={5}
           maxLength={2000}
-          placeholder="Cuenta tu experiencia de forma clara y util para otras personas."
+          placeholder="Cuenta tu experiencia de forma clara y útil para otras personas."
           className="rounded-xl border border-black/10 bg-white px-3 py-2 outline-none focus:border-cyan-400"
         />
       </label>

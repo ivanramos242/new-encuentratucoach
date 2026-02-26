@@ -132,7 +132,7 @@ function messageDto(message: MessageWithRelations, thread: ThreadWithRelations |
 }
 
 function previewFromMessage(message?: Pick<MessageItemDto, "body" | "attachment">) {
-  if (!message) return "ConversaciÃ³n iniciada. EnvÃ­a tu primer mensaje.";
+  if (!message) return "Conversación iniciada. Envía tu primer mensaje.";
   if (message.body?.trim()) return message.body.trim();
   if (message.attachment) {
     if (message.attachment.type === "audio") return "Nota de audio";
@@ -234,8 +234,8 @@ async function loadThreadForUser(
       },
     },
   });
-  if (!thread) return { error: "ConversaciÃ³n no encontrada.", code: "NOT_FOUND" as const };
-  if (!hasThreadAccess(user, thread)) return { error: "No tienes acceso a esta conversaciÃ³n.", code: "FORBIDDEN" as const };
+  if (!thread) return { error: "Conversación no encontrada.", code: "NOT_FOUND" as const };
+  if (!hasThreadAccess(user, thread)) return { error: "No tienes acceso a esta conversación.", code: "FORBIDDEN" as const };
   return { thread };
 }
 
@@ -293,7 +293,7 @@ async function upsertParticipantsAndCursors(thread: { id: string; clientUserId: 
 
 export async function listThreadsForUser(user: SessionUser): Promise<MessageThreadListResult | ServiceError> {
   if (user.role !== "client" && user.role !== "coach") {
-    return { error: "Solo clientes y coaches pueden usar la mensajerÃ­a.", code: "FORBIDDEN" };
+    return { error: "Solo clientes y coaches pueden usar la mensajería.", code: "FORBIDDEN" };
   }
 
   const where =
@@ -358,7 +358,7 @@ export async function startOrGetThread(input: {
     return { error: "Solo clientes y coaches autenticados pueden iniciar conversaciones.", code: "FORBIDDEN" };
   }
   if (!input.coachSlug && !input.coachProfileId) {
-    return { error: "Debes indicar un coach para iniciar la conversaciÃ³n.", code: "VALIDATION" };
+    return { error: "Debes indicar un coach para iniciar la conversación.", code: "VALIDATION" };
   }
 
   const coachProfile = await prisma.coachProfile.findFirst({
@@ -380,10 +380,10 @@ export async function startOrGetThread(input: {
     return { error: "El coach no tiene el perfil activo.", code: "FORBIDDEN" };
   }
   if (!coachProfile.messagingEnabled) {
-    return { error: "El coach no tiene la mensajerÃ­a activa.", code: "FORBIDDEN" };
+    return { error: "El coach no tiene la mensajería activa.", code: "FORBIDDEN" };
   }
   if (!coachProfile.userId) {
-    return { error: "El coach aÃºn no tiene usuario vinculado para recibir mensajes.", code: "CONFLICT" };
+    return { error: "El coach aún no tiene usuario vinculado para recibir mensajes.", code: "CONFLICT" };
   }
   const coachUserId = coachProfile.userId;
   if (coachUserId === input.user.id) {
@@ -449,12 +449,12 @@ export async function sendMessage(input: {
     return { error: "Debes enviar texto o un adjunto.", code: "VALIDATION" };
   }
   if (body.length > 4000) {
-    return { error: "El mensaje supera el mÃ¡ximo de 4000 caracteres.", code: "VALIDATION" };
+    return { error: "El mensaje supera el máximo de 4000 caracteres.", code: "VALIDATION" };
   }
 
   const senderType = inferMessagingRoleForThread(input.user, thread);
   if (!senderType) {
-    return { error: "No tienes acceso a esta conversacion.", code: "FORBIDDEN" };
+    return { error: "No tienes acceso a esta conversación.", code: "FORBIDDEN" };
   }
 
   if (input.clientRequestId?.trim()) {
@@ -534,7 +534,7 @@ export async function sendMessage(input: {
     if (/clientRequestId/i.test(message) || /durationMs/i.test(message) || /enum/i.test(message)) {
       return {
         error:
-          "La base de datos de mensajerÃ­a necesita migraciÃ³n para soportar deduplicaciÃ³n/audio. Ejecuta las migraciones de Prisma.",
+          "La base de datos de mensajería necesita migración para soportar deduplicación/audio. Ejecuta las migraciones de Prisma.",
         code: "UNSUPPORTED",
       };
     }
@@ -564,7 +564,7 @@ export async function markThreadRead(input: {
 
   const role = inferMessagingRoleForThread(input.user, thread);
   if (!role && input.user.role !== "admin") {
-    return { error: "No tienes acceso a esta conversaciÃ³n.", code: "FORBIDDEN" };
+    return { error: "No tienes acceso a esta conversación.", code: "FORBIDDEN" };
   }
 
   const targetMessage =

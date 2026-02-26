@@ -49,7 +49,7 @@ export function ChatHeader({
               ? thread.coachMembershipActive
                 ? "Coach disponible"
                 : "Coach inactivo (solo lectura)"
-              : "ConversaciÃ³n privada"}
+              : "Conversación privada"}
           </p>
         </div>
 
