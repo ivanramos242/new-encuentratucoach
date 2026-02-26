@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { jsonError, jsonOk } from "@/lib/api-handlers";
+import { jsonError, jsonOk, jsonServerError } from "@/lib/api-handlers";
 import { requireApiRole } from "@/lib/api-auth";
 import { buildPublicObjectUrl, createPresignedPutUrl } from "@/lib/s3-storage";
+import { applyEndpointRateLimit } from "@/lib/rate-limit";
 
 const maxBytes = Number(process.env.CHAT_ATTACHMENT_MAX_BYTES ?? 5_242_880);
 const allowedMimeList = (process.env.CHAT_ATTACHMENT_ALLOWED_MIME ??
@@ -24,6 +25,13 @@ const schema = z.object({
 
 export async function POST(request: Request) {
   try {
+    const rateLimited = applyEndpointRateLimit(request, {
+      namespace: "messages-attachments-presign",
+      limit: 30,
+      windowMs: 60_000,
+    });
+    if (rateLimited) return rateLimited;
+
     const auth = await requireApiRole(request, ["client", "coach"]);
     if (!auth.ok) return auth.response;
     const body = await request.json();
@@ -56,6 +64,10 @@ export async function POST(request: Request) {
       });
       publicObjectUrl = buildPublicObjectUrl(process.env.S3_BUCKET_PUBLIC || "etc-public", key);
     } catch (error) {
+      if (process.env.NODE_ENV === "production") {
+        console.error("[messages/attachments/presign] S3 unavailable in production", error);
+        return jsonServerError("No se pudo generar la URL de subida", error, { status: 503, exposeInDevelopment: false });
+      }
       const mockKey = `mock-message/${threadPart}/${Date.now()}-${randomUUID()}-${safeName}`;
       uploadUrl = `/api/messages/attachments/mock-upload?key=${encodeURIComponent(mockKey)}`;
       publicObjectUrl = `/api/messages/attachments/mock-upload?key=${encodeURIComponent(mockKey)}&download=1`;
@@ -88,8 +100,8 @@ export async function POST(request: Request) {
       expiresInSeconds: 600,
       note,
     });
-  } catch {
-    return jsonError("No se pudo generar la URL de subida", 400);
+  } catch (error) {
+    return jsonServerError("No se pudo generar la URL de subida", error, { status: 400 });
   }
 }
 

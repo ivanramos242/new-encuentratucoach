@@ -22,6 +22,15 @@ function isActiveish(status: string) {
   return status === "active" || status === "trialing";
 }
 
+function isUniqueConstraintError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === "P2002"
+  );
+}
+
 async function upsertSubscriptionFromStripe(subscription: Stripe.Subscription) {
   const metadata = subscription.metadata || {};
   let coachProfileId = metadata.coachProfileId || "";
@@ -233,16 +242,31 @@ export async function POST(request: Request) {
       return jsonOk({ received: true, duplicate: true });
     }
 
-    const log = existing
-      ? existing
-      : await prisma.billingEventLog.create({
+    let log = existing;
+    if (!log) {
+      try {
+        log = await prisma.billingEventLog.create({
           data: {
             stripeEventId: event.id,
             eventType: event.type,
             payload: event as unknown as object,
           },
-          select: { id: true },
+          select: { id: true, processedAt: true },
         });
+      } catch (error) {
+        if (!isUniqueConstraintError(error)) throw error;
+        log = await prisma.billingEventLog.findUnique({
+          where: { stripeEventId: event.id },
+          select: { id: true, processedAt: true },
+        });
+      }
+    }
+    if (!log) {
+      return jsonOk({ received: true, duplicate: true, note: "event_log_race_recovered" });
+    }
+    if (log.processedAt) {
+      return jsonOk({ received: true, duplicate: true });
+    }
 
     await processStripeEvent(event);
 
