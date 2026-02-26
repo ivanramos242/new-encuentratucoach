@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
@@ -22,6 +23,7 @@ type HeaderSessionState = {
   loading: boolean;
   authenticated: boolean;
   user: HeaderSessionUser | null;
+  pendingMessagesCount: number;
 };
 
 export function SiteHeader() {
@@ -35,6 +37,7 @@ export function SiteHeader() {
     loading: true,
     authenticated: false,
     user: null,
+    pendingMessagesCount: 0,
   });
 
   useEffect(() => {
@@ -48,17 +51,22 @@ export function SiteHeader() {
           cache: "no-store",
           headers: { "cache-control": "no-store" },
         });
-        const json = (await res.json()) as { authenticated?: boolean; user?: HeaderSessionUser | null };
+        const json = (await res.json()) as {
+          authenticated?: boolean;
+          user?: HeaderSessionUser | null;
+          pendingMessagesCount?: number;
+        };
         if (!cancelled) {
           setSession({
             loading: false,
             authenticated: Boolean(json.authenticated),
             user: json.user ?? null,
+            pendingMessagesCount: Math.max(0, Number(json.pendingMessagesCount ?? 0) || 0),
           });
         }
       } catch {
         if (!cancelled) {
-          setSession({ loading: false, authenticated: false, user: null });
+          setSession({ loading: false, authenticated: false, user: null, pendingMessagesCount: 0 });
         }
       }
     })();
@@ -116,7 +124,7 @@ export function SiteHeader() {
           cache: "no-store",
         });
       } catch {}
-      setSession({ loading: false, authenticated: false, user: null });
+      setSession({ loading: false, authenticated: false, user: null, pendingMessagesCount: 0 });
       setMenuOpen(false);
       router.push("/");
       router.refresh();
@@ -150,8 +158,8 @@ export function SiteHeader() {
 
       <Container className="flex items-center gap-3 py-3 sm:gap-4">
         <Link href="/" className="flex min-w-0 items-center gap-2.5 sm:gap-3">
-          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-cyan-500 to-emerald-500 font-black text-white shadow">
-            ET
+          <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm">
+            <Image src="/site-logo.png" alt="Encuentra TuCoach" fill className="object-cover" sizes="44px" priority />
           </div>
           <div className="hidden min-w-0 sm:block">
             <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Encuentra</div>
@@ -186,9 +194,12 @@ export function SiteHeader() {
             <>
               <Link
                 href={accountHref}
-                className="rounded-xl border border-black/10 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
+                className="inline-flex items-center gap-2 rounded-xl border border-black/10 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
               >
                 {session.user?.role === "admin" ? "Admin" : "Mi cuenta"}
+                {session.user?.role !== "admin" && session.pendingMessagesCount > 0 ? (
+                  <PendingMessagesBadge count={session.pendingMessagesCount} />
+                ) : null}
               </Link>
               <button
                 type="button"
@@ -276,9 +287,12 @@ export function SiteHeader() {
                   <Link
                     href={accountHref}
                     onClick={() => setMenuOpen(false)}
-                    className="rounded-xl border border-black/10 bg-white px-4 py-3 text-center text-sm font-semibold text-zinc-900"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-black/10 bg-white px-4 py-3 text-center text-sm font-semibold text-zinc-900"
                   >
                     {session.user?.role === "admin" ? "Ir al admin" : "Mi cuenta"}
+                    {session.user?.role !== "admin" && session.pendingMessagesCount > 0 ? (
+                      <PendingMessagesBadge count={session.pendingMessagesCount} />
+                    ) : null}
                   </Link>
                   <button
                     type="button"
@@ -312,5 +326,13 @@ export function SiteHeader() {
         </div>
       ) : null}
     </header>
+  );
+}
+
+function PendingMessagesBadge({ count }: { count: number }) {
+  return (
+    <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 py-0.5 text-[11px] font-bold leading-none text-white">
+      {count > 99 ? "99+" : count}
+    </span>
   );
 }

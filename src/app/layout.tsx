@@ -33,8 +33,11 @@ export const metadata: Metadata = {
     description: siteConfig.description,
   },
   icons: {
-    icon: [{ url: "/favicon-v2.svg?v=20260223", type: "image/svg+xml" }],
-    shortcut: ["/favicon-v2.svg?v=20260223"],
+    icon: [
+      { url: "/icon.png", type: "image/png" },
+      { url: "/favicon-v2.svg?v=20260223", type: "image/svg+xml" },
+    ],
+    shortcut: ["/icon.png"],
   },
 };
 

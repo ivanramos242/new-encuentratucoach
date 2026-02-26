@@ -335,6 +335,18 @@ export async function listThreadsForUser(user: SessionUser): Promise<MessageThre
   };
 }
 
+export async function getUnreadMessagesTotalForUser(user: SessionUser): Promise<number> {
+  if (user.role !== "client" && user.role !== "coach") return 0;
+
+  const result = await listThreadsForUser(user);
+  if ("error" in result) return 0;
+
+  return result.threads.reduce((sum, thread) => {
+    const unread = thread.viewerRole === "coach" ? thread.unreadForCoach : thread.unreadForClient;
+    return sum + unread;
+  }, 0);
+}
+
 export async function getThreadForUser(threadId: string, user: SessionUser): Promise<{ thread: MessageThreadDetailDto } | ServiceError> {
   const loaded = await loadThreadForUser(threadId, user);
   if (!("thread" in loaded)) return loaded;
