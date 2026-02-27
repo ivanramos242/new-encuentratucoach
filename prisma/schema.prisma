@@ -253,6 +253,7 @@ model User {
   attributionSessions       AttributionSession[]
   funnelEvents              FunnelEvent[]
   jobRunLogs                JobRunLog[]            @relation("JobRunActor")
+  coachFavorites            CoachFavorite[]
 }
 
 model AuthSession {
@@ -380,6 +381,20 @@ model CoachProfile {
   qaAnswers            QaAnswer[]
   funnelEvents         FunnelEvent[]
   funnelAggregates     CoachFunnelDailyAggregate[]
+  favoritedByUsers     CoachFavorite[]
+}
+
+model CoachFavorite {
+  id            String       @id @default(cuid())
+  userId        String
+  coachProfileId String
+  createdAt     DateTime     @default(now())
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  coachProfile  CoachProfile @relation(fields: [coachProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, coachProfileId])
+  @@index([userId, createdAt])
+  @@index([coachProfileId])
 }
 
 model CoachProfileCategory {

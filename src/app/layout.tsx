@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { FavoriteCoachesProvider } from "@/components/favorites/favorite-coaches-provider";
 import { Poppins } from "next/font/google";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -55,11 +56,13 @@ export default function RootLayout({
         />
       </head>
       <body className={`${poppins.variable} bg-zinc-50 text-zinc-950 antialiased`}>
-        <div className="min-h-screen bg-zinc-50">
-          <SiteHeader />
-          {children}
-          <SiteFooter />
-        </div>
+        <FavoriteCoachesProvider>
+          <div className="min-h-screen bg-zinc-50">
+            <SiteHeader />
+            {children}
+            <SiteFooter />
+          </div>
+        </FavoriteCoachesProvider>
       </body>
     </html>
   );
