@@ -60,6 +60,7 @@ export function SiteHeader() {
     user: null,
     pendingMessagesCount: 0,
   });
+  const topStripCollapsedRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -98,8 +99,27 @@ export function SiteHeader() {
   }, [pathname]);
 
   useEffect(() => {
-    const onScroll = () => setTopStripCollapsed(window.scrollY > 28);
-    onScroll();
+    const collapseAt = 42;
+    const expandAt = 14;
+    let ticking = false;
+
+    const update = () => {
+      ticking = false;
+      const y = window.scrollY;
+      const nextCollapsed = topStripCollapsedRef.current ? y > expandAt : y > collapseAt;
+      if (nextCollapsed !== topStripCollapsedRef.current) {
+        topStripCollapsedRef.current = nextCollapsed;
+        setTopStripCollapsed(nextCollapsed);
+      }
+    };
+
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(update);
+    };
+
+    update();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
@@ -160,7 +180,7 @@ export function SiteHeader() {
         aria-hidden={topStripCollapsed}
       >
         <div className="border-b border-black/10 bg-gradient-to-r from-cyan-50/60 via-white to-emerald-50/60">
-          <Container className="flex h-11 items-center justify-between gap-3">
+          <Container className="max-w-[1700px] px-3 sm:px-4 lg:px-6 xl:px-8 flex h-11 items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2 text-sm text-zinc-600">
               <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500" />
               <span className="truncate">Directorio de coaches en España</span>
@@ -179,7 +199,7 @@ export function SiteHeader() {
         </div>
       </div>
 
-      <Container className="flex items-center gap-3 py-3 sm:gap-4">
+      <Container className="max-w-[1700px] px-3 sm:px-4 lg:px-6 xl:px-8 flex items-center gap-3 py-3 sm:gap-4">
         <Link href="/" className="flex min-w-0 items-center gap-2.5 sm:gap-3">
           <div className="relative h-11 w-11 shrink-0">
             <Image src="/site-logo.png" alt="Encuentra TuCoach" fill className="object-contain" sizes="44px" priority />
@@ -191,7 +211,7 @@ export function SiteHeader() {
         </Link>
 
         <nav className="ml-1 hidden flex-1 justify-center lg:flex" aria-label="Principal">
-          <ul className="flex flex-wrap items-center justify-center gap-1">
+          <ul className="flex flex-nowrap items-center justify-center gap-1">
             {siteNav.map((item) => {
               const active = isActive(pathname, item.href);
               const icon = headerIconByHref[item.href as keyof typeof headerIconByHref];
