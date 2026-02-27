@@ -7,24 +7,19 @@ import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
 import { requireRole } from "@/lib/auth-server";
 import { getUnreadMessagesTotalForUser } from "@/lib/conversation-service";
-import { prisma } from "@/lib/prisma";
+import { listFavoriteCoachIdsForUser } from "@/lib/favorites-service";
 import { listPublicCoachesMerged } from "@/lib/public-coaches";
 
 export default async function ClientDashboardPage() {
   const user = await requireRole(["client", "admin"], { returnTo: "/mi-cuenta/cliente" });
-  const [pendingMessagesCount, favoriteRows, allPublicCoaches] = await Promise.all([
+  const [pendingMessagesCount, favoriteCoachIds, allPublicCoaches] = await Promise.all([
     getUnreadMessagesTotalForUser(user),
-    prisma.coachFavorite.findMany({
-      where: { userId: user.id },
-      select: { coachProfileId: true, createdAt: true },
-      orderBy: { createdAt: "desc" },
-      take: 24,
-    }),
+    listFavoriteCoachIdsForUser(user.id, 24),
     listPublicCoachesMerged(),
   ]);
   const coachById = new Map(allPublicCoaches.map((coach) => [coach.id, coach]));
-  const favoriteCoaches = favoriteRows
-    .map((fav) => coachById.get(fav.coachProfileId))
+  const favoriteCoaches = favoriteCoachIds
+    .map((coachId) => coachById.get(coachId))
     .filter((coach): coach is NonNullable<typeof coach> => Boolean(coach));
 
   const cards = [

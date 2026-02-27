@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { usePathname, useRouter } from "next/navigation";
 import { useFavoriteCoaches } from "@/components/favorites/favorite-coaches-provider";
@@ -19,12 +19,16 @@ export function FavoriteCoachButton({
   async function onClick() {
     const result = await toggleFavorite(coachProfileId);
     if (result === "auth_required") {
-      window.alert("Para guardar favoritos, inicia sesión primero.");
-      const returnTo = pathname || "/coaches";
-      router.push(`/iniciar-sesion?returnTo=${encodeURIComponent(returnTo)}`);
+      const shouldLogin = window.confirm(
+        "Necesitas iniciar sesion para guardar favoritos.\n\n¿Quieres iniciar sesion ahora?",
+      );
+      if (shouldLogin) {
+        const returnTo = pathname || "/coaches";
+        router.push(`/iniciar-sesion?returnTo=${encodeURIComponent(returnTo)}`);
+      }
     }
     if (result === "error") {
-      window.alert("No se pudo actualizar favoritos. Inténtalo de nuevo.");
+      window.alert("No se pudo actualizar favoritos. Intentalo de nuevo.");
     }
   }
 
