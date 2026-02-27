@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProfileAnalyticsTracker } from "@/components/analytics/profile-analytics-tracker";
 import { CoachCard } from "@/components/directory/coach-card";
+import { FavoriteCoachButton } from "@/components/favorites/favorite-coach-button";
 import { ContactCoachForm } from "@/components/forms/contact-coach-form";
 import { PageShell } from "@/components/layout/page-shell";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -95,7 +96,14 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
                       </span>
                     ) : null}
                   </div>
-                  <h1 className="mt-4 text-3xl font-black tracking-tight text-white sm:text-4xl">{coach.name}</h1>
+                  <div className="mt-4 flex items-center justify-between gap-3">
+                    <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl">{coach.name}</h1>
+                    <FavoriteCoachButton
+                      coachId={coach.id}
+                      size="sm"
+                      className="border-white/25 bg-black/25 text-white backdrop-blur hover:bg-black/35"
+                    />
+                  </div>
                   <p className="mt-2 max-w-3xl text-sm leading-6 text-white/90 sm:text-base">{coach.headline}</p>
                 </div>
               </div>
