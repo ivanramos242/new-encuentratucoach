@@ -1,7 +1,15 @@
+<<<<<<< HEAD
 ﻿import { MockClientLoginCard } from "@/components/auth/mock-client-login-card";
 import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
+=======
+import { LoginCard } from "@/components/auth/auth-card";
+import { PageShell } from "@/components/layout/page-shell";
+import { getInflatedRegisteredUsersCount } from "@/lib/platform-stats";
+>>>>>>> 4647dc74b728c8703bf70842cb6a2588bce2ccac
 import { buildMetadata } from "@/lib/seo";
+
+export const dynamic = "force-dynamic";
 
 export const metadata = buildMetadata({
   title: "Iniciar sesion",
@@ -12,6 +20,7 @@ export const metadata = buildMetadata({
 type SearchParamsInput = Promise<Record<string, string | string[] | undefined>>;
 
 export default async function LoginPage({ searchParams }: { searchParams: SearchParamsInput }) {
+<<<<<<< HEAD
   const raw = await searchParams;
   const returnToRaw = Array.isArray(raw.returnTo) ? raw.returnTo[0] : raw.returnTo;
   const returnTo = typeof returnToRaw === "string" ? returnToRaw : undefined;
@@ -35,5 +44,16 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
         </div>
       </PageShell>
     </>
+=======
+  const params = await searchParams;
+  const returnToRaw = Array.isArray(params.returnTo) ? params.returnTo[0] : params.returnTo;
+  const returnTo = typeof returnToRaw === "string" && returnToRaw.startsWith("/") ? returnToRaw : "/mi-cuenta";
+  const userCount = await getInflatedRegisteredUsersCount();
+
+  return (
+    <PageShell className="pt-8">
+      <LoginCard returnTo={returnTo} userCount={userCount} />
+    </PageShell>
+>>>>>>> 4647dc74b728c8703bf70842cb6a2588bce2ccac
   );
 }
