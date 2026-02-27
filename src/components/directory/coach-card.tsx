@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { faCircleCheck } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { FavoriteCoachButton } from "@/components/favorites/favorite-coach-button";
 import { getCoachCategoryLabel } from "@/lib/coach-category-catalog";
 import { getCoachAverageRating } from "@/lib/directory";
 import { formatEuro } from "@/lib/utils";
@@ -80,12 +81,15 @@ export function CoachCard({ coach }: { coach: CoachProfile }) {
           </div>
         </div>
 
-        <Link
-          href={`/coaches/${coach.slug}`}
-          className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800"
-        >
-          Ver perfil
-        </Link>
+        <div className="mt-4 flex items-center gap-2">
+          <FavoriteCoachButton coachProfileId={coach.id} />
+          <Link
+            href={`/coaches/${coach.slug}`}
+            className="inline-flex flex-1 items-center justify-center rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800"
+          >
+            Ver perfil
+          </Link>
+        </div>
       </div>
     </article>
   );

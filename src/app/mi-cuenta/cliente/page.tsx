@@ -1,15 +1,31 @@
 import Link from "next/link";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import { faArrowRight, faChartColumn, faEnvelope, faUsers } from "@fortawesome/free-solid-svg-icons";
+import { faArrowRight, faChartColumn, faEnvelope, faHeart, faUsers } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { CoachCard } from "@/components/directory/coach-card";
 import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
 import { requireRole } from "@/lib/auth-server";
 import { getUnreadMessagesTotalForUser } from "@/lib/conversation-service";
+import { prisma } from "@/lib/prisma";
+import { listPublicCoachesMerged } from "@/lib/public-coaches";
 
 export default async function ClientDashboardPage() {
   const user = await requireRole(["client", "admin"], { returnTo: "/mi-cuenta/cliente" });
-  const pendingMessagesCount = await getUnreadMessagesTotalForUser(user);
+  const [pendingMessagesCount, favoriteRows, allPublicCoaches] = await Promise.all([
+    getUnreadMessagesTotalForUser(user),
+    prisma.coachFavorite.findMany({
+      where: { userId: user.id },
+      select: { coachProfileId: true, createdAt: true },
+      orderBy: { createdAt: "desc" },
+      take: 24,
+    }),
+    listPublicCoachesMerged(),
+  ]);
+  const coachById = new Map(allPublicCoaches.map((coach) => [coach.id, coach]));
+  const favoriteCoaches = favoriteRows
+    .map((fav) => coachById.get(fav.coachProfileId))
+    .filter((coach): coach is NonNullable<typeof coach> => Boolean(coach));
 
   const cards = [
     {
@@ -36,6 +52,15 @@ export default async function ClientDashboardPage() {
       icon: faUsers,
       accent: "from-zinc-700 to-zinc-900",
       cta: "Explorar directorio",
+    },
+    {
+      href: "#favoritos",
+      title: "Favoritos",
+      desc: "Tus coaches guardados para volver rápido cuando lo necesites.",
+      icon: faHeart,
+      accent: "from-rose-500 to-pink-500",
+      cta: "Ver favoritos",
+      pending: favoriteCoaches.length,
     },
   ] as const;
 
@@ -99,6 +124,33 @@ export default async function ClientDashboardPage() {
             {cards.map((item) => (
               <DashboardCard key={item.href} {...item} />
             ))}
+          </section>
+
+          <section id="favoritos" className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
+            <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-black tracking-tight text-zinc-950">Mis favoritos</h2>
+                <p className="mt-1 text-sm text-zinc-700">Coaches guardados para comparar y contactar más tarde.</p>
+              </div>
+              <Link
+                href="/coaches"
+                className="rounded-xl border border-black/10 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
+              >
+                Seguir explorando
+              </Link>
+            </div>
+
+            {favoriteCoaches.length ? (
+              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                {favoriteCoaches.map((coach) => (
+                  <CoachCard key={coach.id} coach={coach} />
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-black/15 bg-zinc-50 p-4 text-sm text-zinc-700">
+                Aún no tienes coaches guardados. Pulsa el icono de corazón en cualquier card o perfil para añadirlos.
+              </div>
+            )}
           </section>
         </div>
       </PageShell>

@@ -32,6 +32,7 @@ import { CoachProfileActionPopups } from "@/components/coach/coach-profile-actio
 import { CoachReviewForm } from "@/components/coach/coach-review-form";
 import { CoachProfileSectionNav } from "@/components/coach/coach-profile-section-nav";
 import { CoachCard } from "@/components/directory/coach-card";
+import { FavoriteCoachButton } from "@/components/favorites/favorite-coach-button";
 import { PageShell } from "@/components/layout/page-shell";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getOptionalSessionUser } from "@/lib/auth-server";
@@ -219,15 +220,18 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
               <p className="mt-4 text-sm font-semibold text-zinc-600">Encuentra • coach en España • online o presencial</p>
               <div className="mt-2 flex items-start justify-between gap-3">
                 <h1 className="text-3xl font-black tracking-tight text-zinc-950 sm:text-4xl lg:text-5xl">{coach.name}</h1>
-                {coach.certifiedStatus === "approved" ? (
-                  <span
-                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white shadow-lg shadow-sky-500/35"
-                    title="Coach verificado"
-                    aria-label="Coach verificado"
-                  >
-                    <FontAwesomeIcon icon={faCircleCheck} className="h-5 w-5" />
-                  </span>
-                ) : null}
+                <div className="flex items-center gap-2">
+                  <FavoriteCoachButton coachProfileId={coach.id} />
+                  {coach.certifiedStatus === "approved" ? (
+                    <span
+                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white shadow-lg shadow-sky-500/35"
+                      title="Coach verificado"
+                      aria-label="Coach verificado"
+                    >
+                      <FontAwesomeIcon icon={faCircleCheck} className="h-5 w-5" />
+                    </span>
+                  ) : null}
+                </div>
               </div>
               <p className="mt-4 max-w-3xl text-base leading-7 text-zinc-700">{leadBits.join(" · ") || coach.headline}</p>
 
