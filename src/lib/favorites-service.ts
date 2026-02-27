@@ -2,10 +2,18 @@
 import { prisma } from "@/lib/prisma";
 
 export function isCoachFavoritesTableMissingError(error: unknown): boolean {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== "P2021") {
+    return false;
+  }
+
+  const modelName = String(error.meta?.modelName ?? "").toLowerCase();
+  const table = String(error.meta?.table ?? "").toLowerCase();
+  const message = String(error.message ?? "").toLowerCase();
+
   return (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
-    error.code === "P2021" &&
-    String(error.meta?.modelName ?? "").toLowerCase() === "coachfavorite"
+    modelName.includes("coachfavorite") ||
+    table.includes("coachfavorite") ||
+    message.includes("coachfavorite")
   );
 }
 
