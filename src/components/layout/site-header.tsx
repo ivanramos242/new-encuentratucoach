@@ -4,6 +4,18 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
+import {
+  faBlog,
+  faCircleQuestion,
+  faCompass,
+  faEnvelope,
+  faHouse,
+  faPenToSquare,
+  faPeopleGroup,
+  faRightFromBracket,
+  faUser,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Container } from "@/components/layout/container";
 import { siteNav } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
@@ -25,6 +37,15 @@ type HeaderSessionState = {
   user: HeaderSessionUser | null;
   pendingMessagesCount: number;
 };
+
+const headerIconByHref = {
+  "/": faHouse,
+  "/coaches": faPeopleGroup,
+  "/membresia": faCompass,
+  "/sobre-nosotros": faCircleQuestion,
+  "/contacto": faEnvelope,
+  "/blog": faBlog,
+} as const;
 
 export function SiteHeader() {
   const pathname = usePathname();
@@ -132,23 +153,25 @@ export function SiteHeader() {
   }
 
   return (
-    <header ref={headerRef} className="sticky top-0 z-40 border-b border-black/5 bg-white/90 backdrop-blur">
+    <header ref={headerRef} className="sticky top-0 z-40 border-b border-black/10 bg-white/85 backdrop-blur-xl">
       <div
         className="overflow-hidden transition-[height,opacity] duration-200 ease-out"
         style={{ height: topStripCollapsed ? 0 : 44, opacity: topStripCollapsed ? 0 : 1 }}
         aria-hidden={topStripCollapsed}
       >
-        <div className="border-b border-black/5 bg-white">
+        <div className="border-b border-black/10 bg-gradient-to-r from-cyan-50/60 via-white to-emerald-50/60">
           <Container className="flex h-11 items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2 text-sm text-zinc-600">
               <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500" />
               <span className="truncate">Directorio de coaches en España</span>
             </div>
             <div className="hidden items-center gap-5 text-sm font-medium text-zinc-700 sm:flex">
-              <Link href="/membresia" className="hover:text-zinc-950">
+              <Link href="/membresia" className="inline-flex items-center gap-1.5 hover:text-zinc-950">
+                <FontAwesomeIcon icon={faCompass} className="h-3.5 w-3.5 text-zinc-500" />
                 Unirse como coach
               </Link>
-              <Link href="/contacto" className="hover:text-zinc-950">
+              <Link href="/contacto" className="inline-flex items-center gap-1.5 hover:text-zinc-950">
+                <FontAwesomeIcon icon={faCircleQuestion} className="h-3.5 w-3.5 text-zinc-500" />
                 Ayuda
               </Link>
             </div>
@@ -158,8 +181,8 @@ export function SiteHeader() {
 
       <Container className="flex items-center gap-3 py-3 sm:gap-4">
         <Link href="/" className="flex min-w-0 items-center gap-2.5 sm:gap-3">
-          <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm">
-            <Image src="/site-logo.png" alt="Encuentra TuCoach" fill className="object-cover" sizes="44px" priority />
+          <div className="relative h-11 w-11 shrink-0">
+            <Image src="/site-logo.png" alt="Encuentra TuCoach" fill className="object-contain" sizes="44px" priority />
           </div>
           <div className="hidden min-w-0 sm:block">
             <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Encuentra</div>
@@ -171,16 +194,20 @@ export function SiteHeader() {
           <ul className="flex flex-wrap items-center justify-center gap-1">
             {siteNav.map((item) => {
               const active = isActive(pathname, item.href);
+              const icon = headerIconByHref[item.href as keyof typeof headerIconByHref];
               return (
                 <li key={item.href}>
                   <Link
                     href={item.href}
                     className={cn(
-                      "rounded-xl px-3 py-2 text-sm font-semibold transition",
-                      active ? "bg-cyan-50 text-cyan-800" : "text-zinc-700 hover:bg-zinc-50 hover:text-zinc-950",
+                      "inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition",
+                      active
+                        ? "bg-cyan-50 text-cyan-800 ring-1 ring-cyan-100"
+                        : "text-zinc-700 hover:bg-zinc-50 hover:text-zinc-950",
                     )}
                     aria-current={active ? "page" : undefined}
                   >
+                    {icon ? <FontAwesomeIcon icon={icon} className="h-3.5 w-3.5 text-zinc-500" /> : null}
                     {item.label}
                   </Link>
                 </li>
@@ -196,6 +223,7 @@ export function SiteHeader() {
                 href={accountHref}
                 className="inline-flex items-center gap-2 rounded-xl border border-black/10 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
               >
+                <FontAwesomeIcon icon={faUser} className="h-3.5 w-3.5 text-zinc-500" />
                 {session.user?.role === "admin" ? "Admin" : "Mi cuenta"}
                 {session.user?.role !== "admin" && session.pendingMessagesCount > 0 ? (
                   <PendingMessagesBadge count={session.pendingMessagesCount} />
@@ -207,6 +235,7 @@ export function SiteHeader() {
                 disabled={pendingLogout}
                 className="rounded-xl bg-zinc-950 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 disabled:opacity-60"
               >
+                <FontAwesomeIcon icon={faRightFromBracket} className="mr-2 h-3.5 w-3.5" />
                 {pendingLogout ? "Saliendo..." : "Cerrar sesión"}
               </button>
             </>
@@ -214,15 +243,17 @@ export function SiteHeader() {
             <>
               <Link
                 href="/iniciar-sesion"
-                className="rounded-xl border border-black/10 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
+                className="inline-flex items-center gap-2 rounded-xl border border-black/10 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
               >
+                <FontAwesomeIcon icon={faUser} className="h-3.5 w-3.5 text-zinc-500" />
                 {session.loading ? "Cargando..." : "Iniciar sesión"}
               </Link>
               <Link
-                href="/membresia"
-                className="rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:brightness-95"
+                href="/registro"
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:brightness-95"
               >
-                Soy coach
+                <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5" />
+                Registrarme
               </Link>
             </>
           )}
@@ -249,15 +280,17 @@ export function SiteHeader() {
               <Link
                 href="/membresia"
                 onClick={() => setMenuOpen(false)}
-                className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-zinc-900"
+                className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-zinc-900"
               >
+                <FontAwesomeIcon icon={faCompass} className="h-3.5 w-3.5 text-zinc-500" />
                 Unirse como coach
               </Link>
               <Link
                 href="/contacto"
                 onClick={() => setMenuOpen(false)}
-                className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-zinc-900"
+                className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-zinc-900"
               >
+                <FontAwesomeIcon icon={faCircleQuestion} className="h-3.5 w-3.5 text-zinc-500" />
                 Ayuda
               </Link>
             </div>
@@ -265,16 +298,18 @@ export function SiteHeader() {
             <ul className="grid gap-2">
               {siteNav.map((item) => {
                 const active = isActive(pathname, item.href);
+                const icon = headerIconByHref[item.href as keyof typeof headerIconByHref];
                 return (
                   <li key={item.href}>
                     <Link
                       href={item.href}
                       onClick={() => setMenuOpen(false)}
                       className={cn(
-                        "block rounded-xl px-3 py-3 text-sm font-semibold",
+                        "inline-flex w-full items-center gap-2 rounded-xl px-3 py-3 text-sm font-semibold",
                         active ? "bg-cyan-50 text-cyan-800" : "bg-zinc-50 text-zinc-800",
                       )}
                     >
+                      {icon ? <FontAwesomeIcon icon={icon} className="h-3.5 w-3.5 text-zinc-500" /> : null}
                       {item.label}
                     </Link>
                   </li>
@@ -289,6 +324,7 @@ export function SiteHeader() {
                     onClick={() => setMenuOpen(false)}
                     className="inline-flex items-center justify-center gap-2 rounded-xl border border-black/10 bg-white px-4 py-3 text-center text-sm font-semibold text-zinc-900"
                   >
+                    <FontAwesomeIcon icon={faUser} className="h-3.5 w-3.5 text-zinc-500" />
                     {session.user?.role === "admin" ? "Ir al admin" : "Mi cuenta"}
                     {session.user?.role !== "admin" && session.pendingMessagesCount > 0 ? (
                       <PendingMessagesBadge count={session.pendingMessagesCount} />
@@ -300,6 +336,7 @@ export function SiteHeader() {
                     disabled={pendingLogout}
                     className="rounded-xl bg-zinc-950 px-4 py-3 text-center text-sm font-semibold text-white disabled:opacity-60"
                   >
+                    <FontAwesomeIcon icon={faRightFromBracket} className="mr-2 h-3.5 w-3.5" />
                     {pendingLogout ? "Saliendo..." : "Cerrar sesión"}
                   </button>
                 </>
@@ -308,16 +345,18 @@ export function SiteHeader() {
                   <Link
                     href="/iniciar-sesion"
                     onClick={() => setMenuOpen(false)}
-                    className="rounded-xl border border-black/10 bg-white px-4 py-3 text-center text-sm font-semibold text-zinc-900"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-black/10 bg-white px-4 py-3 text-center text-sm font-semibold text-zinc-900"
                   >
+                    <FontAwesomeIcon icon={faUser} className="h-3.5 w-3.5 text-zinc-500" />
                     {session.loading ? "Cargando..." : "Iniciar sesión"}
                   </Link>
                   <Link
-                    href="/membresia"
+                    href="/registro"
                     onClick={() => setMenuOpen(false)}
-                    className="rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 px-4 py-3 text-center text-sm font-semibold text-white"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 px-4 py-3 text-center text-sm font-semibold text-white"
                   >
-                    Membresía para coaches
+                    <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5" />
+                    Registrarme
                   </Link>
                 </>
               )}

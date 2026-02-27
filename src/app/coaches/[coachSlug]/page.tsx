@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import {
   faArrowTrendDown,
   faArrowTrendUp,
+  faCircleCheck,
   faChartColumn,
   faCirclePlay,
   faClock,
@@ -216,7 +217,18 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
               </div>
 
               <p className="mt-4 text-sm font-semibold text-zinc-600">Encuentra • coach en España • online o presencial</p>
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-zinc-950 sm:text-4xl lg:text-5xl">{coach.name}</h1>
+              <div className="mt-2 flex items-start justify-between gap-3">
+                <h1 className="text-3xl font-black tracking-tight text-zinc-950 sm:text-4xl lg:text-5xl">{coach.name}</h1>
+                {coach.certifiedStatus === "approved" ? (
+                  <span
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white shadow-lg shadow-sky-500/35"
+                    title="Coach verificado"
+                    aria-label="Coach verificado"
+                  >
+                    <FontAwesomeIcon icon={faCircleCheck} className="h-5 w-5" />
+                  </span>
+                ) : null}
+              </div>
               <p className="mt-4 max-w-3xl text-base leading-7 text-zinc-700">{leadBits.join(" · ") || coach.headline}</p>
 
               <div className="mt-4 flex flex-wrap gap-2">
@@ -229,7 +241,6 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
               </div>
 
               <div className="mt-4 flex flex-wrap gap-2">
-                {coach.certifiedStatus === "approved" ? <Chip tone="success" icon={faStar}>Coach certificado</Chip> : null}
                 {coach.sessionModes.map((mode) => (
                   <Chip key={mode} icon={mode === "online" ? faGlobe : faUsers}>{mode === "online" ? "Sesión Online" : "Sesión Presencial"}</Chip>
                 ))}
