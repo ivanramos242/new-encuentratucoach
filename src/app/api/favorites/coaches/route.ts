@@ -1,4 +1,4 @@
-import { z } from "zod";
+﻿import { z } from "zod";
 import { jsonError, jsonOk, jsonServerError } from "@/lib/api-handlers";
 import { requireApiRole } from "@/lib/api-auth";
 import { listFavoriteCoachIdsForUser, setFavoriteCoachForUser } from "@/lib/favorites-service";
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const parsed = payloadSchema.safeParse(body);
-    if (!parsed.success) return jsonError("Payload inválido", 400, { issues: parsed.error.flatten() });
+    if (!parsed.success) return jsonError("Payload invalido", 400, { issues: parsed.error.flatten() });
 
     const result = await setFavoriteCoachForUser({
       userId: auth.user.id,
@@ -37,6 +37,7 @@ export async function POST(request: Request) {
 
     if (!result.ok) {
       if (result.code === "NOT_FOUND") return jsonError(result.message, 404);
+      if (result.code === "MISSING_TABLE") return jsonError(result.message, 503);
       return jsonError(result.message, 403);
     }
 
