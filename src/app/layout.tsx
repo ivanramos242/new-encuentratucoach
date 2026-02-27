@@ -33,11 +33,9 @@ export const metadata: Metadata = {
     description: siteConfig.description,
   },
   icons: {
-    icon: [
-      { url: "/icon.png", type: "image/png" },
-      { url: "/favicon-v2.svg?v=20260223", type: "image/svg+xml" },
-    ],
-    shortcut: ["/icon.png"],
+    icon: [{ url: "/site-logo.png", type: "image/png" }],
+    shortcut: ["/site-logo.png"],
+    apple: [{ url: "/site-logo.png" }],
   },
 };
 

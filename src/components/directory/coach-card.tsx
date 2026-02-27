@@ -1,5 +1,7 @@
 ﻿import Image from "next/image";
 import Link from "next/link";
+import { faCircleCheck } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { getCoachCategoryLabel } from "@/lib/coach-category-catalog";
 import { getCoachAverageRating } from "@/lib/directory";
 import { formatEuro } from "@/lib/utils";
@@ -22,12 +24,16 @@ export function CoachCard({ coach }: { coach: CoachProfile }) {
           sizes="(max-width: 768px) 100vw, 33vw"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/0 to-transparent" />
+        {coach.certifiedStatus === "approved" ? (
+          <div
+            className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-sky-500 text-white shadow-lg shadow-sky-500/35"
+            title="Coach verificado"
+            aria-label="Coach verificado"
+          >
+            <FontAwesomeIcon icon={faCircleCheck} className="h-5 w-5" />
+          </div>
+        ) : null}
         <div className="absolute bottom-3 left-3 right-3 flex flex-wrap gap-2">
-          {coach.certifiedStatus === "approved" ? (
-            <span className="rounded-full border border-white/20 bg-white/15 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
-              Certificado
-            </span>
-          ) : null}
           {coach.sessionModes.map((mode) => (
             <span
               key={mode}
