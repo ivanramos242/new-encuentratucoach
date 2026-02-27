@@ -20,7 +20,8 @@ Rebuild desde cero de `EncuentraTuCoach` con enfoque SEO para España, directori
 2. (Opcional) levanta servicios locales: `docker compose -f docker-compose.local.yml up -d`
 3. Instala dependencias: `npm install`
 4. Genera Prisma Client: `npm run prisma:generate`
-5. Arranca: `npm run dev`
+5. Sincroniza esquema Prisma a tu DB local: `npm run db:push`
+6. Arranca: `npm run dev`
 
 ## Scripts
 - `npm run dev`
@@ -29,6 +30,7 @@ Rebuild desde cero de `EncuentraTuCoach` con enfoque SEO para España, directori
 - `npm run typecheck`
 - `npm run prisma:generate`
 - `npm run prisma:migrate:dev`
+- `npm run db:push`
 - `npm run db:studio`
 
 
