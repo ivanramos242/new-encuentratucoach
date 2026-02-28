@@ -339,7 +339,7 @@ export default async function CoachesDirectoryPage({
                 </div>
               ) : null}
 
-                            {(filters.q ||
+              {(filters.q ||
                 filters.cat ||
                 filters.location ||
                 filters.certified ||
