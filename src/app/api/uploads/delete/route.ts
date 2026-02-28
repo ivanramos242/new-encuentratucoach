@@ -30,11 +30,17 @@ export async function POST(request: Request) {
       return jsonError("No se pudo resolver el perfil de coach", 400);
     }
 
-    if (!key.startsWith("coach-media/")) {
-      return jsonError("Solo se permite borrar archivos de media de coach", 400);
+    const isCoachMedia = key.startsWith("coach-media/");
+    const isBlogMedia = key.startsWith("blog-media/");
+    if (!isCoachMedia && !isBlogMedia) {
+      return jsonError("Solo se permite borrar archivos de media conocidos", 400);
     }
 
-    if (auth.user.role !== "admin") {
+    if (isBlogMedia && auth.user.role !== "admin") {
+      return jsonError("Solo admin puede borrar media del blog", 403);
+    }
+
+    if (isCoachMedia && auth.user.role !== "admin") {
       const expectedPrefix = `coach-media/${coachProfileId}/`;
       if (!key.startsWith(expectedPrefix)) {
         return jsonError("No puedes borrar archivos de otro perfil", 403);

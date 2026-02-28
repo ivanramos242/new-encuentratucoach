@@ -11,7 +11,7 @@ import {
 import { applyEndpointRateLimit } from "@/lib/rate-limit";
 
 const schema = z.object({
-  scope: z.enum(["coach_gallery", "coach_hero", "coach_video", "certification_document"]),
+  scope: z.enum(["coach_gallery", "coach_hero", "coach_video", "certification_document", "blog_cover"]),
   fileName: z.string().min(1).max(255),
   contentType: z.string().min(1).max(120),
   sizeBytes: z.number().int().positive().max(25 * 1024 * 1024),
@@ -67,17 +67,31 @@ export async function POST(request: Request) {
 
     const allowedMime = parseAllowedMimeList();
     const videoAllowed = new Set(["video/mp4", "video/webm"]);
+    const imageAllowed = new Set(["image/jpeg", "image/png", "image/webp"]);
     if (
       (parsed.data.scope === "coach_video" && !videoAllowed.has(parsed.data.contentType)) ||
       (parsed.data.scope !== "coach_video" && !allowedMime.has(parsed.data.contentType))
     ) {
       return jsonError("Tipo de archivo no permitido", 400);
     }
+    if (parsed.data.scope === "blog_cover" && !imageAllowed.has(parsed.data.contentType)) {
+      return jsonError("La portada del blog solo admite imagen JPG, PNG o WEBP", 400);
+    }
 
-    const coachProfileId =
-      auth.user.role === "admin" ? parsed.data.coachProfileId || auth.user.coachProfileId : auth.user.coachProfileId;
+    let coachProfileId: string | null | undefined = null;
+    if (parsed.data.scope !== "blog_cover") {
+      coachProfileId =
+        auth.user.role === "admin"
+          ? parsed.data.coachProfileId || auth.user.coachProfileId
+          : auth.user.coachProfileId;
+    }
 
-    if (!coachProfileId) return jsonError("No se pudo resolver el perfil de coach para la subida", 400);
+    if (parsed.data.scope === "blog_cover" && auth.user.role !== "admin") {
+      return jsonError("Solo admin puede subir portadas de blog", 403);
+    }
+    if (parsed.data.scope !== "blog_cover" && !coachProfileId) {
+      return jsonError("No se pudo resolver el perfil de coach para la subida", 400);
+    }
 
     const key = buildUploadObjectKey({
       scope: parsed.data.scope,
@@ -108,5 +122,4 @@ export async function POST(request: Request) {
     return jsonServerError("No se pudo generar la URL de subida", error);
   }
 }
-
 

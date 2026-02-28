@@ -7,11 +7,14 @@ export function buildMetadata(input: {
   title: string;
   description: string;
   path?: string;
+  canonicalUrl?: string;
   noindex?: boolean;
   keywords?: string[];
+  image?: string;
+  type?: "website" | "article";
 }): Metadata {
   const title = `${input.title} | ${siteConfig.name}`;
-  const url = absoluteUrl(input.path ?? "/");
+  const url = input.canonicalUrl || absoluteUrl(input.path ?? "/");
 
   return {
     title,
@@ -31,13 +34,15 @@ export function buildMetadata(input: {
       description: input.description,
       url,
       locale: siteConfig.locale,
-      type: "website",
+      type: input.type || "website",
       siteName: siteConfig.name,
+      images: input.image ? [{ url: input.image }] : undefined,
     },
     twitter: {
       card: "summary_large_image",
       title,
       description: input.description,
+      images: input.image ? [input.image] : undefined,
     },
   };
 }
