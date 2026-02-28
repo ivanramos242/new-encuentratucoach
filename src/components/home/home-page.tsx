@@ -6,12 +6,12 @@ import { listPublicCoachesMerged } from "@/lib/public-coaches";
 import { coachCategories, cities } from "@/lib/mock-data";
 
 const quickSearches = [
-  { label: "Certificados", href: "/coaches?certified=certified" },
-  { label: "Online", href: "/coaches?session=online" },
-  { label: "Presencial", href: "/coaches?session=presencial" },
-  { label: "Coaching personal", href: "/coaches?cat=personal" },
-  { label: "Carrera", href: "/coaches?cat=carrera" },
-  { label: "Liderazgo", href: "/coaches?cat=liderazgo" },
+  { label: "Certificados", href: "/coaches/certificados" },
+  { label: "Online", href: "/coaches/modalidad/online" },
+  { label: "Coaching personal", href: "/coaches/categoria/personal" },
+  { label: "Carrera", href: "/coaches/categoria/carrera" },
+  { label: "Liderazgo", href: "/coaches/categoria/liderazgo" },
+  { label: "Coaches en Madrid", href: "/coaches/ciudad/madrid" },
 ];
 
 export async function HomePage() {

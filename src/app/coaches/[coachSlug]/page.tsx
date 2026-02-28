@@ -43,6 +43,7 @@ import { sanitizeRichHtml } from "@/lib/html-sanitize";
 import { getPublicCoachBySlugMerged, listPublicCoachesMerged } from "@/lib/public-coaches";
 import { buildMetadata } from "@/lib/seo";
 import { formatEuro } from "@/lib/utils";
+import { getQaQuestionsList } from "@/lib/v2-mock";
 
 type ParamsInput = Promise<{ coachSlug: string }>;
 type SearchParamsInput = Promise<Record<string, string | string[] | undefined>>;
@@ -121,6 +122,9 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
   const rating = getCoachAverageRating(coach);
   const visibleReviews = coach.reviews;
   const related = getRelatedCoachesFrom(await listPublicCoachesMerged(), coach, 3);
+  const relatedQuestions = getQaQuestionsList({ categorySlug: coach.categories[0] })
+    .filter((question) => question.citySlug === coach.citySlug || question.answers.some((answer) => answer.coachSlug === coach.slug))
+    .slice(0, 3);
   const categoryLabels = coach.categories.map((slug) => getCoachCategoryLabel(slug) ?? slug);
   const categoryNames = categoryLabels.join(", ");
 
@@ -236,11 +240,15 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
               <p className="mt-4 max-w-3xl text-base leading-7 text-zinc-700">{leadBits.join(" · ") || coach.headline}</p>
 
               <div className="mt-4 flex flex-wrap gap-2">
-                {categoryLabels.map((label, index) => (
-                  <span key={`${label}-${index}`} className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-3 py-2 text-sm font-semibold text-zinc-800">
+                {coach.categories.map((categorySlug, index) => (
+                  <Link
+                    key={`${categorySlug}-${index}`}
+                    href={`/coaches/categoria/${categorySlug}`}
+                    className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-3 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50"
+                  >
                     <FontAwesomeIcon icon={faTag} className="h-3.5 w-3.5 text-zinc-500" />
-                    {label}
-                  </span>
+                    {getCoachCategoryLabel(categorySlug) ?? categorySlug}
+                  </Link>
                 ))}
               </div>
 
@@ -248,7 +256,13 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
                 {coach.sessionModes.map((mode) => (
                   <Chip key={mode} icon={mode === "online" ? faGlobe : faUsers}>{mode === "online" ? "Sesión Online" : "Sesión Presencial"}</Chip>
                 ))}
-                <Chip icon={faLocationDot}>{coach.cityLabel}</Chip>
+                <Link
+                  href={`/coaches/ciudad/${coach.citySlug}`}
+                  className="rounded-full border border-black/10 bg-white px-3 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50"
+                >
+                  <FontAwesomeIcon icon={faLocationDot} className="mr-2 h-3.5 w-3.5" />
+                  {coach.cityLabel}
+                </Link>
                 {coach.languages.length ? <Chip icon={faLanguage}>{coach.languages.join(" y ")}</Chip> : null}
                 <Chip icon={faEuroSign}>{coach.basePriceEur ? `Desde ${formatEuro(coach.basePriceEur)} · sesión` : "Precio a consultar"}</Chip>
               </div>
@@ -492,6 +506,36 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
               <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                 {related.map((item) => (
                   <CoachCard key={item.id} coach={item} />
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {relatedQuestions.length ? (
+            <section className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
+              <div className="mb-4 flex items-end justify-between gap-4">
+                <div>
+                  <h2 className="text-2xl font-black tracking-tight text-zinc-950">
+                    Preguntas relacionadas
+                  </h2>
+                  <p className="mt-1 text-sm text-zinc-700">Dudas reales de usuarios que pueden ayudarte a decidir.</p>
+                </div>
+                <Link href="/pregunta-a-un-coach" className="text-sm font-semibold text-cyan-700 hover:text-cyan-800">
+                  Ver todas
+                </Link>
+              </div>
+              <div className="grid gap-3">
+                {relatedQuestions.map((question) => (
+                  <Link
+                    key={question.id}
+                    href={`/pregunta-a-un-coach/${question.slug}`}
+                    className="rounded-2xl border border-black/10 bg-zinc-50 p-4 hover:bg-white"
+                  >
+                    <p className="font-semibold text-zinc-900">{question.title}</p>
+                    <p className="mt-1 text-xs text-zinc-600">
+                      {question.answers.length} respuestas · tema {question.topicName}
+                    </p>
+                  </Link>
                 ))}
               </div>
             </section>

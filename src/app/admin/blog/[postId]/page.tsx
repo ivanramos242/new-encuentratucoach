@@ -138,7 +138,7 @@ export default async function AdminBlogEditorPage({
                   required
                   maxLength={180}
                   defaultValue={post.title}
-                  placeholder="Ej: Cuanto cuesta una sesion de coaching en Espana"
+                  placeholder="Ej: Cuanto cuesta una sesion de coaching en España"
                   className="rounded-xl border border-black/10 px-3 py-2 outline-none focus:border-cyan-400"
                 />
               </label>

@@ -3,19 +3,30 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageShell } from "@/components/layout/page-shell";
 import { JsonLd } from "@/components/seo/json-ld";
-import { buildMetadata } from "@/lib/seo";
+import {
+  buildBreadcrumbJsonLd,
+  buildMetadata,
+  getQaMinAnswersIndexable,
+} from "@/lib/seo";
 import { getQaQuestionBySlug, getQaQuestionsList } from "@/lib/v2-mock";
 
 type ParamsInput = Promise<{ questionSlug: string }>;
+
+function shouldIndexQaQuestion(answerCount: number) {
+  return answerCount >= getQaMinAnswersIndexable();
+}
 
 export async function generateMetadata({ params }: { params: ParamsInput }): Promise<Metadata> {
   const { questionSlug } = await params;
   const question = getQaQuestionBySlug(questionSlug);
   if (!question) return buildMetadata({ title: "Pregunta no encontrada", description: "Pregunta no encontrada", noindex: true });
+
+  const answers = question.answers.filter((answer) => answer.status === "published");
   return buildMetadata({
     title: question.title,
     description: question.body.slice(0, 160),
     path: `/pregunta-a-un-coach/${question.slug}`,
+    noindex: !shouldIndexQaQuestion(answers.length),
   });
 }
 
@@ -25,61 +36,85 @@ export default async function QaQuestionDetailPage({ params }: { params: ParamsI
   if (!question) notFound();
 
   const answers = question.answers.filter((answer) => answer.status === "published");
-  const related = getQaQuestionsList({ topicSlug: question.topicSlug }).filter((q) => q.id !== question.id).slice(0, 4);
+  const related = getQaQuestionsList({ topicSlug: question.topicSlug })
+    .filter((q) => q.id !== question.id)
+    .slice(0, 4);
   const authorLabel = question.isAnonymous ? "Anonimo" : question.authorDisplayName;
+  const shouldIndex = shouldIndexQaQuestion(answers.length);
+  const qaMinAnswers = getQaMinAnswersIndexable();
 
-  const qaJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "QAPage",
-    mainEntity: {
-      "@type": "Question",
-      name: question.title,
-      text: question.body,
-      answerCount: answers.length,
-      upvoteCount: question.votesTotal,
-      dateCreated: question.createdAt,
-      author: {
-        "@type": "Person",
-        name: authorLabel,
-      },
-      acceptedAnswer: question.acceptedAnswerId
-        ? answers
-            .filter((answer) => answer.id === question.acceptedAnswerId)
-            .map((answer) => ({
-              "@type": "Answer",
-              text: answer.body,
-              dateCreated: answer.createdAt,
-              upvoteCount: answer.voteScore,
-              author: {
-                "@type": "Person",
-                name: answer.coachName,
-              },
-            }))[0]
-        : undefined,
-      suggestedAnswer: answers.map((answer) => ({
-        "@type": "Answer",
-        text: answer.body,
-        dateCreated: answer.createdAt,
-        upvoteCount: answer.voteScore,
-        author: {
-          "@type": "Person",
-          name: answer.coachName,
+  const breadcrumb = buildBreadcrumbJsonLd([
+    { name: "Inicio", path: "/" },
+    { name: "Pregunta a un coach", path: "/pregunta-a-un-coach" },
+    { name: question.title, path: `/pregunta-a-un-coach/${question.slug}` },
+  ]);
+
+  const qaJsonLd = shouldIndex
+    ? {
+        "@context": "https://schema.org",
+        "@type": "QAPage",
+        mainEntity: {
+          "@type": "Question",
+          name: question.title,
+          text: question.body,
+          answerCount: answers.length,
+          upvoteCount: question.votesTotal,
+          dateCreated: question.createdAt,
+          author: {
+            "@type": "Person",
+            name: authorLabel,
+          },
+          acceptedAnswer: question.acceptedAnswerId
+            ? answers
+                .filter((answer) => answer.id === question.acceptedAnswerId)
+                .map((answer) => ({
+                  "@type": "Answer",
+                  text: answer.body,
+                  dateCreated: answer.createdAt,
+                  upvoteCount: answer.voteScore,
+                  author: {
+                    "@type": "Person",
+                    name: answer.coachName,
+                  },
+                }))[0]
+            : undefined,
+          suggestedAnswer: answers.map((answer) => ({
+            "@type": "Answer",
+            text: answer.body,
+            dateCreated: answer.createdAt,
+            upvoteCount: answer.voteScore,
+            author: {
+              "@type": "Person",
+              name: answer.coachName,
+            },
+          })),
         },
-      })),
-    },
-  };
+      }
+    : null;
+
+  const coachLinks = answers
+    .slice(0, 3)
+    .map((answer) => ({ slug: answer.coachSlug, name: answer.coachName }))
+    .filter((item, index, arr) => arr.findIndex((x) => x.slug === item.slug) === index);
 
   return (
     <>
-      <JsonLd data={qaJsonLd} />
+      <JsonLd data={breadcrumb} />
+      {qaJsonLd ? <JsonLd data={qaJsonLd} /> : null}
       <PageShell className="pt-8">
         <div className="grid gap-6 lg:grid-cols-[1.1fr_.9fr]">
           <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
+            {!shouldIndex ? (
+              <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                Esta pregunta permanece en noindex hasta alcanzar al menos {qaMinAnswers} respuestas utiles.
+              </div>
+            ) : null}
+
             <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
               <Link href="/pregunta-a-un-coach" className="hover:text-zinc-700">
                 Pregunta a un coach
               </Link>
-              <span>•</span>
+              <span>·</span>
               <Link href={`/pregunta-a-un-coach/tema/${question.topicSlug}`} className="hover:text-zinc-700">
                 {question.topicName}
               </Link>
@@ -87,11 +122,11 @@ export default async function QaQuestionDetailPage({ params }: { params: ParamsI
             <h1 className="mt-3 text-3xl font-black tracking-tight text-zinc-950">{question.title}</h1>
             <div className="mt-3 flex flex-wrap gap-2 text-sm text-zinc-600">
               <span>{authorLabel}</span>
-              <span>•</span>
+              <span>·</span>
               <span>{new Date(question.createdAt).toLocaleDateString("es-ES")}</span>
-              <span>•</span>
+              <span>·</span>
               <span>{question.views} vistas</span>
-              <span>•</span>
+              <span>·</span>
               <span>{answers.length} respuestas</span>
             </div>
             <p className="mt-4 whitespace-pre-line leading-7 text-zinc-700">{question.body}</p>
@@ -169,14 +204,32 @@ export default async function QaQuestionDetailPage({ params }: { params: ParamsI
                 <Link href={`/pregunta-a-un-coach/tema/${question.topicSlug}`} className="rounded-xl border border-black/10 bg-zinc-50 px-3 py-2 text-sm font-semibold text-zinc-900">
                   Ver tema {question.topicName}
                 </Link>
-                <button className="rounded-xl border border-black/10 bg-zinc-50 px-3 py-2 text-left text-sm font-semibold text-zinc-900">
-                  Seguir pregunta (notificaciones)
-                </button>
-                <button className="rounded-xl border border-black/10 bg-zinc-50 px-3 py-2 text-left text-sm font-semibold text-zinc-900">
-                  Reportar contenido
-                </button>
+                {question.categorySlug ? (
+                  <Link href={`/coaches/categoria/${question.categorySlug}`} className="rounded-xl border border-black/10 bg-zinc-50 px-3 py-2 text-sm font-semibold text-zinc-900">
+                    Ver coaches por categoria
+                  </Link>
+                ) : null}
+                {question.citySlug ? (
+                  <Link href={`/coaches/ciudad/${question.citySlug}`} className="rounded-xl border border-black/10 bg-zinc-50 px-3 py-2 text-sm font-semibold text-zinc-900">
+                    Ver coaches por ciudad
+                  </Link>
+                ) : null}
               </div>
             </div>
+
+            {coachLinks.length ? (
+              <div className="rounded-2xl border border-black/10 bg-white p-5 shadow-sm">
+                <h2 className="text-lg font-black tracking-tight text-zinc-950">Coaches que pueden ayudarte</h2>
+                <div className="mt-4 grid gap-3">
+                  {coachLinks.map((coach) => (
+                    <Link key={coach.slug} href={`/coaches/${coach.slug}`} className="rounded-xl border border-black/10 bg-zinc-50 p-3 hover:bg-white">
+                      <p className="text-sm font-semibold text-zinc-900">{coach.name}</p>
+                      <p className="mt-1 text-xs text-zinc-600">Ver perfil de coach</p>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ) : null}
 
             <div className="rounded-2xl border border-black/10 bg-white p-5 shadow-sm">
               <h2 className="text-lg font-black tracking-tight text-zinc-950">Preguntas relacionadas</h2>

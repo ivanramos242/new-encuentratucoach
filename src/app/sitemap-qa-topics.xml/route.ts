@@ -1,33 +1,19 @@
-import { NextResponse } from "next/server";
-import { qaTopics } from "@/lib/v2-mock";
-
-function xmlEscape(value: string) {
-  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
+import { renderSitemapUrlset, xmlResponse } from "@/lib/sitemap-xml";
+import { qaQuestions, qaTopics } from "@/lib/v2-mock";
 
 export async function GET() {
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-  const now = new Date().toISOString();
-  const items = qaTopics
+  const entries = qaTopics
     .filter((topic) => topic.curated)
-    .map(
-      (topic) => `
-  <url>
-    <loc>${xmlEscape(`${base}/pregunta-a-un-coach/tema/${topic.slug}`)}</loc>
-    <lastmod>${now}</lastmod>
-  </url>`,
-    )
-    .join("");
+    .map((topic) => {
+      const latest = qaQuestions
+        .filter((question) => question.status === "published" && question.topicSlug === topic.slug)
+        .sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt))[0];
 
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${items}
-</urlset>`;
+      return {
+        path: `/pregunta-a-un-coach/tema/${topic.slug}`,
+        lastModified: latest?.updatedAt ?? new Date().toISOString(),
+      };
+    });
 
-  return new NextResponse(xml, {
-    headers: {
-      "content-type": "application/xml; charset=utf-8",
-      "cache-control": "public, max-age=300",
-    },
-  });
+  return xmlResponse(renderSitemapUrlset(entries));
 }
-

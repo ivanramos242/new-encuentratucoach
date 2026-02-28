@@ -7,6 +7,10 @@ export const siteConfig = {
   locale: "es-ES",
 } as const;
 
+export function getSiteBaseUrl() {
+  return process.env.NEXT_PUBLIC_SITE_URL ?? siteConfig.url;
+}
+
 export const siteNav = [
   { href: "/", label: "Inicio" },
   { href: "/coaches", label: "Nuestros Coaches" },

@@ -1,7 +1,61 @@
 import type { Metadata } from "next";
 import type { DirectoryFilters } from "@/types/domain";
-import { absoluteUrl } from "@/lib/utils";
 import { siteConfig } from "@/lib/site-config";
+import { absoluteUrl } from "@/lib/utils";
+
+function readBooleanEnv(name: string, defaultValue = false) {
+  const raw = process.env[name];
+  if (raw == null || raw.trim() === "") return defaultValue;
+  const value = raw.trim().toLowerCase();
+  return value === "1" || value === "true" || value === "yes" || value === "on";
+}
+
+function readPositiveIntEnv(name: string, defaultValue: number) {
+  const raw = process.env[name];
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed)) return defaultValue;
+  return Math.max(1, Math.floor(parsed));
+}
+
+export function isSeoIndexingAllowed() {
+  return readBooleanEnv("SEO_ALLOW_INDEXING", false);
+}
+
+export function getSeoMinCoachesIndexable() {
+  return readPositiveIntEnv("SEO_MIN_COACHES_INDEXABLE", 3);
+}
+
+export function getQaMinAnswersIndexable() {
+  return readPositiveIntEnv("QA_INDEX_MIN_ANSWERS", 2);
+}
+
+export function shouldNoIndexLanding(input: { coachCount: number; hasEditorialContent?: boolean }) {
+  if (!isSeoIndexingAllowed()) return true;
+  if (!(input.hasEditorialContent ?? true)) return true;
+  return input.coachCount < getSeoMinCoachesIndexable();
+}
+
+export function hasMeaningfulQueryParams(input: Record<string, string | string[] | undefined>) {
+  return Object.values(input).some((value) => {
+    if (value == null) return false;
+    if (Array.isArray(value)) return value.some((item) => item.trim().length > 0);
+    return value.trim().length > 0;
+  });
+}
+
+export function buildBreadcrumbJsonLd(items: Array<{ name: string; path: string }>) {
+  const base = process.env.NEXT_PUBLIC_SITE_URL ?? siteConfig.url;
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      item: `${base}${item.path}`,
+    })),
+  };
+}
 
 export function buildMetadata(input: {
   title: string;
@@ -15,6 +69,7 @@ export function buildMetadata(input: {
 }): Metadata {
   const title = `${input.title} | ${siteConfig.name}`;
   const url = input.canonicalUrl || absoluteUrl(input.path ?? "/");
+  const noindex = input.noindex || !isSeoIndexingAllowed();
 
   return {
     title,
@@ -22,7 +77,7 @@ export function buildMetadata(input: {
     keywords: input.keywords,
     metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? siteConfig.url),
     alternates: { canonical: url },
-    robots: input.noindex
+    robots: noindex
       ? {
           index: false,
           follow: true,
@@ -48,6 +103,8 @@ export function buildMetadata(input: {
 }
 
 export function shouldNoIndexDirectoryFilters(filters: DirectoryFilters) {
+  if (!isSeoIndexingAllowed()) return true;
+
   const meaningful = Object.entries(filters).filter(([key, value]) => {
     if (key === "page" || key === "sort") return false;
     if (value == null) return false;

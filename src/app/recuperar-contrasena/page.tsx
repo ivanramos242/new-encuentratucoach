@@ -7,6 +7,7 @@ export const metadata = buildMetadata({
   title: "Recuperar contraseña",
   description: "Recupera el acceso a tu cuenta por email.",
   path: "/recuperar-contrasena",
+  noindex: true,
 });
 
 type SearchParamsInput = Promise<Record<string, string | string[] | undefined>>;
@@ -27,4 +28,3 @@ export default async function ForgotPasswordPage({ searchParams }: { searchParam
     </>
   );
 }
-

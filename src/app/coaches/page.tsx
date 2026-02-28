@@ -1,14 +1,19 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { CoachCard } from "@/components/directory/coach-card";
-import { JsonLd } from "@/components/seo/json-ld";
 import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
-import { COACH_CATEGORY_CATALOG } from "@/lib/coach-category-catalog";
-import { PAGE_SIZE, filterAndSortCoachesFrom, getCategoryBySlug, paginateCoaches, parseDirectoryFilters } from "@/lib/directory";
+import { JsonLd } from "@/components/seo/json-ld";
+import {
+  PAGE_SIZE,
+  filterAndSortCoachesFrom,
+  getCategoryBySlug,
+  paginateCoaches,
+  parseDirectoryFilters,
+} from "@/lib/directory";
 import { cities } from "@/lib/mock-data";
 import { listPublicCoachesMerged } from "@/lib/public-coaches";
-import { buildMetadata, shouldNoIndexDirectoryFilters } from "@/lib/seo";
+import { buildMetadata, hasMeaningfulQueryParams } from "@/lib/seo";
 import { formatEuro } from "@/lib/utils";
 
 type SearchParamsInput = Promise<Record<string, string | string[] | undefined>>;
@@ -29,6 +34,36 @@ function buildPaginationHref(page: number, raw: Record<string, string | string[]
   return query ? `/coaches?${query}` : "/coaches";
 }
 
+function getMeaningfulFilterKeys(filters: ReturnType<typeof parseDirectoryFilters>) {
+  const keys: string[] = [];
+  if (filters.q) keys.push("q");
+  if (filters.cat) keys.push("cat");
+  if (filters.location) keys.push("location");
+  if (filters.session?.length) keys.push("session");
+  if (filters.certified) keys.push("certified");
+  if (filters.idioma) keys.push("idioma");
+  if (typeof filters.priceMin === "number") keys.push("priceMin");
+  if (typeof filters.priceMax === "number") keys.push("priceMax");
+  return keys;
+}
+
+function resolveCanonicalForDirectory(input: {
+  filters: ReturnType<typeof parseDirectoryFilters>;
+  citySlug?: string | null;
+  categorySlug?: string | null;
+}) {
+  const keys = new Set(getMeaningfulFilterKeys(input.filters));
+  if (keys.size === 0) return "/coaches";
+
+  const onlyCatOrLocation = Array.from(keys).every((key) => key === "cat" || key === "location");
+  if (!onlyCatOrLocation) return "/coaches";
+
+  if (input.categorySlug && input.citySlug) return `/coaches/categoria/${input.categorySlug}/${input.citySlug}`;
+  if (input.categorySlug) return `/coaches/categoria/${input.categorySlug}`;
+  if (input.citySlug) return `/coaches/ciudad/${input.citySlug}`;
+  return "/coaches";
+}
+
 export async function generateMetadata({
   searchParams,
 }: {
@@ -46,14 +81,21 @@ export async function generateMetadata({
         ? category.name
         : city
           ? `Coaches en ${city.name}`
-          : "Nuestros Coaches";
-  const noindex = shouldNoIndexDirectoryFilters(filters);
+          : "Nuestros coaches";
+
+  const noindex = hasMeaningfulQueryParams(raw);
+  const canonicalPath = resolveCanonicalForDirectory({
+    filters,
+    citySlug: city?.slug ?? null,
+    categorySlug: category?.slug ?? null,
+  });
 
   return buildMetadata({
     title,
     description:
-      "Explora coaches por especialidad, ciudad, modalidad, certificación, idioma y presupuesto. Directorio SEO para España.",
+      "Explora coaches por especialidad, ciudad, modalidad, certificacion, idioma y presupuesto. Directorio SEO para España.",
     path: "/coaches",
+    canonicalUrl: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}${canonicalPath}`,
     noindex,
   });
 }
@@ -65,9 +107,18 @@ export default async function CoachesDirectoryPage({
 }) {
   const raw = await searchParams;
   const filters = parseDirectoryFilters(raw);
-  const allResults = filterAndSortCoachesFrom(await listPublicCoachesMerged(), filters);
+  const sourceCoaches = await listPublicCoachesMerged();
+  const availableCategorySlugs = [...new Set(sourceCoaches.flatMap((coach) => coach.categories))].sort((a, b) =>
+    a.localeCompare(b, "es"),
+  );
+  const allResults = filterAndSortCoachesFrom(sourceCoaches, filters);
   const paginated = paginateCoaches(allResults, filters.page ?? 1, PAGE_SIZE);
-  const indexableFacet = !shouldNoIndexDirectoryFilters(filters);
+  const hasFilters = hasMeaningfulQueryParams(raw);
+  const canonicalPath = resolveCanonicalForDirectory({
+    filters,
+    citySlug: filters.location ?? null,
+    categorySlug: filters.cat ?? null,
+  });
 
   const schema = {
     "@context": "https://schema.org",
@@ -80,7 +131,7 @@ export default async function CoachesDirectoryPage({
     <>
       <JsonLd data={schema} />
       <PageHero
-        badge="Directorio SEO • filtros avanzados"
+        badge="Directorio SEO · filtros avanzados"
         title="Encuentra coaches en España"
         description="Filtra por especialidad, ciudad, modalidad, presupuesto e idiomas. Contacta directamente y compara perfiles antes de elegir."
       />
@@ -101,16 +152,16 @@ export default async function CoachesDirectoryPage({
               </label>
 
               <label className="grid gap-1 text-sm font-medium text-zinc-800">
-                Categoría
+                Categoria
                 <select
                   name="cat"
                   defaultValue={filters.cat ?? ""}
                   className="rounded-xl border border-black/10 px-3 py-2 outline-none focus:border-cyan-400"
                 >
                   <option value="">Todas</option>
-                  {COACH_CATEGORY_CATALOG.map((category) => (
-                    <option key={category.slug} value={category.slug}>
-                      {category.name}
+                  {availableCategorySlugs.map((categorySlug) => (
+                    <option key={categorySlug} value={categorySlug}>
+                      {getCategoryBySlug(categorySlug)?.name ?? categorySlug}
                     </option>
                   ))}
                 </select>
@@ -159,7 +210,7 @@ export default async function CoachesDirectoryPage({
                 <input
                   name="idioma"
                   defaultValue={filters.idioma}
-                  placeholder="Ej: inglés"
+                  placeholder="Ej: ingles"
                   className="rounded-xl border border-black/10 px-3 py-2 outline-none focus:border-cyan-400"
                 />
               </label>
@@ -194,10 +245,10 @@ export default async function CoachesDirectoryPage({
                   defaultValue={filters.sort ?? "recent"}
                   className="rounded-xl border border-black/10 px-3 py-2 outline-none focus:border-cyan-400"
                 >
-                  <option value="recent">Más recientes</option>
+                  <option value="recent">Mas recientes</option>
                   <option value="price_asc">Precio ascendente</option>
                   <option value="price_desc">Precio descendente</option>
-                  <option value="rating_desc">Mejor valoración</option>
+                  <option value="rating_desc">Mejor valoracion</option>
                 </select>
               </label>
 
@@ -223,18 +274,27 @@ export default async function CoachesDirectoryPage({
                     {allResults.length} {allResults.length === 1 ? "resultado" : "resultados"}
                   </h2>
                   <p className="mt-1 text-sm text-zinc-600">
-                    {indexableFacet
-                      ? "Landing indexable (categoría/ciudad) o listado principal."
-                      : "Combinación avanzada de filtros marcada para noindex en producción."}
+                    {hasFilters
+                      ? "Esta URL con filtros se publica como noindex y apunta a una landing canonica."
+                      : "Listado principal indexable del directorio."}
                   </p>
                 </div>
                 <div className="text-right text-sm text-zinc-600">
                   <p>
-                    Página {paginated.currentPage} de {paginated.totalPages}
+                    Pagina {paginated.currentPage} de {paginated.totalPages}
                   </p>
-                  <p>{PAGE_SIZE} por página</p>
+                  <p>{PAGE_SIZE} por pagina</p>
                 </div>
               </div>
+
+              {hasFilters && canonicalPath !== "/coaches" ? (
+                <div className="mt-4 rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm text-cyan-900">
+                  Landing canonica recomendada:{" "}
+                  <Link href={canonicalPath} className="font-semibold underline">
+                    {canonicalPath}
+                  </Link>
+                </div>
+              ) : null}
 
               {(filters.q ||
                 filters.cat ||
@@ -248,7 +308,7 @@ export default async function CoachesDirectoryPage({
                   {filters.q ? <span className="rounded-full bg-zinc-100 px-3 py-1 text-sm">q: {filters.q}</span> : null}
                   {filters.cat ? (
                     <span className="rounded-full bg-zinc-100 px-3 py-1 text-sm">
-                      categoría: {getCategoryBySlug(filters.cat)?.name ?? filters.cat}
+                      categoria: {getCategoryBySlug(filters.cat)?.name ?? filters.cat}
                     </span>
                   ) : null}
                   {filters.location ? (
@@ -283,7 +343,7 @@ export default async function CoachesDirectoryPage({
               <div className="mt-6 rounded-3xl border border-black/10 bg-white p-8 text-center shadow-sm">
                 <h3 className="text-lg font-black tracking-tight text-zinc-950">No hay resultados con esos filtros</h3>
                 <p className="mt-2 text-zinc-700">
-                  Prueba a ampliar el presupuesto, quitar filtros o buscar por una categoría distinta.
+                  Prueba a ampliar el presupuesto, quitar filtros o buscar por una categoria distinta.
                 </p>
                 <Link
                   href="/coaches"
@@ -295,7 +355,7 @@ export default async function CoachesDirectoryPage({
             )}
 
             {paginated.totalPages > 1 ? (
-              <nav aria-label="Paginación" className="mt-8 flex flex-wrap items-center justify-center gap-2">
+              <nav aria-label="Paginacion" className="mt-8 flex flex-wrap items-center justify-center gap-2">
                 {Array.from({ length: paginated.totalPages }, (_, index) => index + 1).map((page) => (
                   <Link
                     key={page}

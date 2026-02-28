@@ -15,6 +15,7 @@ export const metadata = buildMetadata({
   title: "Registro",
   description: "Crea tu cuenta para usar la plataforma. Si quieres publicar como coach, activarás la membresía después.",
   path: "/registro",
+  noindex: true,
 });
 
 export default async function RegisterPage({ searchParams }: { searchParams: SearchParamsInput }) {

@@ -52,6 +52,21 @@ export default function AskCoachHomePage() {
           </section>
 
           <aside className="space-y-6">
+            <div className="rounded-2xl border border-black/10 bg-white p-5 shadow-sm">
+              <h2 className="text-lg font-black tracking-tight text-zinc-950">Atajos de conversion</h2>
+              <div className="mt-4 grid gap-2">
+                <Link href="/coaches" className="rounded-xl border border-black/10 bg-zinc-50 px-3 py-2 text-sm font-semibold text-zinc-900 hover:bg-white">
+                  Buscar coaches ahora
+                </Link>
+                <Link href="/coaches/modalidad/online" className="rounded-xl border border-black/10 bg-zinc-50 px-3 py-2 text-sm font-semibold text-zinc-900 hover:bg-white">
+                  Ver coaching online
+                </Link>
+                <Link href="/coaches/certificados" className="rounded-xl border border-black/10 bg-zinc-50 px-3 py-2 text-sm font-semibold text-zinc-900 hover:bg-white">
+                  Ver coaches certificados
+                </Link>
+              </div>
+            </div>
+
             <QaQuestionAskForm />
 
             <div className="rounded-2xl border border-black/10 bg-white p-5 shadow-sm">
