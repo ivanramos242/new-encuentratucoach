@@ -1,0 +1,16 @@
+{
+    "generated_at": "2026-02-28 21:36:17",
+    "site_url": "https://encuentratucoach.es/",
+    "posts_exported": 48,
+    "taxonomies_exported": [
+        "category",
+        "post_tag",
+        "post_format"
+    ],
+    "media_meta_items": 50,
+    "media_files_added": 50,
+    "notes": [
+        "Incluye posts (post), taxonomías, comentarios, meta/AFC y archivos de medios detectados en el blog.",
+        "Los medios se guardan en /media/... dentro del ZIP."
+    ]
+}

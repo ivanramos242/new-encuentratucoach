@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { listAdminBlogPosts } from "@/lib/blog-service";
+import { importWordpressBlogAction, publishBlogPostAction } from "@/app/admin/blog/actions";
 import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
 
@@ -26,6 +27,12 @@ function seoScore(post: {
   return score;
 }
 
+function parseCount(value: string | string[] | undefined) {
+  if (typeof value !== "string") return 0;
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 export default async function AdminBlogPage({
   searchParams,
 }: {
@@ -46,7 +53,16 @@ export default async function AdminBlogPage({
     : posts;
 
   const publishedCount = posts.filter((item) => item.isPublished).length;
-  const draftCount = posts.length - publishedCount;
+  const pendingCount = posts.length - publishedCount;
+
+  const imported = params.imported === "1";
+  const createdCount = parseCount(params.created);
+  const updatedCount = parseCount(params.updated);
+  const skippedCount = parseCount(params.skipped);
+  const errorCount = parseCount(params.errors);
+  const published = params.published === "1";
+  const publishError = typeof params.publishError === "string" ? params.publishError : "";
+  const importError = typeof params.importError === "string" ? params.importError : "";
 
   return (
     <>
@@ -56,10 +72,46 @@ export default async function AdminBlogPage({
         description="Publica, edita y optimiza articulos con control editorial, metadata y arquitectura de contenidos."
       />
       <PageShell className="pt-8">
+        {imported ? (
+          <p className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+            Importacion completada. Creados: {createdCount}, actualizados: {updatedCount}, omitidos: {skippedCount},
+            errores: {errorCount}.
+          </p>
+        ) : null}
+        {published ? (
+          <p className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+            Post publicado correctamente.
+          </p>
+        ) : null}
+        {publishError ? (
+          <p className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
+            {publishError === "not-found"
+              ? "No se encontro el post para publicar."
+              : "No se pudo publicar el post."}
+          </p>
+        ) : null}
+        {importError ? (
+          <p className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
+            {importError === "missing-path"
+              ? "Debes indicar la ruta del archivo JSON."
+              : importError === "unsafe-path"
+                ? "La ruta indicada no esta dentro del proyecto."
+                : importError === "file-not-found"
+                  ? "No se encontro el archivo JSON indicado."
+                  : importError === "invalid-json"
+                    ? "El archivo no contiene JSON valido."
+                    : importError === "invalid-export"
+                      ? "El formato JSON no corresponde al export esperado de WordPress."
+                      : importError === "empty"
+                        ? "No se han encontrado posts de tipo 'post' en el archivo."
+                        : "No se pudo completar la importacion."}
+          </p>
+        ) : null}
+
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard label="Total posts" value={String(posts.length)} />
           <StatCard label="Publicados" value={String(publishedCount)} />
-          <StatCard label="Borradores" value={String(draftCount)} />
+          <StatCard label="Pendientes" value={String(pendingCount)} />
           <div className="rounded-2xl border border-cyan-200 bg-cyan-50 p-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-cyan-700">Accion</p>
             <Link
@@ -69,6 +121,31 @@ export default async function AdminBlogPage({
               Nuevo articulo
             </Link>
           </div>
+        </section>
+
+        <section className="mt-6 rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
+          <h2 className="text-lg font-black tracking-tight text-zinc-950">Importar blog desde WordPress</h2>
+          <p className="mt-2 text-sm text-zinc-700">
+            Importa desde un archivo JSON de exportacion. Los posts se guardan como pendientes para revisarlos y
+            publicarlos manualmente.
+          </p>
+          <form action={importWordpressBlogAction} className="mt-4 flex flex-wrap items-center gap-3">
+            <input
+              name="jsonPath"
+              defaultValue="blog exportado de wp/blog-export.json"
+              placeholder="Ruta relativa del JSON (ej: blog exportado de wp/blog-export.json)"
+              className="min-w-72 flex-1 rounded-xl border border-black/10 px-3 py-2 text-sm outline-none focus:border-cyan-400"
+            />
+            <button
+              type="submit"
+              className="rounded-xl bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800"
+            >
+              Importar como pendiente
+            </button>
+          </form>
+          <p className="mt-2 text-xs text-zinc-500">
+            La ruta debe estar dentro de este proyecto. Ejemplo: <code>blog exportado de wp/blog-export.json</code>.
+          </p>
         </section>
 
         <section className="mt-6 rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
@@ -121,7 +198,7 @@ export default async function AdminBlogPage({
                             : "bg-amber-100 text-amber-700"
                         }`}
                       >
-                        {post.isPublished ? "Publicado" : "Borrador"}
+                        {post.isPublished ? "Publicado" : "Pendiente"}
                       </span>
                     </td>
                     <td className="px-3 py-3 text-zinc-700">{post.categoryName || "General"}</td>
@@ -147,12 +224,25 @@ export default async function AdminBlogPage({
                         >
                           Editar
                         </Link>
-                        <Link
-                          href={`/blog/${post.slug}`}
-                          className="rounded-lg border border-black/10 px-3 py-1.5 text-xs font-semibold text-zinc-900 hover:bg-zinc-50"
-                        >
-                          Ver
-                        </Link>
+                        {post.isPublished ? (
+                          <Link
+                            href={`/blog/${post.slug}`}
+                            className="rounded-lg border border-black/10 px-3 py-1.5 text-xs font-semibold text-zinc-900 hover:bg-zinc-50"
+                          >
+                            Ver
+                          </Link>
+                        ) : null}
+                        {!post.isPublished ? (
+                          <form action={publishBlogPostAction}>
+                            <input type="hidden" name="postId" value={post.id} />
+                            <button
+                              type="submit"
+                              className="rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800"
+                            >
+                              Publicar
+                            </button>
+                          </form>
+                        ) : null}
                       </div>
                     </td>
                   </tr>
