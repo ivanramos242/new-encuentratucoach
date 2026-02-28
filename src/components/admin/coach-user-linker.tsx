@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import type { CoachProfileStatus, CoachVisibilityStatus, UserRole } from "@prisma/client";
 
 type OwnerSummary = {
@@ -56,6 +56,7 @@ type LinkApiErr = {
 
 type LinkApiResponse = LinkApiOk | LinkApiErr;
 type CoachMutationResponse = LinkApiResponse;
+type CreateCoachResponse = LinkApiResponse;
 
 function fmtDate(iso: string) {
   try {
@@ -83,6 +84,10 @@ export function CoachUserLinker({
   users: CoachUserLinkerUserOption[];
 }) {
   const [coaches, setCoaches] = useState(initialCoaches);
+  const [createName, setCreateName] = useState("");
+  const [createSlug, setCreateSlug] = useState("");
+  const [createBusy, setCreateBusy] = useState(false);
+  const [createFeedback, setCreateFeedback] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
   const [filterText, setFilterText] = useState("");
   const [onlyUnlinked, setOnlyUnlinked] = useState(true);
   const [draftUserIdByCoachId, setDraftUserIdByCoachId] = useState<Record<string, string>>(
@@ -96,6 +101,15 @@ export function CoachUserLinker({
   const total = coaches.length;
   const linked = coaches.filter((c) => Boolean(c.owner)).length;
   const imported = coaches.filter((c) => Boolean(c.legacy)).length;
+
+  function applyCoachMutation(nextCoach: CoachUserLinkerCoachRow) {
+    setCoaches((prev) => {
+      const exists = prev.some((coach) => coach.id === nextCoach.id);
+      if (!exists) return [nextCoach, ...prev];
+      return prev.map((coach) => (coach.id === nextCoach.id ? nextCoach : coach));
+    });
+    setDraftUserIdByCoachId((prev) => ({ ...prev, [nextCoach.id]: nextCoach.owner?.id ?? "" }));
+  }
 
   const filtered = coaches.filter((coach) => {
     if (onlyUnlinked && coach.owner) return false;
@@ -144,8 +158,7 @@ export function CoachUserLinker({
         return;
       }
 
-      setCoaches((prev) => prev.map((coach) => (coach.id === coachId ? data.coach : coach)));
-      setDraftUserIdByCoachId((prev) => ({ ...prev, [coachId]: data.coach.owner?.id ?? "" }));
+      applyCoachMutation(data.coach);
       setFeedbackByCoachId((prev) => ({
         ...prev,
         [coachId]: {
@@ -195,8 +208,7 @@ export function CoachUserLinker({
         return;
       }
 
-      setCoaches((prev) => prev.map((coach) => (coach.id === coachId ? data.coach : coach)));
-      setDraftUserIdByCoachId((prev) => ({ ...prev, [coachId]: data.coach.owner?.id ?? "" }));
+      applyCoachMutation(data.coach);
       setFeedbackByCoachId((prev) => ({
         ...prev,
         [coachId]: {
@@ -217,6 +229,48 @@ export function CoachUserLinker({
     }
   }
 
+  async function createCoach(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const trimmedName = createName.trim();
+    if (!trimmedName) {
+      setCreateFeedback({ kind: "error", text: "El nombre del coach es obligatorio." });
+      return;
+    }
+
+    setCreateBusy(true);
+    setCreateFeedback(null);
+    try {
+      const response = await fetch("/api/admin/coaches/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: trimmedName,
+          slug: createSlug.trim() || undefined,
+        }),
+      });
+      const data = (await response.json()) as CreateCoachResponse;
+      if (!response.ok || !data.ok) {
+        setCreateFeedback({
+          kind: "error",
+          text: data.message || "No se pudo crear el coach.",
+        });
+        return;
+      }
+
+      applyCoachMutation(data.coach);
+      setCreateName("");
+      setCreateSlug("");
+      setCreateFeedback({ kind: "ok", text: data.message });
+    } catch (error) {
+      setCreateFeedback({
+        kind: "error",
+        text: error instanceof Error ? error.message : "Error de red al crear el coach.",
+      });
+    } finally {
+      setCreateBusy(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
@@ -225,6 +279,52 @@ export function CoachUserLinker({
           Asignación manual de perfiles importados. El endpoint bloquea por seguridad asignaciones a usuarios que ya
           tengan otro perfil de coach distinto.
         </p>
+
+        <div className="mt-4 rounded-2xl border border-cyan-200 bg-cyan-50/50 p-4">
+          <h3 className="text-sm font-black tracking-tight text-cyan-950">Crear coach desde cero</h3>
+          <p className="mt-1 text-xs leading-5 text-cyan-900">
+            Se creara en draft/inactive y sin usuario asociado. Luego puedes vincularlo desde esta misma pantalla.
+          </p>
+
+          <form className="mt-3 grid gap-2 md:grid-cols-[1fr_1fr_auto]" onSubmit={(event) => void createCoach(event)}>
+            <input
+              type="text"
+              value={createName}
+              onChange={(event) => setCreateName(event.target.value)}
+              placeholder="Nombre del coach"
+              className="rounded-xl border border-black/15 bg-white px-3 py-2 text-sm"
+              maxLength={160}
+              required
+            />
+            <input
+              type="text"
+              value={createSlug}
+              onChange={(event) => setCreateSlug(event.target.value)}
+              placeholder="Slug opcional (ej: ana-perez)"
+              className="rounded-xl border border-black/15 bg-white px-3 py-2 text-sm"
+              maxLength={180}
+            />
+            <button
+              type="submit"
+              disabled={createBusy}
+              className="rounded-xl bg-cyan-900 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+            >
+              {createBusy ? "Creando..." : "Crear coach"}
+            </button>
+          </form>
+
+          {createFeedback ? (
+            <div
+              className={
+                createFeedback.kind === "ok"
+                  ? "mt-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800"
+                  : "mt-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+              }
+            >
+              {createFeedback.text}
+            </div>
+          ) : null}
+        </div>
 
         <div className="mt-4 grid gap-3 md:grid-cols-4">
           <div className="rounded-2xl border border-black/10 bg-zinc-50 px-4 py-3">
