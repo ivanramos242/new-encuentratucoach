@@ -53,7 +53,7 @@ function extFromMime(contentType: string) {
 }
 
 export function buildUploadObjectKey(input: {
-  scope: "coach_gallery" | "coach_hero" | "coach_video" | "certification_document";
+  scope: "coach_gallery" | "coach_hero" | "coach_video" | "certification_document" | "blog_cover";
   coachProfileId?: string | null;
   threadId?: string | null;
   fileName?: string | null;
@@ -63,6 +63,8 @@ export function buildUploadObjectKey(input: {
   const base = randomUUID();
   const coachId = input.coachProfileId || "unassigned";
   switch (input.scope) {
+    case "blog_cover":
+      return `blog-media/covers/${base}.${safeExt}`;
     case "certification_document":
       return `certifications/${coachId}/${base}.${safeExt}`;
     case "coach_hero":

@@ -2,26 +2,32 @@ import Image from "next/image";
 import Link from "next/link";
 import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
-import { blogPosts } from "@/lib/mock-data";
+import { listPublishedBlogPosts } from "@/lib/blog-service";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
   title: "Blog",
-  description: "Guías, comparativas y contenido SEO sobre coaching en España.",
+  description: "Guias, comparativas y contenido SEO sobre coaching en Espana.",
   path: "/blog",
 });
 
-export default function BlogIndexPage() {
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("es-ES", { dateStyle: "medium" }).format(new Date(value));
+}
+
+export default async function BlogIndexPage() {
+  const posts = await listPublishedBlogPosts();
+
   return (
     <>
       <PageHero
         badge="Blog SEO de la plataforma"
-        title="Blog de coaching en España"
-        description="Guías y contenido evergreen para resolver dudas, comparar opciones y entender mejor el coaching."
+        title="Blog de coaching en Espana"
+        description="Guias y contenido evergreen para resolver dudas, comparar opciones y entender mejor el coaching."
       />
       <PageShell className="pt-8">
         <div className="grid gap-6 lg:grid-cols-2">
-          {blogPosts.map((post) => (
+          {posts.map((post) => (
             <article key={post.id} className="overflow-hidden rounded-3xl border border-black/10 bg-white shadow-sm">
               <div className="relative aspect-[16/9] bg-zinc-100">
                 <Image src={post.coverImageUrl} alt={post.title} fill className="object-cover" />
@@ -37,9 +43,12 @@ export default function BlogIndexPage() {
                   </Link>
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-zinc-700">{post.excerpt}</p>
-                <Link href={`/blog/${post.slug}`} className="mt-4 inline-flex text-sm font-semibold text-cyan-700 hover:text-cyan-800">
-                  Leer artículo
-                </Link>
+                <div className="mt-4 flex items-center justify-between gap-2">
+                  <span className="text-xs text-zinc-500">{formatDate(post.publishedAt)}</span>
+                  <Link href={`/blog/${post.slug}`} className="inline-flex text-sm font-semibold text-cyan-700 hover:text-cyan-800">
+                    Leer articulo
+                  </Link>
+                </div>
               </div>
             </article>
           ))}
