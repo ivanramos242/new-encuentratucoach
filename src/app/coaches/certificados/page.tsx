@@ -6,17 +6,11 @@ import { PageShell } from "@/components/layout/page-shell";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getCategoryBySlug, getCityBySlug } from "@/lib/directory";
 import { listPublicCoachesMerged } from "@/lib/public-coaches";
-import {
-  buildBreadcrumbJsonLd,
-  buildMetadata,
-  getSeoMinCoachesIndexable,
-  shouldNoIndexLanding,
-} from "@/lib/seo";
+import { buildBreadcrumbJsonLd, buildMetadata, shouldNoIndexLanding } from "@/lib/seo";
 
 async function getCertifiedLandingData() {
   const coaches = await listPublicCoachesMerged();
   const items = coaches.filter((coach) => coach.certifiedStatus === "approved");
-  const minToIndex = getSeoMinCoachesIndexable();
   const noindex = shouldNoIndexLanding({ coachCount: items.length, hasEditorialContent: true });
 
   const topCategories = Array.from(
@@ -41,7 +35,7 @@ async function getCertifiedLandingData() {
     .slice(0, 6)
     .map(([slug]) => ({ slug, name: getCityBySlug(slug)?.name ?? slug }));
 
-  return { items, noindex, minToIndex, topCategories, topCities };
+  return { items, noindex, topCategories, topCities };
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -66,28 +60,22 @@ export default async function CertifiedCoachesPage() {
     <>
       <JsonLd data={breadcrumb} />
       <PageHero
-        badge="Landing curada por confianza"
+        badge="Confianza"
         title="Coaches certificados en España"
-        description="Perfiles con señal de certificacion visible para comparar opciones con mas confianza."
+        description="Perfiles con certificación visible para comparar opciones con más confianza."
       />
-      <PageShell className="space-y-6 pt-8">
-        {data.noindex ? (
-          <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-            Esta landing no se indexa todavia porque no alcanza {data.minToIndex} perfiles.
-          </section>
-        ) : null}
-
+      <PageShell className="space-y-8 pt-8" containerClassName="max-w-[1700px]">
         <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-black tracking-tight text-zinc-950">Que significa coach certificado</h2>
+          <h2 className="text-xl font-black tracking-tight text-zinc-950">Qué significa coach certificado</h2>
           <p className="mt-2 text-zinc-700">
-            El distintivo identifica perfiles que han presentado documentacion y han pasado revision dentro de la
-            plataforma. Es una señal de confianza adicional, no la unica.
+            El distintivo identifica perfiles que han presentado documentación y han pasado revisión dentro de la
+            plataforma. Es una señal de confianza adicional, no la única.
           </p>
           <ul className="mt-4 grid gap-2 text-sm text-zinc-700 sm:grid-cols-2">
-            <li className="rounded-xl border border-black/10 bg-zinc-50 px-3 py-2">Certificacion visible en ficha de coach</li>
+            <li className="rounded-xl border border-black/10 bg-zinc-50 px-3 py-2">Certificación visible en ficha de coach</li>
             <li className="rounded-xl border border-black/10 bg-zinc-50 px-3 py-2">Comparativa por especialidad y ciudad</li>
             <li className="rounded-xl border border-black/10 bg-zinc-50 px-3 py-2">Compatibilidad online y presencial</li>
-            <li className="rounded-xl border border-black/10 bg-zinc-50 px-3 py-2">Revision de reseñas y propuesta de valor</li>
+            <li className="rounded-xl border border-black/10 bg-zinc-50 px-3 py-2">Revisión de reseñas y propuesta de valor</li>
           </ul>
         </section>
 
@@ -127,7 +115,7 @@ export default async function CertifiedCoachesPage() {
 
         <section>
           <h2 className="sr-only">Listado de coaches certificados</h2>
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             {data.items.length ? data.items.map((coach) => <CoachCard key={coach.id} coach={coach} />) : <p>No hay coaches.</p>}
           </div>
         </section>

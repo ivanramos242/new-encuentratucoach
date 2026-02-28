@@ -9,14 +9,12 @@ import { listPublicCoachesMerged } from "@/lib/public-coaches";
 import {
   buildBreadcrumbJsonLd,
   buildMetadata,
-  getSeoMinCoachesIndexable,
   shouldNoIndexLanding,
 } from "@/lib/seo";
 
 async function getOnlineLandingData() {
   const coaches = await listPublicCoachesMerged();
   const items = coaches.filter((coach) => coach.sessionModes.includes("online"));
-  const minToIndex = getSeoMinCoachesIndexable();
   const noindex = shouldNoIndexLanding({ coachCount: items.length, hasEditorialContent: true });
 
   const topCategories = Array.from(
@@ -41,7 +39,7 @@ async function getOnlineLandingData() {
     .slice(0, 6)
     .map(([slug]) => ({ slug, name: getCityBySlug(slug)?.name ?? slug }));
 
-  return { items, noindex, minToIndex, topCategories, topCities };
+  return { items, noindex, topCategories, topCities };
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -70,12 +68,7 @@ export default async function OnlineCoachingPage() {
         title="Coaching online en España"
         description="Compara coaches que trabajan online y contacta de forma directa segun tu objetivo."
       />
-      <PageShell className="space-y-6 pt-8">
-        {data.noindex ? (
-          <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-            Esta landing no se indexa todavia porque no alcanza {data.minToIndex} perfiles.
-          </section>
-        ) : null}
+      <PageShell className="space-y-8 pt-8" containerClassName="max-w-[1700px]">
 
         <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
           <h2 className="text-xl font-black tracking-tight text-zinc-950">Cuando elegir modalidad online</h2>

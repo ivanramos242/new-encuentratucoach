@@ -38,12 +38,12 @@ function buildDefaultCategorySeo(category: { name: string; slug: string; shortDe
     intentQueries: [`${lower}`, `coach ${lower}`, `${lower} online`],
     faq: [
       {
-        q: `Qué hace un coach de ${lower}?`,
+        q: `¿Qué hace un coach de ${lower}?`,
         a: "Trabaja objetivos concretos con sesiones estructuradas, seguimiento y plan de acción medible.",
       },
       {
-        q: `Cómo elegir ${lower}?`,
-        a: "Compara 2 o 3 perfiles por metodología, modalidad, precio y señales de confianza antes de contactar.",
+        q: `¿Cómo elegir ${lower}?`,
+        a: "Compara 2 o 3 perfiles por metodología, modalidad y precio antes de contactar.",
       },
     ],
   };
@@ -58,25 +58,15 @@ function getCategorySeoContent(category: { name: string; slug: string; shortDesc
         "Encuentra coaches de desarrollo personal por ciudad, modalidad y precio. Ideal para hábitos, autoestima, foco y objetivos de vida.",
       metaDescription:
         "Encuentra coaching personal en España. Compara coach personal en Madrid y Barcelona, modalidad online/presencial y rango de precio.",
-      keywords: [
-        "coaching personal",
-        "coach personal madrid",
-        "coach personal barcelona",
-        "coaching personal online",
-      ],
-      intentQueries: [
-        "coach personal madrid",
-        "coach personal barcelona",
-        "coaching personal online",
-        "buscar coaching personal",
-      ],
+      keywords: ["coaching personal", "coach personal madrid", "coach personal barcelona", "coaching personal online"],
+      intentQueries: ["coach personal madrid", "coach personal barcelona", "coaching personal online", "buscar coaching personal"],
       faq: [
         {
-          q: "Cuándo elegir coaching personal?",
+          q: "¿Cuándo elegir coaching personal?",
           a: "Cuando necesitas claridad, enfoque y seguimiento para objetivos de hábitos, autoestima o decisiones vitales.",
         },
         {
-          q: "Es mejor coach personal en Madrid/Barcelona u online?",
+          q: "¿Es mejor coach personal en Madrid/Barcelona u online?",
           a: "Depende de tu preferencia. Online da más oferta; presencial aporta cercanía local.",
         },
       ],
@@ -91,26 +81,16 @@ function getCategorySeoContent(category: { name: string; slug: string; shortDesc
         "Compara coaches de carrera para cambio laboral, entrevistas y posicionamiento profesional en Madrid, Barcelona y online.",
       metaDescription:
         "Encuentra coaching de carrera en España. Compara coach de carrera en Madrid y Barcelona por experiencia, formato y precio.",
-      keywords: [
-        "coaching de carrera",
-        "coach de carrera madrid",
-        "coach de carrera barcelona",
-        "coach profesional madrid",
-      ],
-      intentQueries: [
-        "coach de carrera madrid",
-        "coach de carrera barcelona",
-        "coach profesional madrid",
-        "coaching de carrera online",
-      ],
+      keywords: ["coaching de carrera", "coach de carrera madrid", "coach de carrera barcelona", "coach profesional madrid"],
+      intentQueries: ["coach de carrera madrid", "coach de carrera barcelona", "coach profesional madrid", "coaching de carrera online"],
       faq: [
         {
-          q: "Para qué sirve el coaching de carrera?",
-          a: "Para definir siguiente paso profesional, preparar entrevistas, mejorar posicionamiento y tomar decisiones laborales con criterio.",
+          q: "¿Para qué sirve el coaching de carrera?",
+          a: "Para definir siguiente paso profesional, preparar entrevistas y tomar decisiones laborales con criterio.",
         },
         {
-          q: "Cómo elegir coach de carrera en Madrid o Barcelona?",
-          a: "Evalúa experiencia en transición laboral, metodología, métricas de avance y ajuste de presupuesto.",
+          q: "¿Cómo elegir coach de carrera en Madrid o Barcelona?",
+          a: "Evalúa experiencia en transición laboral, metodología y ajuste de presupuesto.",
         },
       ],
     };
@@ -124,25 +104,15 @@ function getCategorySeoContent(category: { name: string; slug: string; shortDesc
         "Encuentra coaches de liderazgo para comunicación, gestión de equipos y toma de decisiones. Incluye opciones de coach directivo en Madrid y Barcelona.",
       metaDescription:
         "Encuentra coaching de liderazgo en España. Compara coach directivo en Madrid y Barcelona por modalidad, experiencia y precio.",
-      keywords: [
-        "coaching liderazgo",
-        "coach liderazgo madrid",
-        "coach liderazgo barcelona",
-        "coach directivo madrid",
-      ],
-      intentQueries: [
-        "coach liderazgo madrid",
-        "coach liderazgo barcelona",
-        "coach directivo madrid",
-        "coaching liderazgo online",
-      ],
+      keywords: ["coaching liderazgo", "coach liderazgo madrid", "coach liderazgo barcelona", "coach directivo madrid"],
+      intentQueries: ["coach liderazgo madrid", "coach liderazgo barcelona", "coach directivo madrid", "coaching liderazgo online"],
       faq: [
         {
-          q: "Qué mejora un proceso de coaching de liderazgo?",
+          q: "¿Qué mejora un proceso de coaching de liderazgo?",
           a: "Suele mejorar comunicación, delegación, gestión de conflictos y decisiones en contexto de equipo.",
         },
         {
-          q: "Hay diferencia entre coach de liderazgo y coach directivo?",
+          q: "¿Hay diferencia entre coach de liderazgo y coach directivo?",
           a: "Se solapan. El directivo suele enfocarse en roles de alta responsabilidad y objetivos de negocio.",
         },
       ],
@@ -152,31 +122,21 @@ function getCategorySeoContent(category: { name: string; slug: string; shortDesc
   if (category.slug === "ejecutivo") {
     return {
       title: "Coaching ejecutivo en España",
-      heroTitle: "Coaching ejecutivo para decision y liderazgo",
+      heroTitle: "Coaching ejecutivo para decisión y liderazgo",
       heroDescription:
-        "Encuentra coaches ejecutivos para liderazgo, comunicacion y rendimiento en Madrid, Barcelona y formato online.",
+        "Encuentra coaches ejecutivos para liderazgo, comunicación y rendimiento en Madrid, Barcelona y formato online.",
       metaDescription:
         "Encuentra coaching ejecutivo en España. Compara coach ejecutivo en Madrid y Barcelona por experiencia, modalidad y precio.",
-      keywords: [
-        "coaching ejecutivo",
-        "coach ejecutivo madrid",
-        "coach ejecutivo barcelona",
-        "coach directivo madrid",
-      ],
-      intentQueries: [
-        "coach ejecutivo madrid",
-        "coach ejecutivo barcelona",
-        "coach directivo madrid",
-        "coaching ejecutivo online",
-      ],
+      keywords: ["coaching ejecutivo", "coach ejecutivo madrid", "coach ejecutivo barcelona", "coach directivo madrid"],
+      intentQueries: ["coach ejecutivo madrid", "coach ejecutivo barcelona", "coach directivo madrid", "coaching ejecutivo online"],
       faq: [
         {
-          q: "Cuando conviene contratar coaching ejecutivo?",
-          a: "Cuando necesitas mejorar decision, comunicacion y gestion de equipo en contexto de alta responsabilidad.",
+          q: "¿Cuándo conviene contratar coaching ejecutivo?",
+          a: "Cuando necesitas mejorar decisión, comunicación y gestión de equipo en contexto de alta responsabilidad.",
         },
         {
-          q: "Que revisar al elegir coach ejecutivo en Madrid o Barcelona?",
-          a: "Evalua experiencia con liderazgo real, metodologia, frecuencia de seguimiento y objetivos medibles.",
+          q: "¿Qué revisar al elegir coach ejecutivo en Madrid o Barcelona?",
+          a: "Evalúa experiencia con liderazgo real, metodología y seguimiento.",
         },
       ],
     };
@@ -206,7 +166,6 @@ async function getCategoryLandingData(categoriaSlug: string) {
       slug,
       count,
       cityName: getCityBySlug(slug)?.name ?? slug,
-      indexable: count >= minToIndex,
     }));
 
   const clusterCitySlugs = ["madrid", "barcelona", "valencia", "sevilla", "bilbao", "malaga"];
@@ -214,32 +173,19 @@ async function getCategoryLandingData(categoriaSlug: string) {
     .map((slug) => {
       const city = getCityBySlug(slug);
       if (!city) return null;
-      const count = cityCounts.get(slug) ?? 0;
       return {
         slug,
         cityName: city.name,
-        count,
-        indexable: count >= minToIndex,
+        count: cityCounts.get(slug) ?? 0,
       };
     })
-    .filter((item): item is { slug: string; cityName: string; count: number; indexable: boolean } => Boolean(item));
+    .filter((item): item is { slug: string; cityName: string; count: number } => Boolean(item));
 
   const madrid = cityCounts.get("madrid") ?? 0;
   const barcelona = cityCounts.get("barcelona") ?? 0;
-
   const keyCities = [
-    {
-      slug: "madrid",
-      cityName: "Madrid",
-      count: madrid,
-      indexable: madrid >= minToIndex,
-    },
-    {
-      slug: "barcelona",
-      cityName: "Barcelona",
-      count: barcelona,
-      indexable: barcelona >= minToIndex,
-    },
+    { slug: "madrid", cityName: "Madrid", count: madrid },
+    { slug: "barcelona", cityName: "Barcelona", count: barcelona },
   ];
 
   const categoryCounts = new Map<string, number>();
@@ -255,15 +201,13 @@ async function getCategoryLandingData(categoriaSlug: string) {
     .map((slug) => {
       const item = getCategoryBySlug(slug);
       if (!item) return null;
-      const count = categoryCounts.get(slug) ?? 0;
       return {
         slug,
         name: item.name,
-        count,
-        indexable: count >= minToIndex,
+        count: categoryCounts.get(slug) ?? 0,
       };
     })
-    .filter((item): item is { slug: string; name: string; count: number; indexable: boolean } => Boolean(item));
+    .filter((item): item is { slug: string; name: string; count: number } => Boolean(item));
 
   const categorySeo = getCategorySeoContent(category);
 
@@ -272,7 +216,6 @@ async function getCategoryLandingData(categoriaSlug: string) {
     categorySeo,
     items,
     noindex,
-    minToIndex,
     topCities,
     clusterCities,
     keyCities,
@@ -301,7 +244,7 @@ export default async function CategoryLandingPage({ params }: { params: ParamsIn
   const data = await getCategoryLandingData(categoriaSlug);
   if (!data) notFound();
 
-  const { category, categorySeo, items, noindex, minToIndex, topCities, clusterCities, keyCities, relatedCategories } = data;
+  const { category, categorySeo, items, topCities, clusterCities, keyCities, relatedCategories } = data;
   const baseUrl = getSiteBaseUrl();
 
   const breadcrumb = buildBreadcrumbJsonLd([
@@ -335,68 +278,18 @@ export default async function CategoryLandingPage({ params }: { params: ParamsIn
   return (
     <>
       <JsonLd data={[breadcrumb, collectionSchema, faqSchema]} />
-      <PageHero
-        badge="Landing SEO por especialidad"
-        title={categorySeo.heroTitle}
-        description={categorySeo.heroDescription}
-      />
-      <PageShell className="space-y-6 pt-8" containerClassName="max-w-[1700px]">
-        {noindex ? (
-          <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-            Esta landing no se indexa todavía porque tiene menos de {minToIndex} coaches publicados.
-            <div className="mt-2 flex flex-wrap gap-3">
-              <Link href="/coaches" className="font-semibold underline">
-                Ir al directorio general
-              </Link>
-            </div>
-          </section>
-        ) : null}
-
+      <PageHero badge="Especialidad" title={categorySeo.heroTitle} description={categorySeo.heroDescription} />
+      <PageShell className="space-y-8 pt-8" containerClassName="max-w-[1700px]">
         <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-black tracking-tight text-zinc-950">Intención de búsqueda para {category.name.toLowerCase()}</h2>
+          <h2 className="text-xl font-black tracking-tight text-zinc-950">Cómo elegir {category.name.toLowerCase()}</h2>
           <p className="mt-2 text-zinc-700">
-            Este cluster está diseñado para resolver intención comercial y transaccional: comparar perfiles por ciudad,
-            modalidad y precio sin canibalizar con filtros query no indexables.
+            Compara perfiles por ciudad, modalidad y precio y elige el coach que mejor encaje con tu objetivo.
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             {categorySeo.intentQueries.map((query) => (
-              <span
-                key={query}
-                className="rounded-full border border-black/10 bg-zinc-50 px-3 py-1 text-sm font-semibold text-zinc-700"
-              >
+              <span key={query} className="rounded-full border border-black/10 bg-zinc-50 px-3 py-1 text-sm font-semibold text-zinc-700">
                 {query}
               </span>
-            ))}
-          </div>
-        </section>
-
-        <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-black tracking-tight text-zinc-950">
-            Mas ciudades populares para {category.name.toLowerCase()}
-          </h2>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {clusterCities.map((item) => (
-              <article key={item.slug} className="rounded-2xl border border-black/10 bg-zinc-50 p-4">
-                <p className="font-semibold text-zinc-900">{category.name} en {item.cityName}</p>
-                <p className="mt-1 text-xs text-zinc-600">{item.count} perfiles en esta combinacion</p>
-                {!item.indexable ? (
-                  <p className="mt-1 text-xs font-semibold text-amber-700">Combinacion noindex por cobertura baja</p>
-                ) : null}
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Link
-                    href={`/coaches/categoria/${category.slug}/${item.slug}`}
-                    className="rounded-xl bg-zinc-950 px-3 py-2 text-xs font-semibold text-white hover:bg-zinc-800"
-                  >
-                    Ver {item.cityName}
-                  </Link>
-                  <Link
-                    href={`/coaches/ciudad/${item.slug}`}
-                    className="rounded-xl border border-black/10 bg-white px-3 py-2 text-xs font-semibold text-zinc-900 hover:bg-zinc-50"
-                  >
-                    Ciudad
-                  </Link>
-                </div>
-              </article>
             ))}
           </div>
         </section>
@@ -408,9 +301,6 @@ export default async function CategoryLandingPage({ params }: { params: ParamsIn
               <article key={item.slug} className="rounded-2xl border border-black/10 bg-zinc-50 p-4">
                 <p className="text-lg font-black tracking-tight text-zinc-900">{category.name} en {item.cityName}</p>
                 <p className="mt-1 text-sm text-zinc-700">{item.count} perfiles en esta combinación.</p>
-                {!item.indexable ? (
-                  <p className="mt-1 text-xs font-semibold text-amber-700">Combinación noindex por cobertura baja</p>
-                ) : null}
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Link
                     href={`/coaches/categoria/${category.slug}/${item.slug}`}
@@ -430,11 +320,35 @@ export default async function CategoryLandingPage({ params }: { params: ParamsIn
           </div>
         </section>
 
+        <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
+          <h2 className="text-xl font-black tracking-tight text-zinc-950">Más ciudades para {category.name.toLowerCase()}</h2>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {clusterCities.map((item) => (
+              <article key={item.slug} className="rounded-2xl border border-black/10 bg-zinc-50 p-4">
+                <p className="font-semibold text-zinc-900">{category.name} en {item.cityName}</p>
+                <p className="mt-1 text-xs text-zinc-600">{item.count} perfiles en esta combinación</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Link
+                    href={`/coaches/categoria/${category.slug}/${item.slug}`}
+                    className="rounded-xl bg-zinc-950 px-3 py-2 text-xs font-semibold text-white hover:bg-zinc-800"
+                  >
+                    Ver {item.cityName}
+                  </Link>
+                  <Link
+                    href={`/coaches/ciudad/${item.slug}`}
+                    className="rounded-xl border border-black/10 bg-white px-3 py-2 text-xs font-semibold text-zinc-900 hover:bg-zinc-50"
+                  >
+                    Ciudad
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
         {topCities.length ? (
           <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-black tracking-tight text-zinc-950">
-              Ciudades top para {category.name.toLowerCase()}
-            </h2>
+            <h2 className="text-xl font-black tracking-tight text-zinc-950">Ciudades top para {category.name.toLowerCase()}</h2>
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {topCities.map((city) => (
                 <Link
@@ -444,9 +358,6 @@ export default async function CategoryLandingPage({ params }: { params: ParamsIn
                 >
                   <p className="font-semibold text-zinc-900">{city.cityName}</p>
                   <p className="mt-1 text-xs text-zinc-600">{city.count} perfiles en esta combinación</p>
-                  {!city.indexable ? (
-                    <p className="mt-1 text-xs font-semibold text-amber-700">Combinación noindex por cobertura baja</p>
-                  ) : null}
                 </Link>
               ))}
             </div>
@@ -454,26 +365,21 @@ export default async function CategoryLandingPage({ params }: { params: ParamsIn
         ) : null}
 
         <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-black tracking-tight text-zinc-950">
-            Categorias populares relacionadas
-          </h2>
+          <h2 className="text-xl font-black tracking-tight text-zinc-950">Otras especialidades populares</h2>
           <p className="mt-2 text-zinc-700">
-            Enlazado interno del cluster para ampliar cobertura sin canibalizar filtros query.
+            Explora especialidades relacionadas para comparar enfoques y tomar una mejor decisión.
           </p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {relatedCategories.map((item) => (
               <article key={item.slug} className="rounded-2xl border border-black/10 bg-zinc-50 p-4">
                 <p className="font-semibold text-zinc-900">{item.name}</p>
                 <p className="mt-1 text-xs text-zinc-600">{item.count} perfiles publicados</p>
-                {!item.indexable ? (
-                  <p className="mt-1 text-xs font-semibold text-amber-700">Landing noindex por cobertura baja</p>
-                ) : null}
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Link
                     href={`/coaches/categoria/${item.slug}`}
                     className="rounded-xl bg-zinc-950 px-3 py-2 text-xs font-semibold text-white hover:bg-zinc-800"
                   >
-                    Ver categoria
+                    Ver categoría
                   </Link>
                   <Link
                     href={`/coaches/categoria/${item.slug}/madrid`}
