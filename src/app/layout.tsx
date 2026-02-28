@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { FavoriteCoachesProvider } from "@/components/favorites/favorite-coaches-provider";
 import { Poppins } from "next/font/google";
+import { FavoriteCoachesProvider } from "@/components/favorites/favorite-coaches-provider";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { isSeoIndexingAllowed } from "@/lib/seo";
 import { siteConfig } from "@/lib/site-config";
 import "./globals.css";
 
@@ -21,6 +22,13 @@ export const metadata: Metadata = {
   },
   description: siteConfig.description,
   applicationName: siteConfig.name,
+  robots: isSeoIndexingAllowed()
+    ? undefined
+    : {
+        index: false,
+        follow: false,
+        googleBot: { index: false, follow: false, noimageindex: true },
+      },
   openGraph: {
     type: "website",
     locale: siteConfig.locale,

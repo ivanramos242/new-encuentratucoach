@@ -1,0 +1,2 @@
+legacy_url,new_url,status_code,notes
+/ejemplo-url-wordpress,/coaches,301,Reemplazar con mapeo real

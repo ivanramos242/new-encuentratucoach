@@ -22,12 +22,15 @@ export function SiteFooter() {
         </div>
 
         <div>
-          <h2 className="text-sm font-black uppercase tracking-wide text-zinc-500">Navegación</h2>
+          <h2 className="text-sm font-black uppercase tracking-wide text-zinc-500">Navegacion</h2>
           <ul className="mt-4 grid gap-2 text-sm">
             {[
               ["/", "Inicio"],
               ["/coaches", "Nuestros coaches"],
-              ["/membresia", "Membresía"],
+              ["/coaches/modalidad/online", "Coaching online"],
+              ["/coaches/certificados", "Coaches certificados"],
+              ["/membresia", "Membresia"],
+              ["/plataformas-para-trabajar-como-coach", "Plataformas para coaches"],
               ["/blog", "Blog"],
               ["/faqs", "FAQs"],
               ["/contacto", "Contacto"],
@@ -42,7 +45,7 @@ export function SiteFooter() {
         </div>
 
         <div>
-          <h2 className="text-sm font-black uppercase tracking-wide text-zinc-500">Categorías</h2>
+          <h2 className="text-sm font-black uppercase tracking-wide text-zinc-500">Categorias</h2>
           <ul className="mt-4 grid gap-2 text-sm">
             {coachCategories.slice(0, 6).map((category) => (
               <li key={category.slug}>

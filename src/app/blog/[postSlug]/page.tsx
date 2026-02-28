@@ -1,11 +1,12 @@
 import Image from "next/image";
+import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { JsonLd } from "@/components/seo/json-ld";
 import { PageShell } from "@/components/layout/page-shell";
 import { sanitizeRichHtml } from "@/lib/html-sanitize";
 import { getPublishedBlogPostBySlug } from "@/lib/blog-service";
-import { buildMetadata } from "@/lib/seo";
+import { buildBreadcrumbJsonLd, buildMetadata } from "@/lib/seo";
 
 type ParamsInput = Promise<{ postSlug: string }>;
 
@@ -38,9 +39,17 @@ export default async function BlogPostPage({ params }: { params: ParamsInput }) 
   const { postSlug } = await params;
   const post = await getPublishedBlogPostBySlug(postSlug);
   if (!post) notFound();
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const postPath = `/blog/${post.slug}`;
+  const breadcrumb = buildBreadcrumbJsonLd([
+    { name: "Inicio", path: "/" },
+    { name: "Blog", path: "/blog" },
+    { name: post.title, path: postPath },
+  ]);
 
   return (
     <PageShell className="pt-8">
+      <JsonLd data={breadcrumb} />
       <JsonLd
         data={{
           "@context": "https://schema.org",
@@ -52,7 +61,7 @@ export default async function BlogPostPage({ params }: { params: ParamsInput }) 
           articleSection: post.category,
           keywords: post.tags.join(", "),
           image: post.coverImageUrl,
-          mainEntityOfPage: { "@type": "WebPage", "@id": `/blog/${post.slug}` },
+          mainEntityOfPage: { "@type": "WebPage", "@id": `${baseUrl}${postPath}` },
           publisher: {
             "@type": "Organization",
             name: "EncuentraTuCoach",
@@ -83,6 +92,29 @@ export default async function BlogPostPage({ params }: { params: ParamsInput }) 
             </div>
           ) : null}
           <div className="prose-lite mt-6 text-zinc-800" dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(post.contentHtml) }} />
+          <section className="mt-8 rounded-2xl border border-black/10 bg-zinc-50 p-5">
+            <h2 className="text-xl font-black tracking-tight text-zinc-950">Siguiente paso recomendado</h2>
+            <p className="mt-2 text-sm text-zinc-700">
+              Si ya tienes claro tu objetivo, compara coaches por especialidad, modalidad y confianza.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Link href="/coaches" className="rounded-xl bg-zinc-950 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800">
+                Ver directorio
+              </Link>
+              <Link
+                href="/coaches/modalidad/online"
+                className="rounded-xl border border-black/10 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-100"
+              >
+                Coaching online
+              </Link>
+              <Link
+                href="/coaches/certificados"
+                className="rounded-xl border border-black/10 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-100"
+              >
+                Coaches certificados
+              </Link>
+            </div>
+          </section>
         </div>
       </article>
     </PageShell>

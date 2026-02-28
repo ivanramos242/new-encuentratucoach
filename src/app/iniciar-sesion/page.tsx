@@ -9,6 +9,7 @@ export const metadata = buildMetadata({
   title: "Iniciar sesión",
   description: "Accede como coach o cliente a tu cuenta en la plataforma.",
   path: "/iniciar-sesion",
+  noindex: true,
 });
 
 type SearchParamsInput = Promise<Record<string, string | string[] | undefined>>;
