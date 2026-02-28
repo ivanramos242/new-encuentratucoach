@@ -7,12 +7,7 @@ import { PageShell } from "@/components/layout/page-shell";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getCategoryBySlug, getCityBySlug } from "@/lib/directory";
 import { listPublicCoachesMerged } from "@/lib/public-coaches";
-import {
-  buildBreadcrumbJsonLd,
-  buildMetadata,
-  getSeoMinCoachesIndexable,
-  shouldNoIndexLanding,
-} from "@/lib/seo";
+import { buildBreadcrumbJsonLd, buildMetadata, shouldNoIndexLanding } from "@/lib/seo";
 import { getSiteBaseUrl } from "@/lib/site-config";
 
 type ParamsInput = Promise<{ ciudadSlug: string }>;
@@ -104,7 +99,7 @@ function getCitySeoContent(citySlug: string, cityName: string): CitySeoContent {
         },
         {
           q: "¿Hay coach directivo madrid y coach de carrera en esta página?",
-          a: "Sí. Usa los enlaces por categoría para ver combinaciones locales de mayor intención comercial.",
+          a: "Sí. Puedes entrar por especialidad y comparar opciones en Madrid.",
         },
       ],
     };
@@ -134,15 +129,15 @@ function getCitySeoContent(citySlug: string, cityName: string): CitySeoContent {
       faq: [
         {
           q: "¿Busco coach barcelona: por dónde empiezo?",
-          a: "Define objetivo, elige modalidad y revisa perfiles con mejor encaje. Luego contacta con un mensaje claro de situación y meta.",
+          a: "Define objetivo, elige modalidad y revisa perfiles con mejor encaje. Después contacta con un mensaje claro de situación y meta.",
         },
         {
           q: "¿Puedo encontrar coach online si estoy en Barcelona?",
-          a: "Sí. Puedes combinar ubicación Barcelona con modalidad online para ampliar oferta y comparar más perfiles.",
+          a: "Sí. Puedes combinar Barcelona con modalidad online para ampliar la oferta.",
         },
         {
           q: "¿Qué diferencia hay entre coaching personal y de carrera en Barcelona?",
-          a: "Depende del objetivo: personal para hábitos y claridad vital; carrera para transición profesional, entrevistas y decisiones laborales.",
+          a: "Depende del objetivo: personal para hábitos y claridad vital; carrera para transición profesional y decisiones laborales.",
         },
       ],
     };
@@ -157,7 +152,6 @@ async function getCityLandingData(ciudadSlug: string) {
 
   const coaches = await listPublicCoachesMerged();
   const items = coaches.filter((coach) => coach.citySlug === city.slug);
-  const minToIndex = getSeoMinCoachesIndexable();
   const noindex = shouldNoIndexLanding({ coachCount: items.length, hasEditorialContent: true });
 
   const categoryCounts = new Map<string, number>();
@@ -174,7 +168,6 @@ async function getCityLandingData(ciudadSlug: string) {
       slug,
       count,
       name: getCategoryBySlug(slug)?.name ?? slug,
-      indexable: count >= minToIndex,
     }));
 
   const popularCategories = POPULAR_CATEGORY_SLUGS.map((slug) => {
@@ -184,7 +177,6 @@ async function getCityLandingData(ciudadSlug: string) {
       slug,
       name: category?.name ?? slug,
       count,
-      indexable: count >= minToIndex,
     };
   });
 
@@ -208,7 +200,6 @@ async function getCityLandingData(ciudadSlug: string) {
         categorySlug,
         categoryName: category?.name ?? categorySlug,
         count,
-        indexable: count >= minToIndex,
       };
     })
       .sort((a, b) => b.count - a.count)
@@ -230,7 +221,6 @@ async function getCityLandingData(ciudadSlug: string) {
     citySeo,
     items,
     noindex,
-    minToIndex,
     topCategories,
     popularCategories,
     clusterCities,
@@ -256,7 +246,7 @@ export default async function CityLandingPage({ params }: { params: ParamsInput 
   const data = await getCityLandingData(ciudadSlug);
   if (!data) notFound();
 
-  const { city, citySeo, items, noindex, minToIndex, topCategories, popularCategories, clusterCities } = data;
+  const { city, citySeo, items, topCategories, popularCategories, clusterCities } = data;
   const baseUrl = getSiteBaseUrl();
 
   const breadcrumb = buildBreadcrumbJsonLd([
@@ -290,27 +280,12 @@ export default async function CityLandingPage({ params }: { params: ParamsInput 
   return (
     <>
       <JsonLd data={[breadcrumb, collectionSchema, faqSchema]} />
-      <PageHero
-        badge="Landing SEO por ciudad"
-        title={citySeo.heroTitle}
-        description={citySeo.heroDescription}
-      />
-      <PageShell className="space-y-6 pt-8" containerClassName="max-w-[1700px]">
-        {noindex ? (
-          <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-            Esta landing no se indexa todavía porque tiene menos de {minToIndex} coaches publicados.
-            <div className="mt-2 flex flex-wrap gap-3">
-              <Link href="/coaches" className="font-semibold underline">
-                Ir al directorio general
-              </Link>
-            </div>
-          </section>
-        ) : null}
-
+      <PageHero badge="Ciudad" title={citySeo.heroTitle} description={citySeo.heroDescription} />
+      <PageShell className="space-y-8 pt-8" containerClassName="max-w-[1700px]">
         <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
           <h2 className="text-xl font-black tracking-tight text-zinc-950">Búsquedas locales en {city.name}</h2>
           <p className="mt-2 text-zinc-700">
-            Esta landing está orientada a intención transaccional local para ayudar a decidir más rápido según objetivo y presupuesto.
+            Compara perfiles por especialidad, modalidad y precio para decidir más rápido según tu objetivo.
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             {citySeo.intentQueries.map((query) => (
@@ -322,23 +297,12 @@ export default async function CityLandingPage({ params }: { params: ParamsInput 
         </section>
 
         <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-black tracking-tight text-zinc-950">Clúster local sin canibalizar /coaches</h2>
-          <p className="mt-2 text-zinc-700">
-            Estas URLs de ciudad y categoría+ciudad son las indexables del clúster local. Los filtros por query en el directorio
-            principal deben seguir como soporte UX, no como páginas objetivo de posicionamiento.
-          </p>
-        </section>
-
-        <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
           <h2 className="text-xl font-black tracking-tight text-zinc-950">Categoría + {city.name}: rutas clave</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {popularCategories.map((category) => (
               <article key={category.slug} className="rounded-2xl border border-black/10 bg-zinc-50 p-4">
                 <p className="font-semibold text-zinc-900">{category.name} en {city.name}</p>
                 <p className="mt-1 text-xs text-zinc-600">{category.count} perfiles en esta combinación</p>
-                {!category.indexable ? (
-                  <p className="mt-1 text-xs font-semibold text-amber-700">Combinación noindex por cobertura baja</p>
-                ) : null}
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Link
                     href={`/coaches/categoria/${category.slug}/${city.slug}`}
@@ -370,9 +334,6 @@ export default async function CityLandingPage({ params }: { params: ParamsInput 
                 >
                   <p className="font-semibold text-zinc-900">{category.name}</p>
                   <p className="mt-1 text-xs text-zinc-600">{category.count} perfiles en esta combinación</p>
-                  {!category.indexable ? (
-                    <p className="mt-1 text-xs font-semibold text-amber-700">Combinación noindex por cobertura baja</p>
-                  ) : null}
                 </Link>
               ))}
             </div>

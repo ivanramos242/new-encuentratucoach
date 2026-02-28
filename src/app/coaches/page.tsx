@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import type { Metadata } from "next";
 import { CoachCard } from "@/components/directory/coach-card";
 import { PageHero } from "@/components/layout/page-hero";
@@ -104,7 +104,7 @@ export async function generateMetadata({
   return buildMetadata({
     title,
     description:
-      "Directorio de coaches en España para buscar por ciudad, especialidad, modalidad y presupuesto sin canibalizar landings transaccionales.",
+      "Directorio de coaches en España para buscar por ciudad, especialidad, modalidad y presupuesto.",
     path: "/coaches",
     canonicalUrl: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}${canonicalPath}`,
     noindex,
@@ -135,12 +135,6 @@ export default async function CoachesDirectoryPage({
   const allResults = filterAndSortCoachesFrom(sourceCoaches, filters);
   const paginated = paginateCoaches(allResults, filters.page ?? 1, PAGE_SIZE);
   const hasFilters = hasMeaningfulQueryParams(raw);
-  const canonicalPath = resolveCanonicalForDirectory({
-    filters,
-    citySlug: filters.location ?? null,
-    categorySlug: filters.cat ?? null,
-  });
-
   const schema = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
@@ -152,7 +146,7 @@ export default async function CoachesDirectoryPage({
     <>
       <JsonLd data={schema} />
       <PageHero
-        badge="Directorio SEO · filtros avanzados"
+        badge="Directorio de coaches"
         title="Encuentra coaches en España"
         description="Filtra por especialidad, ciudad, modalidad, presupuesto e idiomas. Contacta directamente y compara perfiles antes de elegir."
       />
@@ -164,7 +158,7 @@ export default async function CoachesDirectoryPage({
             <p className="mt-1 text-sm text-zinc-600">Diseñados para encontrar encaje rápido.</p>
 
             <div className="mt-4">
-              <p className="text-xs font-black uppercase tracking-wide text-zinc-500">Atajos indexables</p>
+              <p className="text-xs font-black uppercase tracking-wide text-zinc-500">Accesos rápidos</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {QUICK_INDEXABLE_LINKS.map((item) => (
                   <Link
@@ -316,8 +310,8 @@ export default async function CoachesDirectoryPage({
                   </h2>
                   <p className="mt-1 text-sm text-zinc-600">
                     {hasFilters
-                      ? "Los filtros query se publican como noindex para evitar canibalización y consolidar señales en landings limpias."
-                      : "Listado principal indexable del directorio con enlaces a landings transaccionales."}
+                      ? "Resultados según los filtros seleccionados."
+                      : "Explora el listado y entra a las especialidades o ciudades que mejor encajen contigo."}
                   </p>
                 </div>
                 <div className="text-right text-sm text-zinc-600">
@@ -345,16 +339,7 @@ export default async function CoachesDirectoryPage({
                 </div>
               ) : null}
 
-              {hasFilters && canonicalPath !== "/coaches" ? (
-                <div className="mt-4 rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm text-cyan-900">
-                  Landing canónica recomendada: {" "}
-                  <Link href={canonicalPath} className="font-semibold underline">
-                    {canonicalPath}
-                  </Link>
-                </div>
-              ) : null}
-
-              {(filters.q ||
+                            {(filters.q ||
                 filters.cat ||
                 filters.location ||
                 filters.certified ||
@@ -447,3 +432,5 @@ export default async function CoachesDirectoryPage({
     </>
   );
 }
+
+

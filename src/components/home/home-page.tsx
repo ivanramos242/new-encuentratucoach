@@ -271,7 +271,7 @@ export async function HomePage() {
         <section className="mt-12">
           <div className="mb-5">
             <h2 className="text-2xl font-black tracking-tight text-zinc-950 sm:text-3xl">
-              Intenciones de busqueda con mas conversion
+              Búsquedas populares
             </h2>
             <p className="mt-2 max-w-3xl text-zinc-700">
               Rutas directas para quien llega buscando un coach en Madrid, Barcelona o formato online.
@@ -401,7 +401,7 @@ export async function HomePage() {
             </div>
 
             <div className="rounded-3xl border border-black/10 bg-gradient-to-br from-cyan-50 via-white to-emerald-50 p-6">
-              <h3 className="text-xl font-black tracking-tight text-zinc-950">Canal para coaches (30%)</h3>
+              <h3 className="text-xl font-black tracking-tight text-zinc-950">¿Eres coach?</h3>
               <p className="mt-3 text-zinc-700">
                 Si quieres trabajar como coach online y presencial, activa tu membresia y aparece en consultas de alta
                 intencion como coach madrid y coach profesional en madrid.
