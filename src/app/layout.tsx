@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
+import Script from "next/script";
 import { FavoriteCoachesProvider } from "@/components/favorites/favorite-coaches-provider";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -64,6 +65,19 @@ export default function RootLayout({
         />
       </head>
       <body className={`${poppins.variable} bg-zinc-50 text-zinc-950 antialiased`}>
+        <Script id="crisp-chat" strategy="afterInteractive">
+          {`
+            window.$crisp = [];
+            window.CRISP_WEBSITE_ID = "dd7f3530-1483-4546-91ca-7f47835087d7";
+            (function () {
+              var d = document;
+              var s = d.createElement("script");
+              s.src = "https://client.crisp.chat/l.js";
+              s.async = 1;
+              d.getElementsByTagName("head")[0].appendChild(s);
+            })();
+          `}
+        </Script>
         <FavoriteCoachesProvider>
           <div className="min-h-screen bg-zinc-50">
             <SiteHeader />
