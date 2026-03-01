@@ -62,7 +62,23 @@ export async function POST(request: Request) {
     if (isCoachMedia && auth.user.role !== "admin") {
       const expectedPrefix = `coach-media/${effectiveCoachProfileId}/`;
       if (!key.startsWith(expectedPrefix)) {
-        return jsonError("No puedes borrar archivos de otro perfil", 403);
+        // Fallback for migrated/legacy media: allow deletion only if this exact URL is linked
+        // to the profile being edited and owned by the current coach user.
+        const linked = await prisma.coachProfile.findFirst({
+          where: {
+            id: effectiveCoachProfileId || undefined,
+            userId: auth.user.id,
+            OR: [
+              { heroImageUrl: parsed.data.url },
+              { videoPresentationUrl: parsed.data.url },
+              { galleryAssets: { some: { url: parsed.data.url } } },
+            ],
+          },
+          select: { id: true },
+        });
+        if (!linked) {
+          return jsonError("No puedes borrar archivos de otro perfil", 403);
+        }
       }
     }
 
