@@ -9,6 +9,11 @@ const cards = [
     desc: "Gestor editorial con posts, categorias, tags y metadatos SEO.",
   },
   {
+    href: "/admin/usuarios",
+    title: "Usuarios y roles",
+    desc: "Gestiona usuarios y cambia roles entre cliente y coach.",
+  },
+  {
     href: "/admin/membresia",
     title: "Membresia y descuentos",
     desc: "Gestiona precios y descuentos con fecha de fin para mostrar en los planes de coaches.",
