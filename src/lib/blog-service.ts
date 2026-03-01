@@ -1,6 +1,5 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { blogPosts as mockBlogPosts } from "@/lib/mock-data";
 
 export type PublicBlogPostSummary = {
   id: string;
@@ -87,50 +86,17 @@ function mapDbPostToPublic(post: DbPostWithRelations, override?: { canonicalUrl:
   };
 }
 
-function mapMockPostToPublic(slug: string): PublicBlogPostDetail | null {
-  const post = mockBlogPosts.find((item) => item.slug === slug);
-  if (!post) return null;
-  return {
-    id: post.id,
-    slug: post.slug,
-    title: post.title,
-    excerpt: post.excerpt,
-    category: post.category,
-    coverImageUrl: post.coverImageUrl,
-    publishedAt: post.publishedAt,
-    readingMinutes: post.readingMinutes,
-    contentHtml: post.contentHtml,
-    seoTitle: post.seoTitle ?? null,
-    seoDescription: post.seoDescription ?? null,
-    tags: [],
-    canonicalUrl: null,
-    noindex: false,
-  };
-}
-
 export async function listPublishedBlogPosts(limit = 60): Promise<PublicBlogPostSummary[]> {
   try {
     const rows = await prisma.blogPost.findMany({
-      where: { isPublished: true, publishedAt: { lte: new Date() } },
+      where: {
+        isPublished: true,
+        OR: [{ publishedAt: null }, { publishedAt: { lte: new Date() } }],
+      },
       include: { category: { select: { name: true } } },
       orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
       take: limit,
     });
-
-    if (!rows.length) {
-      return mockBlogPosts.map((post) => ({
-        id: post.id,
-        slug: post.slug,
-        title: post.title,
-        excerpt: post.excerpt,
-        category: post.category,
-        coverImageUrl: post.coverImageUrl,
-        publishedAt: post.publishedAt,
-        readingMinutes: post.readingMinutes,
-        seoTitle: post.seoTitle ?? null,
-        seoDescription: post.seoDescription ?? null,
-      }));
-    }
 
     return rows.map((post) => ({
       id: post.id,
@@ -146,20 +112,7 @@ export async function listPublishedBlogPosts(limit = 60): Promise<PublicBlogPost
       seoDescription: post.seoDescription,
     }));
   } catch (error) {
-    if (isMissingBlogTablesError(error)) {
-      return mockBlogPosts.map((post) => ({
-        id: post.id,
-        slug: post.slug,
-        title: post.title,
-        excerpt: post.excerpt,
-        category: post.category,
-        coverImageUrl: post.coverImageUrl,
-        publishedAt: post.publishedAt,
-        readingMinutes: post.readingMinutes,
-        seoTitle: post.seoTitle ?? null,
-        seoDescription: post.seoDescription ?? null,
-      }));
-    }
+    if (isMissingBlogTablesError(error)) return [];
     throw error;
   }
 }
@@ -167,13 +120,17 @@ export async function listPublishedBlogPosts(limit = 60): Promise<PublicBlogPost
 export async function getPublishedBlogPostBySlug(slug: string): Promise<PublicBlogPostDetail | null> {
   try {
     const post = await prisma.blogPost.findFirst({
-      where: { slug, isPublished: true, publishedAt: { lte: new Date() } },
+      where: {
+        slug,
+        isPublished: true,
+        OR: [{ publishedAt: null }, { publishedAt: { lte: new Date() } }],
+      },
       include: {
         category: { select: { name: true } },
         tags: { include: { blogTag: { select: { name: true } } } },
       },
     });
-    if (!post) return mapMockPostToPublic(slug);
+    if (!post) return null;
 
     const override = await prisma.seoMetaOverride.findUnique({
       where: { routePath: `/blog/${slug}` },
@@ -181,9 +138,7 @@ export async function getPublishedBlogPostBySlug(slug: string): Promise<PublicBl
     });
     return mapDbPostToPublic(post, override);
   } catch (error) {
-    if (isMissingBlogTablesError(error)) {
-      return mapMockPostToPublic(slug);
-    }
+    if (isMissingBlogTablesError(error)) return null;
     throw error;
   }
 }

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { jsonError, jsonOk, jsonServerError } from "@/lib/api-handlers";
 import { requireApiRole } from "@/lib/api-auth";
+import { prisma } from "@/lib/prisma";
 import {
   buildPublicObjectUrl,
   buildUploadObjectKey,
@@ -80,10 +81,25 @@ export async function POST(request: Request) {
 
     let coachProfileId: string | null | undefined = null;
     if (parsed.data.scope !== "blog_cover") {
+      const requestedCoachProfileId = parsed.data.coachProfileId?.trim() || undefined;
       coachProfileId =
         auth.user.role === "admin"
-          ? parsed.data.coachProfileId || auth.user.coachProfileId
-          : auth.user.coachProfileId;
+          ? requestedCoachProfileId || auth.user.coachProfileId
+          : requestedCoachProfileId || auth.user.coachProfileId;
+
+      if (auth.user.role !== "admin" && requestedCoachProfileId) {
+        const owned = await prisma.coachProfile.findFirst({
+          where: {
+            id: requestedCoachProfileId,
+            userId: auth.user.id,
+          },
+          select: { id: true },
+        });
+        if (!owned) {
+          return jsonError("No puedes subir archivos para un perfil de otro usuario", 403);
+        }
+        coachProfileId = owned.id;
+      }
     }
 
     if (parsed.data.scope === "blog_cover" && auth.user.role !== "admin") {
@@ -122,4 +138,3 @@ export async function POST(request: Request) {
     return jsonServerError("No se pudo generar la URL de subida", error);
   }
 }
-

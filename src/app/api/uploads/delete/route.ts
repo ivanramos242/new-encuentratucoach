@@ -1,11 +1,13 @@
 import { z } from "zod";
 import { jsonError, jsonOk, jsonServerError } from "@/lib/api-handlers";
 import { requireApiRole } from "@/lib/api-auth";
+import { prisma } from "@/lib/prisma";
 import { deleteObjectFromStorage, parsePublicObjectUrl } from "@/lib/s3-storage";
 import { applyEndpointRateLimit } from "@/lib/rate-limit";
 
 const schema = z.object({
   url: z.string().url(),
+  coachProfileId: z.string().min(1).optional(),
 });
 
 export async function POST(request: Request) {
@@ -25,9 +27,26 @@ export async function POST(request: Request) {
     if (!parsed.success) return jsonError("Payload invalido", 400, { issues: parsed.error.flatten() });
 
     const { bucket, key } = parsePublicObjectUrl(parsed.data.url);
-    const coachProfileId = auth.user.coachProfileId;
-    if (!coachProfileId && auth.user.role !== "admin") {
-      return jsonError("No se pudo resolver el perfil de coach", 400);
+    const requestedCoachProfileId = parsed.data.coachProfileId?.trim() || undefined;
+    let effectiveCoachProfileId = requestedCoachProfileId || auth.user.coachProfileId || null;
+
+    if (auth.user.role !== "admin") {
+      if (!effectiveCoachProfileId) {
+        return jsonError("No se pudo resolver el perfil de coach", 400);
+      }
+
+      // Trust the profile being edited when provided, but enforce ownership.
+      if (requestedCoachProfileId) {
+        const owned = await prisma.coachProfile.findFirst({
+          where: {
+            id: requestedCoachProfileId,
+            userId: auth.user.id,
+          },
+          select: { id: true },
+        });
+        if (!owned) return jsonError("No puedes operar sobre un perfil de otro usuario", 403);
+        effectiveCoachProfileId = owned.id;
+      }
     }
 
     const isCoachMedia = key.startsWith("coach-media/");
@@ -41,7 +60,7 @@ export async function POST(request: Request) {
     }
 
     if (isCoachMedia && auth.user.role !== "admin") {
-      const expectedPrefix = `coach-media/${coachProfileId}/`;
+      const expectedPrefix = `coach-media/${effectiveCoachProfileId}/`;
       if (!key.startsWith(expectedPrefix)) {
         return jsonError("No puedes borrar archivos de otro perfil", 403);
       }

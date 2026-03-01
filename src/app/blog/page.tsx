@@ -79,6 +79,11 @@ export default async function BlogIndexPage() {
             </article>
           ))}
         </div>
+        {!posts.length ? (
+          <section className="mt-6 rounded-3xl border border-black/10 bg-white p-6 text-sm text-zinc-700 shadow-sm">
+            No hay articulos publicados todavia.
+          </section>
+        ) : null}
       </PageShell>
     </>
   );
