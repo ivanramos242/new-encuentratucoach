@@ -73,12 +73,13 @@ async function postJson(url: string, payload: unknown) {
   return json;
 }
 
-async function uploadViaPresign(input: { file: File; scope: UploadScope }) {
+async function uploadViaPresign(input: { file: File; scope: UploadScope; coachProfileId?: string }) {
   const presign = (await postJson("/api/uploads/presign", {
     scope: input.scope,
     fileName: input.file.name,
     contentType: input.file.type,
     sizeBytes: input.file.size,
+    coachProfileId: input.coachProfileId,
   })) as {
     uploadUrl?: string;
     publicObjectUrl?: string | null;
@@ -101,8 +102,11 @@ async function uploadViaPresign(input: { file: File; scope: UploadScope }) {
   return { url: finalUrl, storageKey: presign.storageKey || null };
 }
 
-async function deleteUploadedObject(url: string) {
-  await postJson("/api/uploads/delete", { url });
+async function deleteUploadedObject(input: { url: string; coachProfileId?: string }) {
+  await postJson("/api/uploads/delete", {
+    url: input.url,
+    coachProfileId: input.coachProfileId,
+  });
 }
 
 function fieldInputClass(invalid = false) {
@@ -406,7 +410,7 @@ export function CoachProfileEditor({
     (initialProfile?.galleryAssets || []).map((a) => a.url).slice(0, 8),
   );
   const autoSaveInFlightRef = useRef(false);
-  const adminTargetProfileId = targetCoachProfileId || initialProfile?.id || undefined;
+  const editorTargetProfileId = targetCoachProfileId || initialProfile?.id || undefined;
   const linkValue = (type: string) => initialProfile?.links?.find((l) => l.type === type)?.value || "";
   const [form, setForm] = useState({
     name: initialProfile?.name || "",
@@ -590,7 +594,7 @@ export function CoachProfileEditor({
       ...(form.modePresencial ? (["presencial"] as const) : []),
     ];
     return {
-      coachProfileId: adminTargetProfileId,
+      coachProfileId: editorTargetProfileId,
       name: form.name,
       headline: form.headline || null,
       bio: form.bio || null,
@@ -668,7 +672,10 @@ export function CoachProfileEditor({
           profile?: { slug?: string | null };
         };
         setIsDirty(false);
-        const published = (await postJson("/api/coach-profile/publish", adminTargetProfileId ? { coachProfileId: adminTargetProfileId } : {})) as {
+        const published = (await postJson(
+          "/api/coach-profile/publish",
+          editorTargetProfileId ? { coachProfileId: editorTargetProfileId } : {},
+        )) as {
           profile?: { slug?: string | null };
         };
         const publicSlug = published.profile?.slug || saved.profile?.slug || initialProfile?.slug || null;
@@ -690,7 +697,11 @@ export function CoachProfileEditor({
     setUploading("hero");
     setStatus({ type: "idle", text: "" });
     try {
-      const uploaded = await uploadViaPresign({ file, scope: "coach_hero" });
+      const uploaded = await uploadViaPresign({
+        file,
+        scope: "coach_hero",
+        coachProfileId: editorTargetProfileId,
+      });
       setField("heroImageUrl", uploaded.url);
       setHeroPreviewSrc(URL.createObjectURL(file));
       setStatus({ type: "ok", text: "Imagen principal subida. Guarda el perfil para persistirla." });
@@ -707,7 +718,11 @@ export function CoachProfileEditor({
     setUploading("video");
     setStatus({ type: "idle", text: "" });
     try {
-      const uploaded = await uploadViaPresign({ file, scope: "coach_video" });
+      const uploaded = await uploadViaPresign({
+        file,
+        scope: "coach_video",
+        coachProfileId: editorTargetProfileId,
+      });
       setField("videoPresentationUrl", uploaded.url);
       setVideoPreviewSrc(URL.createObjectURL(file));
       setStatus({ type: "ok", text: "Video subido. Guarda el perfil para persistirlo." });
@@ -727,7 +742,11 @@ export function CoachProfileEditor({
       const urls: string[] = [];
       const localPreviews: string[] = [];
       for (const file of validFiles.slice(0, 8)) {
-        const uploaded = await uploadViaPresign({ file, scope: "coach_gallery" });
+        const uploaded = await uploadViaPresign({
+          file,
+          scope: "coach_gallery",
+          coachProfileId: editorTargetProfileId,
+        });
         urls.push(uploaded.url);
         localPreviews.push(URL.createObjectURL(file));
       }
@@ -768,7 +787,7 @@ export function CoachProfileEditor({
     if (!url) return;
     startTransition(async () => {
       try {
-        await deleteUploadedObject(url);
+        await deleteUploadedObject({ url, coachProfileId: editorTargetProfileId });
       } catch (error) {
         setStatus({
           type: "error",
@@ -787,7 +806,7 @@ export function CoachProfileEditor({
     if (!url) return;
     startTransition(async () => {
       try {
-        await deleteUploadedObject(url);
+        await deleteUploadedObject({ url, coachProfileId: editorTargetProfileId });
       } catch (error) {
         setStatus({
           type: "error",
@@ -806,7 +825,7 @@ export function CoachProfileEditor({
     if (!url) return;
     startTransition(async () => {
       try {
-        await deleteUploadedObject(url);
+        await deleteUploadedObject({ url, coachProfileId: editorTargetProfileId });
       } catch (error) {
         setStatus({
           type: "error",
@@ -1470,7 +1489,7 @@ export function CoachProfileEditor({
               </p>
             </div>
             <span className="rounded-2xl border border-indigo-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-900">
-              Perfil: {initialProfile?.id || adminTargetProfileId || "sin ID"}
+              Perfil: {initialProfile?.id || editorTargetProfileId || "sin ID"}
             </span>
           </div>
 
