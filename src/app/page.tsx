@@ -1,5 +1,6 @@
 import { HomePage } from "@/components/home/home-page";
 import { buildMetadata } from "@/lib/seo";
+import "./home-v4.css";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,7 @@ export const metadata = buildMetadata({
     "busco coach",
     "coach en madrid",
     "mejor coach madrid",
+    "alvaro maximo psicologo",
     "busco coach barcelona",
     "encontrar coach",
     "coach madrid precio",

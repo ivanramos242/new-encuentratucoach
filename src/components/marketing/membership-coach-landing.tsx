@@ -1,0 +1,708 @@
+"use client";
+
+import Link from "next/link";
+import Image from "next/image";
+import { useEffect } from "react";
+
+type MembershipCoachLandingProps = {
+  annualPrice: string;
+  joinHref: string;
+  joinLabel: string;
+  monthlyPrice: string;
+};
+
+export function MembershipCoachLanding({ annualPrice, joinHref, joinLabel, monthlyPrice }: MembershipCoachLandingProps) {
+  useEffect(() => {
+    const root = document.getElementById("etcLanding");
+    if (!root) return;
+
+    const sticky = document.getElementById("etcSticky");
+    const hero = root.querySelector(".hero");
+
+    const showSticky = () => {
+      if (!sticky || !hero) return;
+      const rect = hero.getBoundingClientRect();
+      sticky.style.display = rect.bottom < -30 ? "block" : "none";
+    };
+
+    const tocLinks = Array.from(root.querySelectorAll<HTMLAnchorElement>('.toc a[href^="#"]'));
+    const sections = tocLinks
+      .map((a) => root.querySelector(a.getAttribute("href") ?? ""))
+      .filter((item): item is Element => !!item);
+
+    const setActiveToc = () => {
+      let currentId: string | null = null;
+      for (const section of sections) {
+        const r = section.getBoundingClientRect();
+        if (r.top <= 120 && r.bottom >= 120) {
+          currentId = section.id;
+          break;
+        }
+      }
+      tocLinks.forEach((a) => {
+        const id = (a.getAttribute("href") ?? "").replace("#", "");
+        a.setAttribute("aria-current", id === currentId ? "true" : "false");
+      });
+    };
+
+    const revealEls = Array.from(
+      root.querySelectorAll(
+        ".hero-grid > *, .toc, section > .section-head, .section-card, .card, .compare-card, .adv-card, .step, .pricebox, details, .contact-card",
+      ),
+    );
+    revealEls.forEach((el, index) => {
+      el.classList.add("reveal");
+      (el as HTMLElement).style.setProperty("--d", `${Math.min((index % 6) * 70, 280)}ms`);
+    });
+
+    const prefersReducedMotion =
+      typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+    let io: IntersectionObserver | null = null;
+    if (prefersReducedMotion || typeof window === "undefined" || !("IntersectionObserver" in window)) {
+      revealEls.forEach((el) => el.classList.add("is-in"));
+    } else {
+      io = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (!entry.isIntersecting) continue;
+            entry.target.classList.add("is-in");
+            io?.unobserve(entry.target);
+          }
+        },
+        { threshold: 0.15, rootMargin: "0px 0px -10% 0px" },
+      );
+      revealEls.forEach((el) => io?.observe(el));
+    }
+
+    window.addEventListener("scroll", showSticky, { passive: true });
+    window.addEventListener("scroll", setActiveToc, { passive: true });
+    showSticky();
+    setActiveToc();
+
+    return () => {
+      window.removeEventListener("scroll", showSticky);
+      window.removeEventListener("scroll", setActiveToc);
+      io?.disconnect();
+    };
+  }, []);
+
+  return (
+    <div className="etc-coach-landing" id="etcLanding">
+      <div className="wrap">
+        <section className="hero" aria-label="Introduccion">
+          <div className="hero-grid">
+            <div>
+              <div className="kicker">
+                <span>Guia + estrategia</span>
+                <span style={{ opacity: 0.55 }}>-</span>
+                <span>
+                  <b>SEO</b> para coaches
+                </span>
+                <span style={{ opacity: 0.55 }}>-</span>
+                <span>Enfoque conversion</span>
+              </div>
+
+              <h1 className="hero-title">
+                Plataformas para trabajar como coach: como elegir y captar clientes en una plataforma de coaching online
+              </h1>
+
+              <p className="hero-lead">
+                Si eres coach y quieres crecer, una buena <strong>plataforma de coaching</strong> te da visibilidad,
+                confianza con resenas y contactos con intencion real de compra. Esta guia de{" "}
+                <strong>plataformas para trabajar como coach</strong> esta orientada a conversion.
+              </p>
+
+              <div className="hero-cta">
+                <a className="btn primary" href="#etc-membresia" aria-label="Ver beneficios y precio">
+                  Ver beneficios y precio
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M12 5v14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    <path d="m19 12-7 7-7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </a>
+                <a className="btn" href="#etc-ventajas" aria-label="Ver ventajas">
+                  Ver 8 ventajas
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M12 5v14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    <path d="m19 12-7 7-7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </a>
+                <Link className="btn" href="/coaches" aria-label="Ver directorio de coaches">
+                  Ver directorio
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    <path d="m13 5 7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </Link>
+              </div>
+
+              <div className="micro" aria-label="Beneficios clave">
+                <div className="item">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path
+                      d="M20 7 10 17l-5-5"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  <span>Sin comision por cliente</span>
+                </div>
+                <div className="item">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M12 20a8 8 0 1 0-8-8 8 8 0 0 0 8 8Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    <path d="M12 8v4l3 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                  <span>Mas visibilidad y leads</span>
+                </div>
+                <div className="item">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path
+                      d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <span>Mensajeria interna</span>
+                </div>
+                <Link className="item" href="/coaches" aria-label="Ir al directorio de coaches">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    <path d="M20 21a8 8 0 1 0-16 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                  <span>Ejemplos de perfiles</span>
+                </Link>
+              </div>
+            </div>
+
+            <aside className="hero-card" aria-label="Vista previa">
+              <div className="inner">
+                <div className="preview">
+                  <div className="top">
+                    <span className="badge">
+                      <small>-</small> Perfil profesional
+                    </span>
+                    <span className="badge">
+                      <small>-</small> Estadisticas
+                    </span>
+                  </div>
+
+                  <div className="body">
+                    <div className="grid2">
+                      <div className="stat">
+                        <b>+ Visibilidad</b>
+                        <span>Directorio + SEO</span>
+                      </div>
+                      <div className="stat">
+                        <b>+ Confianza</b>
+                        <span>Resenas verificables</span>
+                      </div>
+                    </div>
+
+                    <div className="note">Asi se ve un perfil dentro de un directorio de coaches:</div>
+
+                    <div className="mock-img">
+                      <Image
+                        src="https://encuentratucoach.es/wp-content/uploads/2026/01/descarga.png"
+                        alt="Ejemplo de perfil de coach en EncuentraTuCoach con especialidad, precio y ubicacion"
+                        loading="lazy"
+                        width={900}
+                        height={900}
+                        sizes="(max-width: 980px) 100vw, 520px"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </aside>
+          </div>
+
+          <div className="toc section-card" id="etc-indice" aria-label="Indice">
+            <strong>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ color: "var(--brand-1)", height: 18, width: 18 }}>
+                <path d="M8 6h13M8 12h13M8 18h13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                <path d="M3 6h.01M3 12h.01M3 18h.01" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+              </svg>
+              Indice (SEO + lectura rapida)
+            </strong>
+            <ul>
+              <li><a href="#etc-que-es">Que es una plataforma para coaches</a></li>
+              <li><a href="#etc-tipos">Tipos de plataformas (comparativa)</a></li>
+              <li><a href="#etc-ventajas">Ventajas de EncuentraTuCoach (8)</a></li>
+              <li><a href="#etc-como-funciona">Como funciona en 3 pasos</a></li>
+              <li><a href="#etc-membresia">Precio y que incluye</a></li>
+              <li><a href="#etc-guia">Guia + checklist SEO/ventas</a></li>
+              <li><a href="#etc-faq">FAQs</a></li>
+              <li><a href="#etc-contacto">Contacto</a></li>
+            </ul>
+          </div>
+        </section>
+
+        <section id="etc-que-es" aria-label="Que es una plataforma para coaches">
+          <div className="section-head">
+            <div>
+              <h2 className="h2">Que es una plataforma para trabajar como coach</h2>
+              <div className="sub">
+                Las <strong>plataformas para trabajar como coach</strong> mas rentables suelen combinar{" "}
+                <strong>trafico SEO</strong>, <strong>confianza con resenas</strong> y <strong>contacto directo</strong>.
+                Si buscas ventas, prioriza una <strong>plataforma especializada</strong>.
+              </div>
+            </div>
+          </div>
+
+          <div className="grid cols-3">
+            <div className="card">
+              <div className="icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M4 6h16v12H4z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  <path d="M8 10h8M8 14h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </div>
+              <h3>Directorio / marketplace</h3>
+              <p>Te encuentran buscando coach por ciudad o especialidad. Es el canal mas cercano a la compra.</p>
+            </div>
+
+            <div className="card">
+              <div className="icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M7 3v4M17 3v4M4 9h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  <path d="M6 5h12a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" stroke="currentColor" strokeWidth="2" />
+                </svg>
+              </div>
+              <h3>Herramientas de gestion</h3>
+              <p>Agenda y pagos mejoran eficiencia, pero sin trafico no escalan ventas.</p>
+            </div>
+
+            <div className="card">
+              <div className="icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  <path d="M20 21a8 8 0 1 0-16 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  <path d="M18 8h4M20 6v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </div>
+              <h3>Comunidad / networking</h3>
+              <p>Funciona mejor cuando ya tienes posicionamiento y perfil optimizado.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="etc-tipos" aria-label="Tipos de plataformas para coaches">
+          <div className="section-head">
+            <div>
+              <h2 className="h2">Tipos de plataformas para coaches (comparativa rapida)</h2>
+              <div className="sub">Elige segun tu objetivo principal: captacion o gestion.</div>
+            </div>
+          </div>
+          <div className="section-card compare">
+            <div className="compare-grid">
+              <div className="compare-card recommend">
+                <div className="compare-head">
+                  <div className="chip"><b>Recomendado</b> para ventas</div>
+                  <div className="chip">Captacion: <b>Alta</b></div>
+                </div>
+                <div className="compare-body">
+                  <h3 style={{ fontWeight: 950, margin: 0 }}>Directorio especializado (EncuentraTuCoach)</h3>
+                  <div className="mini">Ideal para trabajar como coach online con SEO, resenas y contacto directo.</div>
+                  <ul className="compare-list">
+                    <li><strong>Pros:</strong> trafico SEO, prueba social y contacto directo.</li>
+                    <li><strong>Mejor para:</strong> coach online y coach por ciudad/especialidad.</li>
+                    <li><strong>Clave:</strong> perfil con propuesta de valor + CTA + resenas.</li>
+                  </ul>
+                </div>
+                <div className="compare-cta">
+                  <div className="hint">Accion rapida: mira el directorio y replica los mejores perfiles.</div>
+                  <Link className="btn primary" href="/coaches">Ver directorio de coaches</Link>
+                </div>
+              </div>
+
+              <div className="compare-card">
+                <div className="compare-head">
+                  <div className="chip">Eficiencia: <b>Alta</b></div>
+                  <div className="chip">Captacion: <b>Baja</b></div>
+                </div>
+                <div className="compare-body">
+                  <h3 style={{ fontWeight: 950, margin: 0 }}>Suite de herramientas (agenda / pagos)</h3>
+                  <div className="mini">Perfecta si ya tienes trafico y quieres operar mejor.</div>
+                  <ul className="compare-list">
+                    <li><strong>Pros:</strong> menos no-shows y procesos.</li>
+                    <li><strong>Contras:</strong> no suele traer clientes por si misma.</li>
+                    <li><strong>Clave:</strong> combinar con una plataforma especializada.</li>
+                  </ul>
+                </div>
+                <div className="compare-cta">
+                  <div className="hint">Si tu foco es vender, empieza por captacion.</div>
+                  <a className="btn" href="#etc-membresia">Ver membresia</a>
+                </div>
+              </div>
+
+              <div className="compare-card">
+                <div className="compare-head">
+                  <div className="chip">Volumen: <b>Medio</b></div>
+                  <div className="chip">Marca: <b>Limitada</b></div>
+                </div>
+                <div className="compare-body">
+                  <h3 style={{ fontWeight: 950, margin: 0 }}>Plataforma corporativa</h3>
+                  <div className="mini">Util para acceso a empresas, pero con menos control de branding.</div>
+                  <ul className="compare-list">
+                    <li><strong>Pros:</strong> estabilidad si hay flujo constante.</li>
+                    <li><strong>Contras:</strong> menos control de oferta.</li>
+                    <li><strong>Clave:</strong> canal extra, no unico.</li>
+                  </ul>
+                </div>
+                <div className="compare-cta">
+                  <div className="hint">Complementario si ya tienes posicionamiento.</div>
+                  <a className="btn" href="#etc-guia">Ver checklist</a>
+                </div>
+              </div>
+
+              <div className="compare-card">
+                <div className="compare-head">
+                  <div className="chip">Autoridad: <b>Alta</b></div>
+                  <div className="chip">Cierre: <b>Medio</b></div>
+                </div>
+                <div className="compare-body">
+                  <h3 style={{ fontWeight: 950, margin: 0 }}>Comunidad / formacion</h3>
+                  <div className="mini">Buena para networking y aprendizaje, pero la venta depende de tu marca.</div>
+                  <ul className="compare-list">
+                    <li><strong>Pros:</strong> soporte, metodo y colaboraciones.</li>
+                    <li><strong>Contras:</strong> no asegura demanda.</li>
+                    <li><strong>Clave:</strong> combinar con SEO transaccional.</li>
+                  </ul>
+                </div>
+                <div className="compare-cta">
+                  <div className="hint">Si quieres cierre, reduce friccion en tu perfil.</div>
+                  <a className="btn" href="#etc-ventajas">Ver ventajas</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="etc-ventajas" aria-label="Ventajas de EncuentraTuCoach">
+          <div className="section-head">
+            <div>
+              <h2 className="h2">Ventajas de unirte a EncuentraTuCoach (8 razones)</h2>
+              <div className="sub">
+                En plataformas para trabajar como coach, lo que convierte es <strong>visibilidad</strong> +{" "}
+                <strong>confianza</strong> + <strong>contacto directo</strong>.
+              </div>
+            </div>
+            <a className="btn primary" href="#etc-membresia" aria-label="Ver membresia">Ver precio</a>
+          </div>
+
+          <div className="adv-grid" aria-label="Lista de 8 ventajas">
+            {[
+              ["Portal de coaches", "Perfil con propuesta clara, especialidad, ubicacion, precio y CTA."],
+              ["Promociones y anuncios", "Impulso de visibilidad para captar demanda y no depender solo de redes."],
+              ["Valoraciones", "Prueba social visible para aumentar conversiones en coach online."],
+              ["Comunicacion directa", "Mensajeria para responder rapido y cerrar antes."],
+              ["Estadisticas de perfil", "Datos para mejorar CTR y conversion por nicho."],
+              ["Networking profesional", "Colaboraciones y referidos para conseguir clientes como coach."],
+              ["Sin comisiones", "Tu margen no se reduce por cliente."],
+              ["Descuentos por miembro", "Beneficios en servicios habituales para coaches."],
+            ].map(([title, text], index) => (
+              <div className="adv-card" key={title}>
+                <span className="num" aria-hidden="true">{index + 1}</span>
+                <div className="adv-title">
+                  <div className="icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path d="M4 5h16v14H4z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                      <path d="M8 9h8M8 13h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  </div>
+                  <h3>{title}</h3>
+                </div>
+                <p>{text}</p>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ marginTop: 16 }} className="section-card">
+            <article>
+              <div className="callout">
+                <b>Conversion:</b> el camino mas corto es <b>ver ventajas - ver precio - unirse</b>. Por eso repetimos
+                CTA y reducimos friccion.
+              </div>
+              <a className="btn primary" href="#etc-membresia" style={{ justifyContent: "center", width: "100%" }}>
+                Quiero unirme y crear mi perfil
+              </a>
+            </article>
+          </div>
+        </section>
+
+        <section id="etc-como-funciona" aria-label="Como funciona">
+          <div className="section-head">
+            <div>
+              <h2 className="h2">Como funciona en 3 pasos</h2>
+              <div className="sub">Simple y orientado a resultados: perfil listo, contacto y seguimiento.</div>
+            </div>
+          </div>
+
+          <div className="steps">
+            <div className="step">
+              <h3>Unete como profesional</h3>
+              <p>Activa tu cuenta de coach.</p>
+            </div>
+            <div className="step">
+              <h3>Optimiza tu perfil</h3>
+              <p>Especialidad clara, propuesta en 1 frase y CTA.</p>
+            </div>
+            <div className="step">
+              <h3>Recibe solicitudes</h3>
+              <p>Mensajeria + resenas + estadisticas para mejorar conversion mes a mes.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="etc-membresia" aria-label="Membresia">
+          <div className="section-head">
+            <div>
+              <h2 className="h2">Membresia para coaches</h2>
+              <div className="sub">
+                Precio claro y beneficios claros. Ideal para trabajar como coach online en plataforma especializada.
+              </div>
+            </div>
+          </div>
+
+          <div className="pricing">
+            <div className="pricebox" aria-label="Precio">
+              <div className="headline">
+                <span className="badge"><small>-</small> Plan principal (todo incluido)</span>
+              </div>
+
+              <div className="price">
+                {monthlyPrice} <span style={{ fontSize: "1.05rem", fontWeight: 950 }}>/mes</span>
+                <small>o {annualPrice} /ano</small>
+              </div>
+
+              <ul className="features">
+                <li>
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M20 7 10 17l-5-5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  Perfil profesional en el directorio de coaches (especialidad + ciudad + online)
+                </li>
+                <li>
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M20 7 10 17l-5-5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  Contacto directo con clientes (sin comisiones por cliente)
+                </li>
+                <li>
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M20 7 10 17l-5-5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  Resenas para elevar confianza y conversion
+                </li>
+                <li>
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M20 7 10 17l-5-5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  Estadisticas para mejorar resultados
+                </li>
+                <li>
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M20 7 10 17l-5-5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  Comunidad y networking (referidos)
+                </li>
+              </ul>
+
+              <div className="price-actions">
+                <Link className="btn primary" href={joinHref} style={{ flex: 1 }} aria-label={joinLabel}>
+                  {joinLabel}
+                </Link>
+                <Link className="btn" href="/coaches" style={{ flex: 1 }} aria-label="Ver directorio de coaches">
+                  Ver directorio
+                </Link>
+              </div>
+
+              <div className="fine">
+                Tip SEO: usa variaciones como <strong>plataformas para trabajar como coach</strong>,{" "}
+                <strong>coach online</strong>, <strong>coach en ciudad</strong> y tu especialidad.
+              </div>
+            </div>
+
+            <div className="section-card" aria-label="Resumen">
+              <article>
+                <h3>Para quien es esta membresia</h3>
+                <p>
+                  Para coaches que quieren un canal estable de captacion. Si comparas{" "}
+                  <strong>plataformas para trabajar como coach</strong>, prioriza SEO, resenas y contacto directo.
+                </p>
+
+                <div className="callout">
+                  <b>Accion recomendada:</b> abre el{" "}
+                  <Link href="/coaches" style={{ textDecoration: "underline", textUnderlineOffset: 3 }}>
+                    directorio de coaches
+                  </Link>{" "}
+                  e identifica los perfiles mas completos.
+                </div>
+
+                <h3>Que optimiza mas tu conversion</h3>
+                <ul>
+                  <li>Headline: Coach de nicho para tipo de cliente.</li>
+                  <li>3 bullets: problema - metodo - resultado.</li>
+                  <li>Oferta simple: sesion + pack.</li>
+                  <li>Resenas visibles y actuales.</li>
+                </ul>
+
+                <Link className="btn primary" href={joinHref} style={{ justifyContent: "center", width: "100%" }}>
+                  {joinLabel}
+                </Link>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section id="etc-guia" aria-label="Guia completa">
+          <div className="section-head">
+            <div>
+              <h2 className="h2">Guia: como elegir plataformas para trabajar como coach (SEO + ventas)</h2>
+              <div className="sub">
+                Bloque optimizado para captar coaches con keywords comerciales sin perder intencion transaccional.
+              </div>
+            </div>
+          </div>
+          <div className="section-card">
+            <article>
+              <h3>1) Elige segun tu objetivo: clientes o eficiencia</h3>
+              <p>
+                Si tu prioridad es vender, necesitas una plataforma de coaching con SEO y demanda con intencion. Si
+                eliges solo herramientas, mejoras gestion pero no captacion.
+              </p>
+              <h3>2) Senales de una plataforma que convierte</h3>
+              <ul>
+                <li><strong>SEO:</strong> paginas por especialidad y ciudad.</li>
+                <li><strong>Prueba social:</strong> resenas visibles.</li>
+                <li><strong>Contacto directo:</strong> menos pasos, mas cierres.</li>
+                <li><strong>Perfil con estructura:</strong> propuesta + CTA + oferta.</li>
+                <li><strong>Medicion:</strong> estadisticas para iterar.</li>
+              </ul>
+              <div className="callout">
+                <b>Regla:</b> si no entienden en 5 segundos que haces y como contactarte, pierdes conversion.
+              </div>
+              <h3>3) Keywords para tu perfil</h3>
+              <ul>
+                <li>plataformas para trabajar como coach</li>
+                <li>plataformas especializadas</li>
+                <li>plataforma coaching online</li>
+                <li>trabajar como coach online</li>
+                <li>plataforma de coaching en linea</li>
+                <li>plataforma de coaching</li>
+                <li>trabajar como coach</li>
+              </ul>
+              <a className="btn primary" href="#etc-membresia" style={{ justifyContent: "center", width: "100%" }}>
+                Ver precio y unirme ahora
+              </a>
+            </article>
+          </div>
+        </section>
+
+        <section id="etc-faq" aria-label="Preguntas frecuentes">
+          <div className="section-head">
+            <div>
+              <h2 className="h2">FAQs</h2>
+              <div className="sub">Respuestas para eliminar objeciones y aumentar conversion.</div>
+            </div>
+          </div>
+          <div className="section-card faq">
+            <details>
+              <summary>
+                <div className="q">
+                  <span>Si trabajo con EncuentraTuCoach, mis clientes siguen siendo mios?</span>
+                  <svg className="chev" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </div>
+              </summary>
+              <p>Si. La plataforma te da visibilidad y herramientas, pero tu gestionas tu relacion profesional.</p>
+            </details>
+
+            <details>
+              <summary>
+                <div className="q">
+                  <span>Puedo seguir desarrollando mi marca propia?</span>
+                  <svg className="chev" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </div>
+              </summary>
+              <p>Si. Puedes usar el directorio como canal adicional mientras construyes tu marca.</p>
+            </details>
+
+            <details>
+              <summary>
+                <div className="q">
+                  <span>Cobrais comision por los clientes?</span>
+                  <svg className="chev" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </div>
+              </summary>
+              <p>No. Tu defines tus honorarios y el cliente te contacta directamente.</p>
+            </details>
+
+            <details>
+              <summary>
+                <div className="q">
+                  <span>Que hago si no tengo resenas todavia?</span>
+                  <svg className="chev" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </div>
+              </summary>
+              <p>Empieza con 3 a 5 testimonios reales y pide resena al finalizar cada proceso.</p>
+            </details>
+          </div>
+        </section>
+
+        <section id="etc-contacto" aria-label="Contacto">
+          <div className="section-head">
+            <div>
+              <h2 className="h2">Contacto y acciones rapidas</h2>
+              <div className="sub">
+                Si ya decidiste trabajar como coach en una plataforma especializada, este es el siguiente paso.
+              </div>
+            </div>
+          </div>
+          <div className="section-card contact-grid">
+            <div className="contact-card">
+              <h3>Crear cuenta coach</h3>
+              <p>Activa tu cuenta y publica tu perfil.</p>
+              <Link className="btn primary" href={joinHref}>{joinLabel}</Link>
+            </div>
+            <div className="contact-card">
+              <h3>Ver perfiles que convierten</h3>
+              <p>Analiza la estructura de perfiles para replicar la oferta.</p>
+              <Link className="btn" href="/coaches">Ir al directorio</Link>
+            </div>
+            <div className="contact-card">
+              <h3>Hablar con el equipo</h3>
+              <p>Resuelve dudas de membresia, onboarding y posicionamiento.</p>
+              <Link className="btn" href="/contacto">Contactar</Link>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div className="sticky-cta" id="etcSticky" aria-label="Accion rapida">
+        <div className="bar">
+          <div className="txt">
+            <b>Listo para captar clientes como coach?</b>
+            <span>
+              Membresia: {monthlyPrice}/mes o {annualPrice}/ano (sin comision por cliente)
+            </span>
+          </div>
+          <Link className="btn primary" href={joinHref} aria-label={joinLabel}>
+            {joinLabel}
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
