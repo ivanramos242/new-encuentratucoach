@@ -16,6 +16,11 @@ type RegisterInput = {
   role: UserRole;
 };
 
+type AdminCreateCoachUserInput = {
+  email: string;
+  displayName?: string | null;
+};
+
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
 }
@@ -84,6 +89,52 @@ export async function registerUser(input: RegisterInput) {
       role: result.user.role,
       displayName: result.user.displayName,
       coachProfileId: result.coachProfileId,
+    },
+  };
+}
+
+export async function createCoachUserByAdmin(input: AdminCreateCoachUserInput) {
+  const email = normalizeEmail(input.email);
+  if (!email) {
+    return { error: "Email invalido." as const, code: "INVALID_EMAIL" as const };
+  }
+
+  const existing = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+  if (existing) {
+    return { error: "Ya existe una cuenta con ese email." as const, code: "EMAIL_EXISTS" as const };
+  }
+
+  // Temporary password is never shown. Access is unlocked only after reset.
+  const temporaryPassword = randomBytes(24).toString("base64url");
+  const passwordHash = await hashPassword(temporaryPassword);
+  const displayName = input.displayName?.trim() || null;
+
+  const user = await prisma.user.create({
+    data: {
+      email,
+      passwordHash,
+      displayName,
+      role: "coach",
+      isActive: true,
+      mustResetPassword: true,
+    },
+    select: {
+      id: true,
+      email: true,
+      displayName: true,
+      role: true,
+      isActive: true,
+      mustResetPassword: true,
+    },
+  });
+
+  const reset = await createPasswordResetRequest(email);
+
+  return {
+    user,
+    reset: {
+      delivered: reset.delivered,
+      debugResetUrl: reset.debugResetUrl,
     },
   };
 }
