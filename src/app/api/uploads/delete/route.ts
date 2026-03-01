@@ -26,7 +26,17 @@ export async function POST(request: Request) {
     const parsed = schema.safeParse(body);
     if (!parsed.success) return jsonError("Payload invalido", 400, { issues: parsed.error.flatten() });
 
-    const { bucket, key } = parsePublicObjectUrl(parsed.data.url);
+    let bucket: string;
+    let key: string;
+    try {
+      ({ bucket, key } = parsePublicObjectUrl(parsed.data.url));
+    } catch {
+      // Legacy/external URL: do not fail. Caller can still detach it from profile.
+      return jsonOk({
+        message: "URL externa o no gestionada por este storage. Se omite borrado fisico.",
+        skipped: true,
+      });
+    }
     const requestedCoachProfileId = parsed.data.coachProfileId?.trim() || undefined;
     let effectiveCoachProfileId = requestedCoachProfileId || auth.user.coachProfileId || null;
 
@@ -52,7 +62,10 @@ export async function POST(request: Request) {
     const isCoachMedia = key.startsWith("coach-media/");
     const isBlogMedia = key.startsWith("blog-media/");
     if (!isCoachMedia && !isBlogMedia) {
-      return jsonError("Solo se permite borrar archivos de media conocidos", 400);
+      return jsonOk({
+        message: "Objeto fuera de los prefijos gestionados. Se omite borrado fisico.",
+        skipped: true,
+      });
     }
 
     if (isBlogMedia && auth.user.role !== "admin") {
