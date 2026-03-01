@@ -786,18 +786,21 @@ export function CoachProfileEditor({
     const url = form.heroImageUrl.trim();
     if (!url) return;
     startTransition(async () => {
+      let storageErrorText: string | null = null;
       try {
         await deleteUploadedObject({ url, coachProfileId: editorTargetProfileId });
       } catch (error) {
-        setStatus({
-          type: "error",
-          text: error instanceof Error ? `No se pudo eliminar en storage: ${error.message}` : "No se pudo eliminar la imagen",
-        });
-        return;
+        storageErrorText =
+          error instanceof Error ? `No se pudo eliminar en storage: ${error.message}` : "No se pudo eliminar la imagen";
       }
       setField("heroImageUrl", "");
       setHeroPreviewSrc(null);
-      setStatus({ type: "ok", text: "Imagen principal eliminada. Guarda el perfil para persistir el cambio." });
+      setStatus({
+        type: storageErrorText ? "error" : "ok",
+        text: storageErrorText
+          ? `${storageErrorText}. La imagen se quito del perfil; guarda para persistir.`
+          : "Imagen principal eliminada. Guarda el perfil para persistir el cambio.",
+      });
     });
   }
 
@@ -805,18 +808,21 @@ export function CoachProfileEditor({
     const url = form.videoPresentationUrl.trim();
     if (!url) return;
     startTransition(async () => {
+      let storageErrorText: string | null = null;
       try {
         await deleteUploadedObject({ url, coachProfileId: editorTargetProfileId });
       } catch (error) {
-        setStatus({
-          type: "error",
-          text: error instanceof Error ? `No se pudo eliminar en storage: ${error.message}` : "No se pudo eliminar el video",
-        });
-        return;
+        storageErrorText =
+          error instanceof Error ? `No se pudo eliminar en storage: ${error.message}` : "No se pudo eliminar el video";
       }
       setField("videoPresentationUrl", "");
       setVideoPreviewSrc(null);
-      setStatus({ type: "ok", text: "Video eliminado. Guarda el perfil para persistir el cambio." });
+      setStatus({
+        type: storageErrorText ? "error" : "ok",
+        text: storageErrorText
+          ? `${storageErrorText}. El video se quito del perfil; guarda para persistir.`
+          : "Video eliminado. Guarda el perfil para persistir el cambio.",
+      });
     });
   }
 
@@ -824,20 +830,22 @@ export function CoachProfileEditor({
     const url = galleryUrlsList[index];
     if (!url) return;
     startTransition(async () => {
+      let storageErrorText: string | null = null;
       try {
         await deleteUploadedObject({ url, coachProfileId: editorTargetProfileId });
       } catch (error) {
-        setStatus({
-          type: "error",
-          text:
-            error instanceof Error
-              ? `No se pudo eliminar en storage: ${error.message}`
-              : "No se pudo eliminar la imagen de galeria",
-        });
-        return;
+        storageErrorText =
+          error instanceof Error
+            ? `No se pudo eliminar en storage: ${error.message}`
+            : "No se pudo eliminar la imagen de galeria";
       }
       removeGalleryAt(index);
-      setStatus({ type: "ok", text: "Imagen de galeria eliminada. Guarda el perfil para persistir el cambio." });
+      setStatus({
+        type: storageErrorText ? "error" : "ok",
+        text: storageErrorText
+          ? `${storageErrorText}. La imagen se quito del perfil; guarda para persistir.`
+          : "Imagen de galeria eliminada. Guarda el perfil para persistir el cambio.",
+      });
     });
   }
 
