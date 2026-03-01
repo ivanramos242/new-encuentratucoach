@@ -57,6 +57,14 @@ type LinkApiErr = {
 type LinkApiResponse = LinkApiOk | LinkApiErr;
 type CoachMutationResponse = LinkApiResponse;
 type CreateCoachResponse = LinkApiResponse;
+type CreateCoachUserApiOk = {
+  ok: true;
+  message: string;
+  user: CoachUserLinkerUserOption;
+  resetEmailDelivered: boolean;
+  debugResetUrl?: string;
+};
+type CreateCoachUserResponse = CreateCoachUserApiOk | LinkApiErr;
 
 function fmtDate(iso: string) {
   try {
@@ -78,16 +86,25 @@ function userLabel(user: CoachUserLinkerUserOption) {
 
 export function CoachUserLinker({
   coaches: initialCoaches,
-  users,
+  users: initialUsers,
 }: {
   coaches: CoachUserLinkerCoachRow[];
   users: CoachUserLinkerUserOption[];
 }) {
   const [coaches, setCoaches] = useState(initialCoaches);
+  const [users, setUsers] = useState(initialUsers);
   const [createName, setCreateName] = useState("");
   const [createSlug, setCreateSlug] = useState("");
   const [createBusy, setCreateBusy] = useState(false);
   const [createFeedback, setCreateFeedback] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
+  const [createUserEmail, setCreateUserEmail] = useState("");
+  const [createUserDisplayName, setCreateUserDisplayName] = useState("");
+  const [createUserBusy, setCreateUserBusy] = useState(false);
+  const [createUserFeedback, setCreateUserFeedback] = useState<{
+    kind: "ok" | "error";
+    text: string;
+    debugResetUrl?: string;
+  } | null>(null);
   const [filterText, setFilterText] = useState("");
   const [onlyUnlinked, setOnlyUnlinked] = useState(true);
   const [draftUserIdByCoachId, setDraftUserIdByCoachId] = useState<Record<string, string>>(
@@ -109,6 +126,13 @@ export function CoachUserLinker({
       return prev.map((coach) => (coach.id === nextCoach.id ? nextCoach : coach));
     });
     setDraftUserIdByCoachId((prev) => ({ ...prev, [nextCoach.id]: nextCoach.owner?.id ?? "" }));
+  }
+
+  function addUserOption(nextUser: CoachUserLinkerUserOption) {
+    setUsers((prev) => {
+      if (prev.some((user) => user.id === nextUser.id)) return prev;
+      return [...prev, nextUser].sort((a, b) => a.email.localeCompare(b.email, "es", { sensitivity: "base" }));
+    });
   }
 
   const filtered = coaches.filter((coach) => {
@@ -271,6 +295,52 @@ export function CoachUserLinker({
     }
   }
 
+  async function createCoachUser(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const email = createUserEmail.trim();
+    if (!email) {
+      setCreateUserFeedback({ kind: "error", text: "El email es obligatorio." });
+      return;
+    }
+
+    setCreateUserBusy(true);
+    setCreateUserFeedback(null);
+    try {
+      const response = await fetch("/api/admin/coaches/create-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          displayName: createUserDisplayName.trim() || undefined,
+        }),
+      });
+      const data = (await response.json()) as CreateCoachUserResponse;
+      if (!response.ok || !data.ok) {
+        setCreateUserFeedback({
+          kind: "error",
+          text: data.message || "No se pudo crear el usuario coach.",
+        });
+        return;
+      }
+
+      addUserOption(data.user);
+      setCreateUserEmail("");
+      setCreateUserDisplayName("");
+      setCreateUserFeedback({
+        kind: "ok",
+        text: data.message,
+        debugResetUrl: data.debugResetUrl,
+      });
+    } catch (error) {
+      setCreateUserFeedback({
+        kind: "error",
+        text: error instanceof Error ? error.message : "Error de red al crear el usuario coach.",
+      });
+    } finally {
+      setCreateUserBusy(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
@@ -322,6 +392,65 @@ export function CoachUserLinker({
               }
             >
               {createFeedback.text}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4">
+          <h3 className="text-sm font-black tracking-tight text-emerald-950">Crear usuario coach (solo email)</h3>
+          <p className="mt-1 text-xs leading-5 text-emerald-900">
+            Se crea una cuenta coach con cambio obligatorio de contrasena en el primer acceso (una sola vez).
+          </p>
+
+          <form
+            className="mt-3 grid gap-2 md:grid-cols-[1fr_1fr_auto]"
+            onSubmit={(event) => void createCoachUser(event)}
+          >
+            <input
+              type="email"
+              value={createUserEmail}
+              onChange={(event) => setCreateUserEmail(event.target.value)}
+              placeholder="email@dominio.com"
+              className="rounded-xl border border-black/15 bg-white px-3 py-2 text-sm"
+              maxLength={190}
+              required
+            />
+            <input
+              type="text"
+              value={createUserDisplayName}
+              onChange={(event) => setCreateUserDisplayName(event.target.value)}
+              placeholder="Nombre visible (opcional)"
+              className="rounded-xl border border-black/15 bg-white px-3 py-2 text-sm"
+              maxLength={120}
+            />
+            <button
+              type="submit"
+              disabled={createUserBusy}
+              className="rounded-xl bg-emerald-800 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+            >
+              {createUserBusy ? "Creando..." : "Crear usuario coach"}
+            </button>
+          </form>
+
+          {createUserFeedback ? (
+            <div
+              className={
+                createUserFeedback.kind === "ok"
+                  ? "mt-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800"
+                  : "mt-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+              }
+            >
+              <div>{createUserFeedback.text}</div>
+              {createUserFeedback.debugResetUrl ? (
+                <a
+                  href={createUserFeedback.debugResetUrl}
+                  className="mt-1 inline-flex text-xs font-semibold underline"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Enlace de recuperacion (dev)
+                </a>
+              ) : null}
             </div>
           ) : null}
         </div>
