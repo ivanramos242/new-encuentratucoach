@@ -32,6 +32,19 @@ function startsWithAny(pathname: string, prefixes: string[]) {
 
 function getTrustedOrigins(request: NextRequest) {
   const origins = new Set<string>([request.nextUrl.origin]);
+
+  const forwardedProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
+  const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+  if (forwardedProto && forwardedHost) {
+    origins.add(`${forwardedProto}://${forwardedHost}`);
+  }
+
+  const host = request.headers.get("host")?.trim();
+  const protoFromHost = forwardedProto || request.nextUrl.protocol.replace(":", "");
+  if (host && protoFromHost) {
+    origins.add(`${protoFromHost}://${host}`);
+  }
+
   const configured = process.env.ALLOWED_APP_ORIGINS ?? process.env.NEXT_PUBLIC_SITE_URL ?? "";
   for (const raw of configured.split(",")) {
     const value = raw.trim();
@@ -43,6 +56,11 @@ function getTrustedOrigins(request: NextRequest) {
     }
   }
   return origins;
+}
+
+function isLikelySameSiteRequest(request: NextRequest) {
+  const fetchSite = request.headers.get("sec-fetch-site")?.trim().toLowerCase();
+  return fetchSite === "same-origin" || fetchSite === "same-site" || fetchSite === "none";
 }
 
 function originFromHeaders(request: NextRequest) {
@@ -81,6 +99,16 @@ export function middleware(request: NextRequest) {
   if (shouldCheckCsrf(request)) {
     const requestOrigin = originFromHeaders(request);
     const trustedOrigins = getTrustedOrigins(request);
+    // Some reverse proxies strip Origin/Referer on same-site POST requests.
+    if (!requestOrigin && isLikelySameSiteRequest(request)) {
+      const response = NextResponse.next();
+      response.headers.set("x-request-id", requestId);
+      if (startsWithAny(request.nextUrl.pathname, SENSITIVE_NO_STORE_PREFIXES)) {
+        response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+      }
+      return response;
+    }
+
     if (!requestOrigin || !trustedOrigins.has(requestOrigin)) {
       const response = NextResponse.json(
         {
