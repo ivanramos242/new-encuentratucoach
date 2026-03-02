@@ -28,14 +28,14 @@ function releaseCheckoutLock(planCode: PlanCode) {
   window.sessionStorage.removeItem(checkoutLockKey(planCode));
 }
 
-export function MembershipCheckoutRedirect({ planCode }: { planCode: PlanCode }) {
+export function MembershipCheckoutRedirect({ planCode, forceRestart = false }: { planCode: PlanCode; forceRestart?: boolean }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string>("");
   const inFlightRef = useRef(false);
 
-  async function startCheckout(options?: { force?: boolean }) {
+  async function startCheckout(options?: { force?: boolean; forceRestart?: boolean }) {
     if (inFlightRef.current) return;
-    if (!options?.force && !acquireCheckoutLock(planCode)) {
+    if (!options?.force && !options?.forceRestart && !acquireCheckoutLock(planCode)) {
       setError("Ya estamos iniciando tu checkout. Si no se abre Stripe, espera unos segundos y reintenta.");
       return;
     }
@@ -47,8 +47,11 @@ export function MembershipCheckoutRedirect({ planCode }: { planCode: PlanCode })
       try {
         const res = await fetch("/api/stripe/checkout-session", {
           method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ planCode }),
+          headers: {
+            "content-type": "application/json",
+            ...(options?.forceRestart ? { "idempotency-key": `force-retry:${planCode}:${Date.now()}` } : {}),
+          },
+          body: JSON.stringify({ planCode, forceRestart: options?.forceRestart ?? false }),
         });
         const json = (await res.json().catch(() => ({}))) as { ok?: boolean; message?: string; checkoutUrl?: string };
         if (!res.ok || !json.ok || !json.checkoutUrl) {
@@ -68,7 +71,7 @@ export function MembershipCheckoutRedirect({ planCode }: { planCode: PlanCode })
   }
 
   useEffect(() => {
-    void startCheckout();
+    void startCheckout({ forceRestart });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -100,7 +103,7 @@ export function MembershipCheckoutRedirect({ planCode }: { planCode: PlanCode })
             type="button"
             onClick={() => {
               releaseCheckoutLock(planCode);
-              void startCheckout({ force: true });
+              void startCheckout({ force: true, forceRestart: true });
             }}
             disabled={pending}
             className="rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800 disabled:opacity-60"

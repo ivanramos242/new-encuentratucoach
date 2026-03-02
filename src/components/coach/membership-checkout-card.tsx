@@ -1,6 +1,6 @@
 "use client";
 
-import { faListCheck, faPen } from "@fortawesome/free-solid-svg-icons";
+import { faChevronDown, faListCheck, faPen } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
 import { useEffect, useMemo, useState, useTransition } from "react";
@@ -16,15 +16,21 @@ async function createCheckout(
   options?: {
     successPath?: string;
     cancelPath?: string;
+    forceRestart?: boolean;
   },
 ) {
+  const idempotencyKey = options?.forceRestart ? `force-retry:${planCode}:${Date.now()}` : undefined;
   const res = await fetch("/api/stripe/checkout-session", {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: {
+      "content-type": "application/json",
+      ...(idempotencyKey ? { "idempotency-key": idempotencyKey } : {}),
+    },
     body: JSON.stringify({
       planCode,
       successPath: options?.successPath,
       cancelPath: options?.cancelPath,
+      forceRestart: options?.forceRestart ?? false,
     }),
   });
   const json = await res.json().catch(() => ({ ok: false, message: `Error ${res.status}` }));
@@ -41,7 +47,7 @@ function withPlanParam(path: string | undefined, planCode: PlanCode) {
 async function postAction(url: string) {
   const res = await fetch(url, { method: "POST" });
   const json = await res.json().catch(() => ({ ok: false, message: `Error ${res.status}` }));
-  if (!res.ok || !json.ok) throw new Error(json.message || "No se pudo completar la acción");
+  if (!res.ok || !json.ok) throw new Error(json.message || "No se pudo completar la accion");
   return json;
 }
 
@@ -61,6 +67,12 @@ function formatCountdown(ms: number) {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function getPlanLabel(planCode?: string | null) {
+  if (planCode === "monthly") return "mensual";
+  if (planCode === "annual") return "anual";
+  return "-";
 }
 
 export function MembershipCheckoutCard({
@@ -108,10 +120,10 @@ export function MembershipCheckoutCard({
   const inactiveStatusHint = useMemo(() => {
     const s = currentStatus?.status || null;
     if (s === "past_due" || s === "unpaid") {
-      return "Tu suscripción anterior no pudo renovarse. Puedes volver a pagar para reactivar la membresía.";
+      return "Tu suscripcion anterior no pudo renovarse. Puedes volver a pagar para reactivar la membresia.";
     }
     if (s === "canceled" || s === "incomplete_expired") {
-      return "Tu membresía está cancelada. Puedes activar un nuevo pago cuando quieras.";
+      return "Tu membresia esta cancelada. Puedes activar un nuevo pago cuando quieras.";
     }
     return null;
   }, [currentStatus?.status]);
@@ -128,19 +140,20 @@ export function MembershipCheckoutCard({
     };
   }, [pendingActivation?.active, pendingActivation?.pendingUntilEpochMs]);
 
-  function startCheckout(planCode: PlanCode) {
+  function startCheckout(planCode: PlanCode, options?: { forceRestart?: boolean }) {
     startTransition(async () => {
       setStatus({ type: "idle", text: "" });
       try {
         const json = await createCheckout(planCode, {
           successPath: withPlanParam(checkoutPaths?.successPath, planCode),
           cancelPath: withPlanParam(checkoutPaths?.cancelPath, planCode),
+          forceRestart: options?.forceRestart ?? false,
         });
         if (json.checkoutUrl) {
           window.location.href = json.checkoutUrl;
           return;
         }
-        setStatus({ type: "error", text: "Stripe no devolvió URL de checkout." });
+        setStatus({ type: "error", text: "Stripe no devolvio URL de checkout." });
       } catch (error) {
         setStatus({ type: "error", text: error instanceof Error ? error.message : "No se pudo iniciar el pago." });
       }
@@ -156,7 +169,7 @@ export function MembershipCheckoutCard({
           window.location.href = json.url;
           return;
         }
-        setStatus({ type: "error", text: "Stripe no devolvió URL del portal." });
+        setStatus({ type: "error", text: "Stripe no devolvio URL del portal." });
       } catch (error) {
         setStatus({ type: "error", text: error instanceof Error ? error.message : "No se pudo abrir el portal." });
       }
@@ -170,7 +183,7 @@ export function MembershipCheckoutCard({
         await postAction(cancel ? "/api/stripe/subscription/cancel" : "/api/stripe/subscription/resume");
         window.location.reload();
       } catch (error) {
-        setStatus({ type: "error", text: error instanceof Error ? error.message : "No se pudo actualizar la suscripción." });
+        setStatus({ type: "error", text: error instanceof Error ? error.message : "No se pudo actualizar la suscripcion." });
       }
     });
   }
@@ -199,7 +212,7 @@ export function MembershipCheckoutCard({
 
   function cancelNow() {
     const ok = window.confirm(
-      "Vas a cancelar la membresía inmediatamente. Tu perfil dejará de estar activo en el directorio. ¿Continuar?",
+      "Vas a cancelar la membresia inmediatamente. Tu perfil dejara de estar activo en el directorio. Continuar?",
     );
     if (!ok) return;
     startTransition(async () => {
@@ -208,39 +221,36 @@ export function MembershipCheckoutCard({
         await postAction("/api/stripe/subscription/cancel-now");
         window.location.reload();
       } catch (error) {
-        setStatus({ type: "error", text: error instanceof Error ? error.message : "No se pudo cancelar la suscripción." });
+        setStatus({ type: "error", text: error instanceof Error ? error.message : "No se pudo cancelar la suscripcion." });
       }
     });
   }
 
   return (
     <div className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-      <h2 className="text-xl font-black tracking-tight text-zinc-950">Membresía de coach</h2>
-      <p className="mt-2 text-sm text-zinc-700">
-        Activa tu suscripción con Stripe para publicar el perfil y responder en mensajería/Q&A.
-      </p>
+      <h2 className="text-xl font-black tracking-tight text-zinc-950">Membresia de coach</h2>
+      <p className="mt-2 text-sm text-zinc-700">Empieza por el estado actual y ejecuta solo la accion necesaria.</p>
 
-      <div className="mt-4 rounded-2xl border border-black/10 bg-zinc-50 p-4 text-sm text-zinc-800">
-        <p>
-          Estado actual: <strong>{currentStatus?.status || "sin suscripción"}</strong>
-          {currentStatus?.planCode ? ` · plan ${currentStatus.planCode}` : ""}
-        </p>
-        {currentStatus?.currentPeriodEnd ? (
-          <p className="mt-1 text-xs text-zinc-600">
-            Período actual hasta: {new Date(currentStatus.currentPeriodEnd).toLocaleString("es-ES")}
-          </p>
-        ) : null}
-        {hasActiveSubscription && cancelAtPeriodEnd ? (
-          <p className="mt-1 text-xs font-semibold text-amber-700">
-            La suscripción se cancelará al final del período actual.
-          </p>
-        ) : null}
-        {!hasActiveSubscription && inactiveStatusHint ? <p className="mt-1 text-xs text-zinc-700">{inactiveStatusHint}</p> : null}
+      <div className="mt-4 grid gap-3 rounded-2xl border border-black/10 bg-zinc-50 p-4 text-sm text-zinc-800 sm:grid-cols-3">
+        <InfoPill label="Estado" value={currentStatus?.status || "sin suscripcion"} />
+        <InfoPill label="Plan" value={getPlanLabel(currentStatus?.planCode)} />
+        <InfoPill
+          label="Renovacion"
+          value={cancelAtPeriodEnd ? "cancelada al final" : hasActiveSubscription ? "activa" : "-"}
+        />
       </div>
+
+      {currentStatus?.currentPeriodEnd ? (
+        <p className="mt-2 text-xs text-zinc-600">
+          Periodo actual hasta: {new Date(currentStatus.currentPeriodEnd).toLocaleString("es-ES")}
+        </p>
+      ) : null}
+
+      {!hasActiveSubscription && inactiveStatusHint ? <p className="mt-2 text-xs text-zinc-700">{inactiveStatusHint}</p> : null}
 
       {checkoutStatus === "cancel" ? (
         <div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-800">
-          Pago cancelado. No se ha activado ninguna membresía. Puedes volver a intentarlo cuando quieras.
+          Pago cancelado. No se activo ningun plan. Puedes intentarlo de nuevo cuando quieras.
         </div>
       ) : null}
 
@@ -248,11 +258,11 @@ export function MembershipCheckoutCard({
         <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-bold text-amber-900">Procesando activación de la membresía</p>
+              <p className="text-sm font-bold text-amber-900">Procesando activacion de membresia</p>
               <p className="mt-1 text-xs text-amber-800">
                 {pendingActivationTimedOut
-                  ? "Han pasado 3 minutos sin confirmación. Puedes volver a intentar el pago."
-                  : "Stripe está procesando el pago. En cuanto termine, actualiza el estado."}
+                  ? "Han pasado 3 minutos sin confirmacion. Puedes reintentar el pago."
+                  : "Stripe esta procesando el pago. Actualiza en unos segundos."}
               </p>
             </div>
             <div className="rounded-xl border border-amber-300 bg-white px-3 py-1.5 text-sm font-semibold tabular-nums text-amber-900">
@@ -260,12 +270,14 @@ export function MembershipCheckoutCard({
             </div>
           </div>
           <div className="mt-3 grid gap-2 sm:grid-cols-3">
-            <Link
-              href={pendingRetryCheckoutHref}
-              className="rounded-xl bg-zinc-950 px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-zinc-800"
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => startCheckout(pendingActivation?.planCode || "monthly", { forceRestart: true })}
+              className="rounded-xl bg-zinc-950 px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-zinc-800 disabled:opacity-60"
             >
-              Volver a intentar pago
-            </Link>
+              Reintentar pago ahora
+            </button>
             <button
               type="button"
               onClick={() => window.location.reload()}
@@ -274,56 +286,55 @@ export function MembershipCheckoutCard({
               Actualizar estado
             </button>
             <Link
-              href={showOnboardingCta ? profileHref : "/mi-cuenta/coach"}
+              href={pendingRetryCheckoutHref}
               className="rounded-xl border border-black/10 bg-white px-4 py-2.5 text-center text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
             >
-              Ir a mi cuenta
+              Abrir checkout
             </Link>
           </div>
         </div>
       ) : null}
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-2">
-        {hasActiveSubscription ? (
-          <>
-            <Link
-              href={showOnboardingCta ? `${profileHref}${profileHref.includes("?") ? "&" : "?"}wizard=1` : profileHref}
-              className="inline-flex items-center justify-center rounded-xl bg-zinc-950 px-4 py-3 text-sm font-semibold text-white"
-            >
-              <FontAwesomeIcon
-                icon={showOnboardingCta ? faListCheck : faPen}
-                className="mr-2 h-3.5 w-3.5"
-              />
-              {showOnboardingCta ? "Empezar formulario de bienvenida" : "Editar mi perfil coach"}
-            </Link>
-            <Link
-              href="/coaches"
-              className="inline-flex items-center justify-center rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-zinc-900"
-            >
-              Ver directorio
-            </Link>
-          </>
-        ) : (
-          <>
-            <button
-              type="button"
+      {!hasActiveSubscription ? (
+        <section className="mt-5">
+          <h3 className="text-sm font-bold uppercase tracking-wide text-zinc-800">Activa tu plan</h3>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <PlanCard
+              title="Plan mensual"
+              helper="Flexibilidad mes a mes"
+              cta={pending ? "Procesando..." : currentStatus?.status ? "Reactivar mensual" : "Activar mensual"}
               disabled={pending || pendingActivationActive}
               onClick={() => startCheckout("monthly")}
-              className="rounded-xl bg-zinc-950 px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
-            >
-              {pending ? "Procesando..." : currentStatus?.status ? "Reactivar plan mensual" : "Activar plan mensual"}
-            </button>
-            <button
-              type="button"
+            />
+            <PlanCard
+              title="Plan anual"
+              helper="Menos gestion durante el ano"
+              cta={pending ? "Procesando..." : currentStatus?.status ? "Reactivar anual" : "Activar anual"}
               disabled={pending || pendingActivationActive}
               onClick={() => startCheckout("annual")}
-              className="rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-zinc-900 disabled:opacity-60"
-            >
-              {pending ? "Procesando..." : currentStatus?.status ? "Reactivar plan anual" : "Activar plan anual"}
-            </button>
-          </>
-        )}
-      </div>
+              highlighted
+            />
+          </div>
+        </section>
+      ) : (
+        <section className="mt-5 grid gap-3 sm:grid-cols-2">
+          <Link
+            href={showOnboardingCta ? `${profileHref}${profileHref.includes("?") ? "&" : "?"}wizard=1` : profileHref}
+            className="inline-flex items-center justify-center rounded-xl bg-zinc-950 px-4 py-3 text-sm font-semibold text-white"
+          >
+            <FontAwesomeIcon icon={showOnboardingCta ? faListCheck : faPen} className="mr-2 h-3.5 w-3.5" />
+            {showOnboardingCta ? "Completar formulario" : "Editar perfil coach"}
+          </Link>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={openBillingPortal}
+            className="rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-zinc-900 disabled:opacity-60"
+          >
+            Gestionar facturacion (Stripe)
+          </button>
+        </section>
+      )}
 
       {hasActiveSubscription && showOnboardingCta ? (
         <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
@@ -333,85 +344,129 @@ export function MembershipCheckoutCard({
       ) : null}
 
       {hasActiveSubscription ? (
-        <div className="mt-4 grid gap-2 sm:grid-cols-2">
-          <button
-            type="button"
-            disabled={pending}
-            onClick={openBillingPortal}
-            className="rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-zinc-900 disabled:opacity-60"
-          >
-            Gestionar facturación (Stripe)
-          </button>
-          {cancelAtPeriodEnd ? (
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() => setCancellation(false)}
-              className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-900 disabled:opacity-60"
-            >
-              Reactivar renovación
-            </button>
-          ) : (
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() => setCancellation(true)}
-              className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 disabled:opacity-60"
-            >
-              Cancelar al final del período
-            </button>
-          )}
-          {!cancelAtPeriodEnd ? (
-            <button
-              type="button"
-              disabled={pending}
-              onClick={cancelNow}
-              className="sm:col-span-2 rounded-xl border border-red-300 bg-white px-4 py-3 text-sm font-semibold text-red-700 disabled:opacity-60"
-            >
-              Cancelar ahora (inmediato)
-            </button>
-          ) : null}
-        </div>
-      ) : null}
+        <section className="mt-5 space-y-3">
+          <details className="group rounded-2xl border border-black/10 bg-white p-4">
+            <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-semibold text-zinc-900">
+              Gestion avanzada de renovacion y cancelacion
+              <FontAwesomeIcon icon={faChevronDown} className="h-3.5 w-3.5 text-zinc-500 transition group-open:rotate-180" />
+            </summary>
+            <p className="mt-2 text-xs text-zinc-600">Estas acciones afectan la continuidad y visibilidad de tu perfil.</p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {cancelAtPeriodEnd ? (
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => setCancellation(false)}
+                  className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-900 disabled:opacity-60"
+                >
+                  Reactivar renovacion
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => setCancellation(true)}
+                  className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 disabled:opacity-60"
+                >
+                  Cancelar al final del periodo
+                </button>
+              )}
+              {!cancelAtPeriodEnd ? (
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={cancelNow}
+                  className="rounded-xl border border-red-300 bg-white px-4 py-3 text-sm font-semibold text-red-700 disabled:opacity-60"
+                >
+                  Cancelar ahora (inmediato)
+                </button>
+              ) : null}
+            </div>
+          </details>
 
-      {hasActiveSubscription && activePlanCode ? (
-        <div id="cambiar-plan" className="mt-4 rounded-2xl border border-black/10 bg-zinc-50 p-4">
-          <p className="text-sm font-semibold text-zinc-900">Cambiar de plan (solo uno activo a la vez)</p>
-          <p className="mt-1 text-xs text-zinc-600">
-            El cambio actualiza tu suscripcion actual en Stripe; no se crea una segunda membresia.
-          </p>
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            <button
-              type="button"
-              disabled={pending || pendingActivationActive || activePlanCode === "monthly"}
-              onClick={() => changePlan("monthly")}
-              className="rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-zinc-900 disabled:opacity-60"
-            >
-              {pending
-                ? "Procesando..."
-                : activePlanCode === "monthly"
-                  ? "Plan mensual (actual)"
-                  : "Cambiar a plan mensual"}
-            </button>
-            <button
-              type="button"
-              disabled={pending || pendingActivationActive || activePlanCode === "annual"}
-              onClick={() => changePlan("annual")}
-              className="rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-zinc-900 disabled:opacity-60"
-            >
-              {pending
-                ? "Procesando..."
-                : activePlanCode === "annual"
-                  ? "Plan anual (actual)"
-                  : "Cambiar a plan anual"}
-            </button>
-          </div>
-        </div>
+          {activePlanCode ? (
+            <details className="group rounded-2xl border border-black/10 bg-white p-4">
+              <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-semibold text-zinc-900">
+                Cambiar plan
+                <FontAwesomeIcon icon={faChevronDown} className="h-3.5 w-3.5 text-zinc-500 transition group-open:rotate-180" />
+              </summary>
+              <p className="mt-2 text-xs text-zinc-600">Solo puede existir un plan activo. El cambio se aplica al plan actual.</p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                <button
+                  type="button"
+                  disabled={pending || pendingActivationActive || activePlanCode === "monthly"}
+                  onClick={() => changePlan("monthly")}
+                  className="rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-zinc-900 disabled:opacity-60"
+                >
+                  {pending
+                    ? "Procesando..."
+                    : activePlanCode === "monthly"
+                      ? "Plan mensual (actual)"
+                      : "Cambiar a mensual"}
+                </button>
+                <button
+                  type="button"
+                  disabled={pending || pendingActivationActive || activePlanCode === "annual"}
+                  onClick={() => changePlan("annual")}
+                  className="rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-zinc-900 disabled:opacity-60"
+                >
+                  {pending
+                    ? "Procesando..."
+                    : activePlanCode === "annual"
+                      ? "Plan anual (actual)"
+                      : "Cambiar a anual"}
+                </button>
+              </div>
+            </details>
+          ) : null}
+        </section>
       ) : null}
 
       {status.text ? (
         <p className={`mt-4 text-sm ${status.type === "success" ? "text-emerald-700" : "text-red-600"}`}>{status.text}</p>
       ) : null}
+    </div>
+  );
+}
+
+function InfoPill({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-black/10 bg-white px-3 py-2">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">{label}</p>
+      <p className="mt-0.5 text-sm font-semibold text-zinc-900">{value}</p>
+    </div>
+  );
+}
+
+function PlanCard({
+  title,
+  helper,
+  cta,
+  disabled,
+  onClick,
+  highlighted,
+}: {
+  title: string;
+  helper: string;
+  cta: string;
+  disabled: boolean;
+  onClick: () => void;
+  highlighted?: boolean;
+}) {
+  return (
+    <div className={`rounded-2xl border p-4 ${highlighted ? "border-cyan-300 bg-cyan-50" : "border-black/10 bg-white"}`}>
+      <p className="text-base font-bold text-zinc-950">{title}</p>
+      <p className="mt-1 text-xs text-zinc-600">{helper}</p>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={onClick}
+        className={`mt-3 w-full rounded-xl px-4 py-2.5 text-sm font-semibold disabled:opacity-60 ${
+          highlighted ? "bg-zinc-950 text-white" : "border border-black/10 bg-white text-zinc-900"
+        }`}
+      >
+        {cta}
+      </button>
     </div>
   );
 }

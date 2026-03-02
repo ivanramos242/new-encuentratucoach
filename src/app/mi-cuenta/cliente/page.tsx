@@ -22,40 +22,43 @@ export default async function ClientDashboardPage() {
     .map((coachId) => coachById.get(coachId))
     .filter((coach): coach is NonNullable<typeof coach> => Boolean(coach));
 
-  const cards = [
+  const priorityCards = [
     {
       href: "/mi-cuenta/cliente/mensajes",
       title: "Mensajes",
-      desc: "Conversaciones con clientes y coaches.",
+      desc: pendingMessagesCount > 0 ? "Tienes mensajes sin leer. Respondelos primero." : "Tu bandeja esta al dia.",
       icon: faEnvelope,
       accent: "from-rose-500 to-pink-500",
       cta: "Abrir mensajes",
       pending: pendingMessagesCount,
     },
     {
-      href: "/pregunta-a-un-coach",
-      title: "Pregunta a un coach",
-      desc: "Crea preguntas públicas y sigue respuestas de la comunidad.",
-      icon: faChartColumn,
-      accent: "from-emerald-500 to-teal-500",
-      cta: "Ir a preguntas",
-    },
-    {
-      href: "/coaches",
-      title: "Explorar coaches",
-      desc: "Vuelve al directorio y descubre profesionales compatibles.",
-      icon: faUsers,
-      accent: "from-zinc-700 to-zinc-900",
-      cta: "Explorar directorio",
-    },
-    {
       href: "#favoritos",
       title: "Favoritos",
-      desc: "Tus coaches guardados para volver rápido cuando lo necesites.",
+      desc: "Accede rapido a coaches guardados para comparar opciones.",
       icon: faHeart,
       accent: "from-rose-500 to-pink-500",
       cta: "Ver favoritos",
       pending: favoriteCoaches.length,
+    },
+    {
+      href: "/pregunta-a-un-coach",
+      title: "Pregunta a un coach",
+      desc: "Publica dudas y recibe respuestas de la comunidad.",
+      icon: faChartColumn,
+      accent: "from-emerald-500 to-teal-500",
+      cta: "Ir a preguntas",
+    },
+  ] as const;
+
+  const secondaryCards = [
+    {
+      href: "/coaches",
+      title: "Explorar coaches",
+      desc: "Busca nuevos perfiles por tema, modalidad o ciudad.",
+      icon: faUsers,
+      accent: "from-zinc-700 to-zinc-900",
+      cta: "Explorar directorio",
     },
   ] as const;
 
@@ -63,8 +66,8 @@ export default async function ClientDashboardPage() {
     <>
       <PageHero
         badge="Mi cuenta · Cliente"
-        title="Tu panel de cliente"
-        description="Sigue tus conversaciones, notificaciones y reseñas desde un panel más completo."
+        title="Panel de cliente"
+        description="Sigue tus conversaciones y decisiones clave desde un panel claro y ordenado."
       />
       <PageShell className="pt-8">
         <div className="grid gap-6">
@@ -73,16 +76,16 @@ export default async function ClientDashboardPage() {
               <div>
                 <div className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-rose-900">
                   <span className="h-2 w-2 rounded-full bg-rose-500" />
-                  Área privada de cliente
+                  Area privada de cliente
                 </div>
                 <h2 className="mt-3 text-2xl font-black tracking-tight text-zinc-950 sm:text-3xl">
                   {user.displayName || "Tu cuenta"}
                 </h2>
                 <p className="mt-2 text-sm text-zinc-700">
-                  Sesión activa como <strong>{user.role}</strong> con el email <strong>{user.email}</strong>.
+                  Sesion activa como <strong>{user.role}</strong> con el email <strong>{user.email}</strong>.
                 </p>
                 <p className="mt-1 text-sm text-zinc-700">
-                  Usa este panel para seguir conversaciones, gestionar avisos y revisar tus reseñas publicadas.
+                  Prioriza mensajes y favoritos para comparar coaches con mas criterio.
                 </p>
 
                 <div className="mt-4 flex flex-wrap gap-2">
@@ -99,33 +102,51 @@ export default async function ClientDashboardPage() {
                     ) : null}
                   </Link>
                   <Link
-                    href="/coaches"
+                    href="#favoritos"
                     className="inline-flex items-center rounded-xl border border-black/10 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
                   >
-                    <FontAwesomeIcon icon={faUsers} className="mr-2 h-4 w-4 text-zinc-500" />
-                    Explorar coaches
+                    <FontAwesomeIcon icon={faHeart} className="mr-2 h-4 w-4 text-zinc-500" />
+                    Favoritos
                   </Link>
                 </div>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                 <StatMiniCard label="Mensajes pendientes" value={String(pendingMessagesCount)} helper={pendingMessagesCount > 0 ? "Pendientes por leer" : "Sin pendientes"} />
-                <StatMiniCard label="Acceso rápido" value="Mi cuenta" helper="Todo centralizado en este panel" />
+                <StatMiniCard label="Coaches favoritos" value={String(favoriteCoaches.length)} helper={favoriteCoaches.length > 0 ? "Listos para comparar" : "Aun no has guardado coaches"} />
               </div>
             </div>
           </section>
 
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {cards.map((item) => (
-              <DashboardCard key={item.href} {...item} />
-            ))}
+          <section>
+            <div className="mb-3">
+              <h3 className="text-lg font-black tracking-tight text-zinc-950">Prioridades de hoy</h3>
+              <p className="text-sm text-zinc-600">Acciones clave para que avances sin perder tiempo.</p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {priorityCards.map((item) => (
+                <DashboardCard key={item.href} {...item} />
+              ))}
+            </div>
+          </section>
+
+          <section>
+            <div className="mb-3">
+              <h3 className="text-lg font-black tracking-tight text-zinc-950">Exploracion</h3>
+              <p className="text-sm text-zinc-600">Abre nuevas opciones cuando ya tengas controlado lo importante.</p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {secondaryCards.map((item) => (
+                <DashboardCard key={item.href} {...item} />
+              ))}
+            </div>
           </section>
 
           <section id="favoritos" className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
             <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-black tracking-tight text-zinc-950">Mis favoritos</h2>
-                <p className="mt-1 text-sm text-zinc-700">Coaches guardados para comparar y contactar más tarde.</p>
+                <p className="mt-1 text-sm text-zinc-700">Coaches guardados para comparar y contactar mas tarde.</p>
               </div>
               <Link
                 href="/coaches"
@@ -143,7 +164,7 @@ export default async function ClientDashboardPage() {
               </div>
             ) : (
               <div className="rounded-2xl border border-dashed border-black/15 bg-zinc-50 p-4 text-sm text-zinc-700">
-                Aún no tienes coaches guardados. Pulsa el icono de corazón en cualquier card o perfil para añadirlos.
+                Aun no tienes coaches guardados. Pulsa el icono de corazon en cualquier card o perfil para agregarlos.
               </div>
             )}
           </section>
