@@ -180,21 +180,17 @@ function CardHeader({ title, hint }: { title: string; hint: string }) {
   );
 }
 
-function GoogleButtonPlaceholder({ mode }: { mode: "login" | "register" }) {
+function GoogleAuthButton({ mode, href }: { mode: "login" | "register"; href: string }) {
   return (
-    <button
-      type="button"
-      disabled
-      className="mx-auto inline-flex w-full max-w-sm items-center justify-center gap-3 rounded-2xl border border-black/10 bg-zinc-950 px-4 py-3 font-semibold text-white opacity-95"
-      aria-disabled="true"
-      title="Lo configuraremos más adelante"
+    <Link
+      href={href}
+      className="mx-auto inline-flex w-full max-w-sm items-center justify-center gap-3 rounded-2xl border border-black/10 bg-zinc-950 px-4 py-3 font-semibold text-white transition hover:bg-zinc-900"
     >
       <span className="grid h-7 w-7 place-items-center rounded-full bg-white text-zinc-900">
         <i className="fa-brands fa-google" aria-hidden="true" />
       </span>
       {mode === "login" ? "Iniciar sesión con Google" : "Registrarme con Google"}
-      <span className="text-xs font-medium text-zinc-300">(próximamente)</span>
-    </button>
+    </Link>
   );
 }
 
@@ -304,11 +300,22 @@ function ForgotPasswordModal({
   );
 }
 
-export function LoginCard({ returnTo = "/mi-cuenta", userCount = 602 }: { returnTo?: string; userCount?: number }) {
+export function LoginCard({
+  returnTo = "/mi-cuenta",
+  userCount = 602,
+  oauthError,
+}: {
+  returnTo?: string;
+  userCount?: number;
+  oauthError?: string;
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [status, setStatus] = useState<{ type: "idle" | "ok" | "error"; text: string }>({ type: "idle", text: "" });
+  const [status, setStatus] = useState<{ type: "idle" | "ok" | "error"; text: string }>(() =>
+    oauthError ? { type: "error", text: oauthError } : { type: "idle", text: "" },
+  );
   const [forgotOpen, setForgotOpen] = useState(false);
+  const googleLoginHref = `/api/auth/google/start?intent=login&returnTo=${encodeURIComponent(returnTo || "/mi-cuenta")}`;
 
   const title = "Iniciar sesión";
   const subtitle = "Accede para guardar coaches, enviar mensajes y participar en “Pregunta a un coach”.";
@@ -321,7 +328,7 @@ export function LoginCard({ returnTo = "/mi-cuenta", userCount = 602 }: { return
       />
       <div className="px-5 py-5">
         <div className="text-center">
-          <GoogleButtonPlaceholder mode="login" />
+          <GoogleAuthButton mode="login" href={googleLoginHref} />
         </div>
         <DividerOr />
 
@@ -430,17 +437,19 @@ export function RegisterCard({
       title: "Crear cuenta",
       subtitle: "Crea tu cuenta para guardar coaches, enviar mensajes y participar en “Pregunta a un coach”.",
       cardTitle: "Registro de cliente",
-      cardHint: "Google estará disponible más adelante. Mientras tanto, completa tus datos para continuar.",
+      cardHint: "Regístrate con Google o completa tus datos para continuar.",
       redirect: "/mi-cuenta/cliente",
     };
   }, [role]);
+  const googleRegisterHref =
+    role === "coach" ? "/api/auth/google/start?intent=coach" : "/api/auth/google/start?intent=client";
 
   const rightCard = (
     <>
       <CardHeader title={content.cardTitle} hint={content.cardHint} />
       <div className="px-5 py-5">
         <div className="text-center">
-          <GoogleButtonPlaceholder mode="register" />
+          <GoogleAuthButton mode="register" href={googleRegisterHref} />
         </div>
         <DividerOr />
 
@@ -633,5 +642,3 @@ export function ResetPasswordCard({ token }: { token: string }) {
     </SimpleCardShell>
   );
 }
-
-

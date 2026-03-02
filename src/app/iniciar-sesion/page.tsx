@@ -18,11 +18,13 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
   const params = await searchParams;
   const returnToRaw = Array.isArray(params.returnTo) ? params.returnTo[0] : params.returnTo;
   const returnTo = typeof returnToRaw === "string" && returnToRaw.startsWith("/") ? returnToRaw : "/mi-cuenta";
+  const oauthErrorRaw = Array.isArray(params.error) ? params.error[0] : params.error;
+  const oauthError = typeof oauthErrorRaw === "string" && oauthErrorRaw.trim() ? oauthErrorRaw.trim() : undefined;
   const userCount = await getInflatedRegisteredUsersCount();
 
   return (
     <PageShell className="pt-8">
-      <LoginCard returnTo={returnTo} userCount={userCount} />
+      <LoginCard returnTo={returnTo} userCount={userCount} oauthError={oauthError} />
     </PageShell>
   );
 }

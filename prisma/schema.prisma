@@ -226,6 +226,7 @@ model User {
   createdAt           DateTime                 @default(now())
   updatedAt           DateTime                 @updatedAt
   sessions            AuthSession[]
+  authIdentities      AuthIdentity[]
   passwordResetTokens PasswordResetToken[]
   emailTokens         EmailVerificationToken[]
   coachProfiles       CoachProfile[]
@@ -254,6 +255,21 @@ model User {
   funnelEvents              FunnelEvent[]
   jobRunLogs                JobRunLog[]            @relation("JobRunActor")
   coachFavorites            CoachFavorite[]
+}
+
+model AuthIdentity {
+  id                String   @id @default(cuid())
+  userId            String
+  provider          String
+  providerAccountId String
+  providerEmail     String?
+  providerData      Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 model AuthSession {
