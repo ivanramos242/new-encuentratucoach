@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SiteContactForm } from "@/components/forms/site-contact-form";
 import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -6,20 +7,20 @@ import { buildMetadata } from "@/lib/seo";
 
 const CONTACT_FAQ = [
   {
-    q: "Como contacto con el equipo de EncuentraTuCoach?",
+    q: "¿Cómo contacto con el equipo de EncuentraTuCoach?",
     a: "Puedes escribir por email a info@encuentratucoach.es o usar esta página de contacto para dejar tu mensaje.",
   },
   {
-    q: "Que información debo incluir en un reporte técnico?",
+    q: "¿Qué información debo incluir en un reporte técnico?",
     a: "Incluye URL, pasos para reproducir, resultado esperado, resultado real y captura si aplica.",
   },
   {
-    q: "Puedo resolver dudas sobre membresía desde esta página?",
-    a: "Sí. Selecciona el motivo correcto o usa el email y el equipo te orienta sobre planes, pagos y activación.",
+    q: "¿Puedo resolver dudas sobre membresía desde esta página?",
+    a: "Sí. Selecciona el motivo correcto en el formulario y el equipo te orientará sobre planes, pagos y activación.",
   },
   {
-    q: "Este canal sirve para dudas sobre un coach específico?",
-    a: "Sí. Comparte el enlace del perfil y contexto de tu consulta para una respuesta más rápida.",
+    q: "¿Este canal sirve para dudas sobre un coach específico?",
+    a: "Sí. Comparte el enlace del perfil y el contexto de tu consulta para una respuesta más rápida.",
   },
 ] as const;
 
@@ -98,90 +99,17 @@ export default function ContactPage() {
           </article>
           <article className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-black tracking-tight text-zinc-950">Chat en vivo</h2>
-            <p className="mt-2 text-sm text-zinc-700">Si tienes Crisp activo, usa el botón de chat para respuesta rápida.</p>
+            <p className="mt-2 text-sm text-zinc-700">
+              Si tienes Crisp activo, usa el botón azul de chat en la esquina inferior derecha para una respuesta rápida.
+            </p>
             <p className="mt-4 rounded-xl border border-black/10 bg-zinc-50 px-3 py-2 text-sm font-semibold text-zinc-700">
-              Recomendado para consultas breves.
+              Ideal para consultas breves.
             </p>
           </article>
         </section>
 
         <section className="grid gap-6 lg:grid-cols-[1.1fr_.9fr]">
-          <form className="grid gap-4 rounded-3xl border border-black/10 bg-white p-6 shadow-sm" aria-label="Formulario de contacto">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="grid gap-1 text-sm font-medium text-zinc-800">
-                Nombre (opcional)
-                <input
-                  className="rounded-xl border border-black/10 px-3 py-2 outline-none focus:border-cyan-400"
-                  placeholder="Tu nombre"
-                />
-              </label>
-              <label className="grid gap-1 text-sm font-medium text-zinc-800">
-                Email
-                <input
-                  type="email"
-                  required
-                  className="rounded-xl border border-black/10 px-3 py-2 outline-none focus:border-cyan-400"
-                  placeholder="tu@email.com"
-                />
-              </label>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="grid gap-1 text-sm font-medium text-zinc-800">
-                Motivo
-                <select className="rounded-xl border border-black/10 px-3 py-2 outline-none focus:border-cyan-400" defaultValue="">
-                  <option value="" disabled>
-                    Selecciona una opción
-                  </option>
-                  <option value="soporte">Soporte técnico</option>
-                  <option value="cuenta">Cuenta y acceso</option>
-                  <option value="membresia">Membresía</option>
-                  <option value="certificacion">Certificación</option>
-                  <option value="colaboracion">Colaboración</option>
-                </select>
-              </label>
-              <label className="grid gap-1 text-sm font-medium text-zinc-800">
-                URL relacionada (opcional)
-                <input
-                  className="rounded-xl border border-black/10 px-3 py-2 outline-none focus:border-cyan-400"
-                  placeholder="https://encuentratucoach.es/..."
-                />
-              </label>
-            </div>
-
-            <label className="grid gap-1 text-sm font-medium text-zinc-800">
-              Mensaje
-              <textarea
-                rows={6}
-                required
-                className="rounded-xl border border-black/10 px-3 py-2 outline-none focus:border-cyan-400"
-                placeholder="Qué intentabas hacer, qué pasó y qué esperabas que ocurriera."
-              />
-            </label>
-
-            <label className="flex items-start gap-2 text-sm text-zinc-700">
-              <input type="checkbox" className="mt-1" required />
-              <span>
-                He leído la política de privacidad y acepto el tratamiento de datos para responder mi consulta.
-              </span>
-            </label>
-
-            <div className="flex flex-wrap gap-3">
-              <button className="rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800">
-                Enviar mensaje
-              </button>
-              <a
-                href="mailto:info@encuentratucoach.es"
-                className="rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
-              >
-                Enviar por email
-              </a>
-            </div>
-
-            <p className="text-sm text-zinc-500">
-              V1: formulario visual. Para respuesta inmediata, usa el email o el chat en vivo cuando esté disponible.
-            </p>
-          </form>
+          <SiteContactForm />
 
           <aside className="space-y-4">
             <div className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
