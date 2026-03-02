@@ -42,6 +42,7 @@ import { getCoachAverageRating, getRelatedCoachesFrom } from "@/lib/directory";
 import { sanitizeRichHtml } from "@/lib/html-sanitize";
 import { getPublicCoachBySlugMerged, listPublicCoachesMerged } from "@/lib/public-coaches";
 import { buildMetadata } from "@/lib/seo";
+import { getSiteBaseUrl } from "@/lib/site-config";
 import { formatEuro } from "@/lib/utils";
 import { getQaQuestionsList } from "@/lib/v2-mock";
 
@@ -128,15 +129,16 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
   const categoryLabels = coach.categories.map((slug) => getCoachCategoryLabel(slug) ?? slug);
   const categoryNames = categoryLabels.join(", ");
 
-  const coachUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/coaches/${coach.slug}`;
+  const baseUrl = getSiteBaseUrl();
+  const coachUrl = `${baseUrl}/coaches/${coach.slug}`;
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
       {
         "@type": "BreadcrumbList",
         itemListElement: [
-          { "@type": "ListItem", position: 1, name: "Inicio", item: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/` },
-          { "@type": "ListItem", position: 2, name: "Coaches", item: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/coaches` },
+          { "@type": "ListItem", position: 1, name: "Inicio", item: `${baseUrl}/` },
+          { "@type": "ListItem", position: 2, name: "Coaches", item: `${baseUrl}/coaches` },
           { "@type": "ListItem", position: 3, name: coach.name, item: coachUrl },
         ],
       },

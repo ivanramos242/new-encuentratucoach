@@ -14,6 +14,7 @@ import {
 import { cities } from "@/lib/mock-data";
 import { listPublicCoachesMerged } from "@/lib/public-coaches";
 import { buildMetadata, hasMeaningfulQueryParams } from "@/lib/seo";
+import { getSiteBaseUrl } from "@/lib/site-config";
 import { formatEuro } from "@/lib/utils";
 
 type SearchParamsInput = Promise<Record<string, string | string[] | undefined>>;
@@ -106,7 +107,7 @@ export async function generateMetadata({
     description:
       "Directorio de coaches en España para buscar por ciudad, especialidad, modalidad y presupuesto.",
     path: "/coaches",
-    canonicalUrl: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}${canonicalPath}`,
+    canonicalUrl: `${getSiteBaseUrl()}${canonicalPath}`,
     noindex,
     keywords: [
       "directorio de coaches",

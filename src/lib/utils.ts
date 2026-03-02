@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { getSiteBaseUrl } from "@/lib/site-config";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -31,7 +32,7 @@ export function absoluteUrl(path: string) {
   if (!path.startsWith("/") || path.startsWith("//")) {
     throw new Error("absoluteUrl solo acepta rutas internas que empiecen por '/'");
   }
-  return `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}${path}`;
+  return `${getSiteBaseUrl()}${path}`;
 }
 
 export function isAllowedInternalReturnPath(
@@ -40,7 +41,7 @@ export function isAllowedInternalReturnPath(
 ) {
   if (!value || !value.startsWith("/") || value.startsWith("//")) return false;
   try {
-    const url = new URL(value, "http://localhost");
+    const url = new URL(value, getSiteBaseUrl());
     return allowedPrefixes.some((prefix) => url.pathname === prefix || url.pathname.startsWith(`${prefix}/`));
   } catch {
     return false;
