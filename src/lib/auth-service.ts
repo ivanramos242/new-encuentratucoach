@@ -16,6 +16,37 @@ type RegisterInput = {
   role: UserRole;
 };
 
+type GoogleAuthInput = {
+  email: string;
+  googleSub: string;
+  displayName?: string | null;
+  pictureUrl?: string | null;
+  intent: "login" | "client" | "coach";
+  ipAddress?: string | null;
+  userAgent?: string | null;
+};
+
+type GoogleAuthSuccess = {
+  session: { rawToken: string; expiresAt: Date };
+  user: {
+    id: string;
+    email: string;
+    role: UserRole;
+    displayName: string | null;
+    coachProfileId?: string;
+  };
+  isNewUser: boolean;
+};
+
+type GoogleAuthFailure = {
+  error: string;
+  code: "GOOGLE_PROFILE_INVALID" | "ACCOUNT_DISABLED";
+};
+
+type GoogleAuthTxResult =
+  | { kind: "error"; error: string; code: GoogleAuthFailure["code"] }
+  | { kind: "ok"; user: Parameters<typeof toAuthUserPayload>[0]; isNewUser: boolean };
+
 type AdminCreateCoachUserInput = {
   email: string;
   displayName?: string | null;
@@ -178,6 +209,181 @@ export async function loginUser(input: { email: string; password: string; ipAddr
       displayName: user.displayName,
       coachProfileId: user.coachProfiles[0]?.id,
     },
+  };
+}
+
+function toAuthUserPayload(user: {
+  id: string;
+  email: string;
+  role: UserRole;
+  displayName: string | null;
+  coachProfiles: Array<{ id: string }>;
+}) {
+  return {
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    displayName: user.displayName,
+    coachProfileId: user.coachProfiles[0]?.id,
+  };
+}
+
+function buildGoogleProviderData(input: Pick<GoogleAuthInput, "displayName" | "pictureUrl" | "intent">) {
+  return {
+    name: input.displayName?.trim() || null,
+    picture: input.pictureUrl?.trim() || null,
+    intent: input.intent,
+  };
+}
+
+export async function loginOrRegisterUserWithGoogle(input: GoogleAuthInput): Promise<GoogleAuthSuccess | GoogleAuthFailure> {
+  const email = normalizeEmail(input.email);
+  const googleSub = input.googleSub.trim();
+
+  if (!email || !googleSub) {
+    return { error: "No se pudo validar el perfil de Google." as const, code: "GOOGLE_PROFILE_INVALID" as const };
+  }
+
+  const result = (await prisma.$transaction(async (tx) => {
+    const byIdentity = await tx.authIdentity.findUnique({
+      where: {
+        provider_providerAccountId: {
+          provider: "google",
+          providerAccountId: googleSub,
+        },
+      },
+      include: {
+        user: {
+          include: {
+            coachProfiles: {
+              take: 1,
+              orderBy: { createdAt: "asc" },
+              select: { id: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (byIdentity?.user) {
+      if (!byIdentity.user.isActive) {
+        return { kind: "error", error: "La cuenta esta desactivada.", code: "ACCOUNT_DISABLED" as const };
+      }
+
+      await tx.authIdentity.update({
+        where: { id: byIdentity.id },
+        data: {
+          providerEmail: email,
+          providerData: buildGoogleProviderData(input),
+        },
+      });
+
+      const shouldBackfillDisplayName = !byIdentity.user.displayName && Boolean(input.displayName?.trim());
+      const user = shouldBackfillDisplayName
+        ? await tx.user.update({
+            where: { id: byIdentity.user.id },
+            data: { displayName: input.displayName?.trim() || null },
+            include: {
+              coachProfiles: {
+                take: 1,
+                orderBy: { createdAt: "asc" },
+                select: { id: true },
+              },
+            },
+          })
+        : byIdentity.user;
+
+      return { kind: "ok", user, isNewUser: false as const };
+    }
+
+    const userByEmail = await tx.user.findUnique({
+      where: { email },
+      include: {
+        coachProfiles: {
+          take: 1,
+          orderBy: { createdAt: "asc" },
+          select: { id: true },
+        },
+      },
+    });
+
+    if (userByEmail && !userByEmail.isActive) {
+      return { kind: "error", error: "La cuenta esta desactivada.", code: "ACCOUNT_DISABLED" as const };
+    }
+
+    const user =
+      userByEmail ??
+      (await tx.user.create({
+        data: {
+          email,
+          passwordHash: null,
+          displayName: input.displayName?.trim() || null,
+          role: "client",
+          isActive: true,
+          mustResetPassword: false,
+        },
+        include: {
+          coachProfiles: {
+            take: 1,
+            orderBy: { createdAt: "asc" },
+            select: { id: true },
+          },
+        },
+      }));
+
+    await tx.authIdentity.upsert({
+      where: {
+        provider_providerAccountId: {
+          provider: "google",
+          providerAccountId: googleSub,
+        },
+      },
+      update: {
+        userId: user.id,
+        providerEmail: email,
+        providerData: buildGoogleProviderData(input),
+      },
+      create: {
+        userId: user.id,
+        provider: "google",
+        providerAccountId: googleSub,
+        providerEmail: email,
+        providerData: buildGoogleProviderData(input),
+      },
+    });
+
+    if (!userByEmail || user.displayName || !input.displayName?.trim()) {
+      return { kind: "ok", user, isNewUser: !userByEmail };
+    }
+
+    const backfilled = await tx.user.update({
+      where: { id: user.id },
+      data: { displayName: input.displayName.trim() },
+      include: {
+        coachProfiles: {
+          take: 1,
+          orderBy: { createdAt: "asc" },
+          select: { id: true },
+        },
+      },
+    });
+
+    return { kind: "ok", user: backfilled, isNewUser: false as const };
+  })) as GoogleAuthTxResult;
+
+  if (result.kind === "error") {
+    return { error: result.error, code: result.code };
+  }
+
+  const session = await createSessionForUser(result.user.id, {
+    ipAddress: input.ipAddress ?? null,
+    userAgent: input.userAgent ?? null,
+  });
+
+  return {
+    session,
+    user: toAuthUserPayload(result.user),
+    isNewUser: result.isNewUser,
   };
 }
 
