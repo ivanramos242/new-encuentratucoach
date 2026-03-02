@@ -7,6 +7,7 @@ import { PageShell } from "@/components/layout/page-shell";
 import { sanitizeRichHtml } from "@/lib/html-sanitize";
 import { getPublishedBlogPostBySlug } from "@/lib/blog-service";
 import { buildBreadcrumbJsonLd, buildMetadata } from "@/lib/seo";
+import { getSiteBaseUrl } from "@/lib/site-config";
 
 type ParamsInput = Promise<{ postSlug: string }>;
 
@@ -39,7 +40,7 @@ export default async function BlogPostPage({ params }: { params: ParamsInput }) 
   const { postSlug } = await params;
   const post = await getPublishedBlogPostBySlug(postSlug);
   if (!post) notFound();
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const baseUrl = getSiteBaseUrl();
   const postPath = `/blog/${post.slug}`;
   const breadcrumb = buildBreadcrumbJsonLd([
     { name: "Inicio", path: "/" },

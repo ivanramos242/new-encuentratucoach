@@ -1,14 +1,15 @@
 export const siteConfig = {
   name: "EncuentraTuCoach",
-  domain: "encuentratucoach.local",
-  url: "http://localhost:3000",
+  domain: "encuentratucoach.es",
+  url: "https://encuentratucoach.es",
   description:
     "Directorio de coaches en España para encontrar coaching personal, de carrera, liderazgo y más, online o presencial.",
   locale: "es-ES",
 } as const;
 
 export function getSiteBaseUrl() {
-  return process.env.NEXT_PUBLIC_SITE_URL ?? siteConfig.url;
+  const raw = process.env.NEXT_PUBLIC_SITE_URL?.trim() || siteConfig.url;
+  return raw.replace(/\/+$/, "");
 }
 
 export const siteNav = [
