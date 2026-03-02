@@ -77,6 +77,9 @@ export function SiteFooter() {
             <Link href="/aviso-legal" className="hover:text-zinc-700">
               Aviso legal
             </Link>
+            <Link href="/terminos-y-condiciones" className="hover:text-zinc-700">
+              Términos y condiciones
+            </Link>
             <Link href="/privacidad" className="hover:text-zinc-700">
               Privacidad
             </Link>

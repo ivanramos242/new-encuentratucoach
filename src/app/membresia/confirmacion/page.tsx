@@ -68,7 +68,7 @@ export default async function MembershipConfirmationPage({ searchParams }: { sea
   }
 
   const planCode = isPlanCode(requestedPlan) ? requestedPlan : latestSubscription?.planCode;
-  const retryPaymentHref = planCode ? `/membresia/checkout?plan=${planCode}` : "/membresia";
+  const retryPaymentHref = planCode ? `/membresia/checkout?plan=${planCode}&force=1` : "/membresia";
   const pendingUntilEpochMs = latestSubscription!.updatedAt!.getTime() + PENDING_ACTIVATION_WINDOW_MS;
 
   return (

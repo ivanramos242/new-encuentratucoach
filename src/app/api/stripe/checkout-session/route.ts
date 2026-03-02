@@ -13,6 +13,7 @@ const schema = z.object({
   planCode: z.enum(["monthly", "annual"]),
   successPath: z.string().optional(),
   cancelPath: z.string().optional(),
+  forceRestart: z.boolean().optional(),
 });
 
 const ALLOWED_RETURN_PATHS = ["/membresia", "/membresia/confirmacion", "/mi-cuenta/coach/membresia"];
@@ -107,7 +108,7 @@ export async function POST(request: Request) {
 
     const body = await request.json().catch(() => ({}));
     const parsed = schema.safeParse(body);
-    if (!parsed.success) return jsonError("Payload inválido", 400, { issues: parsed.error.flatten() });
+    if (!parsed.success) return jsonError("Payload invalido", 400, { issues: parsed.error.flatten() });
     if (parsed.data.successPath && !isAllowedInternalReturnPath(parsed.data.successPath, ALLOWED_RETURN_PATHS)) {
       return jsonError("successPath no permitido", 400);
     }
@@ -117,7 +118,7 @@ export async function POST(request: Request) {
 
     const publicPlans = await listMembershipPlansForPublic();
     const publicPlan = publicPlans.find((plan) => plan.code === parsed.data.planCode);
-    if (!publicPlan) return jsonError("Plan de membresía no encontrado o inactivo", 404);
+    if (!publicPlan) return jsonError("Plan de membresia no encontrado o inactivo", 404);
 
     const priceConfig = resolveStripePlanPriceConfig(parsed.data.planCode);
     if (!priceConfig) {
@@ -153,24 +154,39 @@ export async function POST(request: Request) {
         currentPeriodEnd: true,
         cancelAtPeriodEnd: true,
         updatedAt: true,
+        stripeSubscriptionId: true,
       },
     });
+    const forceRestart = Boolean(parsed.data.forceRestart);
     if (latestSubscription && isActiveishSubscription(latestSubscription.status)) {
       return jsonError(
-        `Ya tienes una suscripción ${latestSubscription.status} (${latestSubscription.planCode}). No puedes crear otra hasta cancelarla o que termine.`,
+        `Ya tienes una suscripcion ${latestSubscription.status} (${latestSubscription.planCode}). No puedes crear otra hasta cancelarla o que termine.`,
         409,
         { subscription: latestSubscription },
       );
     }
     if (latestSubscription && isRecentPendingCheckout(latestSubscription.status, latestSubscription.updatedAt)) {
-      return jsonError(
-        "Ya hay una activación de membresía en proceso. Espera unos segundos y revisa /membresia/confirmacion antes de reintentar.",
-        409,
-        {
-          subscription: latestSubscription,
-          nextStep: "/membresia/confirmacion",
-        },
-      );
+      if (!forceRestart) {
+        return jsonError(
+          "Ya hay una activacion de membresia en proceso. Espera unos segundos y revisa /membresia/confirmacion antes de reintentar.",
+          409,
+          {
+            subscription: latestSubscription,
+            nextStep: "/membresia/confirmacion",
+          },
+        );
+      }
+
+      if (latestSubscription.stripeSubscriptionId) {
+        const stripeForCancel = getStripeServer();
+        await stripeForCancel.subscriptions.cancel(latestSubscription.stripeSubscriptionId).catch(() => undefined);
+      }
+      await prisma.coachSubscription
+        .update({
+          where: { id: latestSubscription.id },
+          data: { status: "canceled", cancelAtPeriodEnd: false },
+        })
+        .catch(() => undefined);
     }
 
     const stripeCustomer = await ensureStripeCustomer({
@@ -223,9 +239,9 @@ export async function POST(request: Request) {
                 unit_amount: unitAmountForCheckout,
                 recurring: { interval: parsed.data.planCode === "monthly" ? "month" : "year" },
                 product_data: {
-                  name: parsed.data.planCode === "monthly" ? "Membresía coach mensual" : "Membresía coach anual",
+                  name: parsed.data.planCode === "monthly" ? "Membresia coach mensual" : "Membresia coach anual",
                   description: hasActiveDiscount
-                    ? "Perfil activo en el directorio de coaches de EncuentraTuCoach · Descuento aplicado"
+                    ? "Perfil activo en el directorio de coaches de EncuentraTuCoach Â· Descuento aplicado"
                     : "Perfil activo en el directorio de coaches de EncuentraTuCoach",
                 },
               },
@@ -279,10 +295,10 @@ export async function POST(request: Request) {
     return jsonOk({
       sessionId: session.id,
       checkoutUrl: session.url,
-      message: "Sesión de checkout creada",
+      message: "Sesion de checkout creada",
     });
   } catch (error) {
     console.error("[stripe/checkout-session] error", error);
-    return jsonServerError("No se pudo crear la sesión de pago", error);
+    return jsonServerError("No se pudo crear la sesion de pago", error);
   }
 }

@@ -26,6 +26,7 @@ export const metadata = buildMetadata({
 export default async function MembershipCheckoutPage({ searchParams }: { searchParams: SearchParamsInput }) {
   const sp = await searchParams;
   const plan = pick(sp.plan);
+  const forceRestart = pick(sp.force) === "1";
   if (!isPlanCode(plan)) redirect("/membresia");
 
   const returnTo = `/membresia/checkout?plan=${encodeURIComponent(plan)}`;
@@ -36,7 +37,7 @@ export default async function MembershipCheckoutPage({ searchParams }: { searchP
 
   return (
     <PageShell className="pt-10">
-      <MembershipCheckoutRedirect planCode={plan} />
+      <MembershipCheckoutRedirect planCode={plan} forceRestart={forceRestart} />
     </PageShell>
   );
 }

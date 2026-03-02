@@ -44,54 +44,62 @@ export default async function CoachDashboardPage() {
   const c = completion(profile);
   const hasActiveMembership = isActiveish(sub?.status);
   const needsOnboarding = hasActiveMembership && (profile?.profileStatus !== "published" || c.done < c.total);
+  const missingSteps = c.total - c.done;
 
-  const cards = [
+  const priorityCards = [
+    {
+      href: "/mi-cuenta/coach/membresia",
+      title: hasActiveMembership ? "Membresia activa" : "Activar membresia",
+      desc: hasActiveMembership
+        ? "Gestiona cobros y mantiene tu perfil visible."
+        : "Sin membresia tu perfil no aparece publicado.",
+      icon: faStar,
+      accent: "from-amber-500 to-orange-500",
+      cta: hasActiveMembership ? "Gestionar membresia" : "Activar ahora",
+      badge: sub?.status ? String(sub.status) : "sin suscripcion",
+    },
     {
       href: "/mi-cuenta/coach/perfil",
       title: "Perfil coach",
-      desc: "Editar datos públicos, precios, enlaces y galería.",
+      desc: needsOnboarding
+        ? `Te faltan ${missingSteps} pasos para publicar.`
+        : "Actualiza datos, precios y galeria.",
       icon: faPenToSquare,
       accent: "from-cyan-500 to-sky-500",
-      cta: "Editar perfil",
-    },
-    {
-      href: "/mi-cuenta/coach/membresia",
-      title: "Membresía",
-      desc: "Estado de suscripción, plan actual y facturación.",
-      icon: faStar,
-      accent: "from-amber-500 to-orange-500",
-      cta: "Ver membresía",
-      badge: sub?.status ? String(sub.status) : "sin suscripción",
+      cta: needsOnboarding ? "Completar perfil" : "Editar perfil",
     },
     {
       href: "/mi-cuenta/coach/mensajes",
       title: "Mensajes",
-      desc: "Conversaciones con clientes y coaches.",
+      desc: pendingMessagesCount > 0 ? "Responde primero los mensajes pendientes." : "Tu bandeja esta al dia.",
       icon: faEnvelope,
       accent: "from-rose-500 to-pink-500",
       cta: "Abrir bandeja",
       pending: pendingMessagesCount,
     },
+  ] as const;
+
+  const managementCards = [
     {
       href: "/mi-cuenta/coach/certificacion",
-      title: "Certificación",
-      desc: "Subir documentación y revisar estado de validación.",
+      title: "Certificacion",
+      desc: "Sube documentos y revisa validacion.",
       icon: faUser,
       accent: "from-violet-500 to-fuchsia-500",
-      cta: "Gestionar certificación",
+      cta: "Gestionar certificacion",
     },
     {
       href: "/mi-cuenta/coach/metricas",
-      title: "Métricas",
-      desc: "Visitas, retención y clics de tu perfil.",
+      title: "Metricas",
+      desc: "Sigue visitas, clics y rendimiento del perfil.",
       icon: faChartColumn,
       accent: "from-emerald-500 to-teal-500",
-      cta: "Ver métricas",
+      cta: "Ver metricas",
     },
     {
       href: "/coaches",
       title: "Ver directorio",
-      desc: "Revisa cómo se muestran otros perfiles y detecta mejoras.",
+      desc: "Compara tu perfil con otros coaches y detecta mejoras.",
       icon: faUsers,
       accent: "from-zinc-700 to-zinc-900",
       cta: "Explorar",
@@ -105,7 +113,7 @@ export default async function CoachDashboardPage() {
       <PageHero
         badge="Mi cuenta · Coach"
         title="Panel profesional"
-        description="Gestiona tu perfil, membresía, mensajes y métricas desde un panel más completo."
+        description="Gestiona tu cuenta con foco en prioridades, resultados y crecimiento profesional."
       />
       <PageShell className="pt-8">
         <div className="grid gap-6">
@@ -114,7 +122,7 @@ export default async function CoachDashboardPage() {
               <div>
                 <div className="inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-cyan-900">
                   <span className="h-2 w-2 rounded-full bg-cyan-500" />
-                  Área privada de coach
+                  Area privada de coach
                 </div>
                 <h2 className="mt-3 text-2xl font-black tracking-tight text-zinc-950 sm:text-3xl">
                   {profile?.name || user.displayName || "Tu perfil coach"}
@@ -123,7 +131,7 @@ export default async function CoachDashboardPage() {
                   Estado perfil: <strong>{profile?.profileStatus || "draft"}</strong> · Visibilidad: <strong>{profile?.visibilityStatus || "inactive"}</strong>
                 </p>
                 <p className="mt-1 text-sm text-zinc-700">
-                  Membresía: <strong>{sub?.status || "sin suscripción"}</strong>
+                  Membresia: <strong>{sub?.status || "sin plan activo"}</strong>
                   {sub?.planCode ? ` · ${sub.planCode}` : ""}
                 </p>
 
@@ -152,7 +160,7 @@ export default async function CoachDashboardPage() {
 
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                 <StatMiniCard label="Progreso del perfil" value={`${c.done}/${c.total}`} helper={`${completionPct}% completado`} />
-                <StatMiniCard label="Mensajes pendientes" value={String(pendingMessagesCount)} helper={pendingMessagesCount > 0 ? "Pendientes por leer" : "Bandeja al día"} />
+                <StatMiniCard label="Mensajes pendientes" value={String(pendingMessagesCount)} helper={pendingMessagesCount > 0 ? "Pendientes por leer" : "Bandeja al dia"} />
               </div>
             </div>
 
@@ -165,24 +173,24 @@ export default async function CoachDashboardPage() {
                 />
               </div>
               <p className="mt-2 text-xs font-medium text-zinc-600">
-                Completa los datos base para publicar y mejorar la conversión del perfil.
+                Completa tu informacion base para mejorar confianza y conversion del perfil.
               </p>
             </div>
           </section>
 
           {!hasActiveMembership ? (
             <section className="rounded-3xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900 shadow-sm">
-              <p className="font-semibold">Activa tu membresía para publicar el perfil y responder en mensajes/Q&A.</p>
+              <p className="font-semibold">Prioridad: activa tu membresia para publicar el perfil y responder en mensajes/Q&A.</p>
               <Link href="/mi-cuenta/coach/membresia" className="mt-3 inline-flex items-center rounded-xl bg-zinc-950 px-4 py-2 font-semibold text-white">
                 <FontAwesomeIcon icon={faArrowRight} className="mr-2 h-3.5 w-3.5" />
-                Ir a membresía
+                Ir a membresia
               </Link>
             </section>
           ) : null}
 
           {needsOnboarding ? (
             <section className="rounded-3xl border border-cyan-200 bg-cyan-50 p-5 text-sm text-cyan-900 shadow-sm">
-              <p className="font-semibold">Ya tienes una membresía activa. Completa el formulario para publicar tu perfil.</p>
+              <p className="font-semibold">Tienes membresia activa. Completa el perfil para que se vea profesional y publicable.</p>
               <Link
                 href="/mi-cuenta/coach/perfil?wizard=1"
                 className="mt-3 inline-flex items-center rounded-xl border border-cyan-300 bg-white px-4 py-2 font-semibold text-zinc-900"
@@ -193,10 +201,28 @@ export default async function CoachDashboardPage() {
             </section>
           ) : null}
 
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {cards.map((item) => (
-              <DashboardCard key={item.href} {...item} />
-            ))}
+          <section>
+            <div className="mb-3">
+              <h3 className="text-lg font-black tracking-tight text-zinc-950">Prioridades de hoy</h3>
+              <p className="text-sm text-zinc-600">Empieza por estas acciones para mantener tu cuenta operativa.</p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {priorityCards.map((item) => (
+                <DashboardCard key={item.href} {...item} />
+              ))}
+            </div>
+          </section>
+
+          <section>
+            <div className="mb-3">
+              <h3 className="text-lg font-black tracking-tight text-zinc-950">Gestion del negocio</h3>
+              <p className="text-sm text-zinc-600">Herramientas para medir rendimiento y optimizar tu propuesta.</p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {managementCards.map((item) => (
+                <DashboardCard key={item.href} {...item} />
+              ))}
+            </div>
           </section>
         </div>
       </PageShell>

@@ -92,40 +92,60 @@ export default async function CoachMembershipPage({
     <>
       <PageHero
         badge="Mi cuenta · Coach"
-        title="Mi membresía"
-        description="Activa tu suscripción Stripe para publicar el perfil y mantenerlo visible en el directorio."
+        title="Membresia"
+        description="Gestiona tu plan de forma clara: estado actual, accion principal y ajustes avanzados."
       />
       <PageShell className="pt-8">
-        <MembershipCheckoutCard
-          currentStatus={
-            sub
-              ? {
-                  status: sub.status,
-                  planCode: sub.planCode,
-                  currentPeriodEnd: sub.currentPeriodEnd?.toISOString() || null,
-                  cancelAtPeriodEnd: sub.cancelAtPeriodEnd,
-                  updatedAt: sub.updatedAt?.toISOString?.() || null,
-                }
-              : null
-          }
-          checkoutPaths={{
-            successPath: "/mi-cuenta/coach/membresia?checkout=success",
-            cancelPath: "/mi-cuenta/coach/membresia?checkout=cancel",
-          }}
-          pendingActivation={
-            pendingActivation && pendingUntilEpochMs
-              ? {
-                  active: true,
-                  pendingUntilEpochMs,
-                  retryCheckoutHref: `/membresia/checkout?plan=${pendingPlanCode}`,
-                  planCode: pendingPlanCode,
-                }
-              : null
-          }
-          checkoutStatus={checkoutStatus}
-          showOnboardingCta={shouldShowOnboardingCta}
-          onboardingStepSummary={onboardingStepSummary}
-        />
+        <div className="grid gap-6">
+          <section className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm">
+            <h2 className="text-lg font-black tracking-tight text-zinc-950">Pasos recomendados</h2>
+            <div className="mt-3 grid gap-2 text-sm text-zinc-700 sm:grid-cols-3">
+              <div className="rounded-2xl border border-black/10 bg-zinc-50 px-3 py-2">
+                <p className="font-semibold text-zinc-900">1. Revisa estado</p>
+                <p className="mt-0.5 text-xs">Confirma si tu suscripcion esta activa o pendiente.</p>
+              </div>
+              <div className="rounded-2xl border border-black/10 bg-zinc-50 px-3 py-2">
+                <p className="font-semibold text-zinc-900">2. Ejecuta accion principal</p>
+                <p className="mt-0.5 text-xs">Activa plan o gestiona facturacion en Stripe.</p>
+              </div>
+              <div className="rounded-2xl border border-black/10 bg-zinc-50 px-3 py-2">
+                <p className="font-semibold text-zinc-900">3. Usa opciones avanzadas</p>
+                <p className="mt-0.5 text-xs">Solo cuando necesites cambiar plan o cancelar.</p>
+              </div>
+            </div>
+          </section>
+
+          <MembershipCheckoutCard
+            currentStatus={
+              sub
+                ? {
+                    status: sub.status,
+                    planCode: sub.planCode,
+                    currentPeriodEnd: sub.currentPeriodEnd?.toISOString() || null,
+                    cancelAtPeriodEnd: sub.cancelAtPeriodEnd,
+                    updatedAt: sub.updatedAt?.toISOString?.() || null,
+                  }
+                : null
+            }
+            checkoutPaths={{
+              successPath: "/mi-cuenta/coach/membresia?checkout=success",
+              cancelPath: "/mi-cuenta/coach/membresia?checkout=cancel",
+            }}
+            pendingActivation={
+              pendingActivation && pendingUntilEpochMs
+                ? {
+                    active: true,
+                    pendingUntilEpochMs,
+                    retryCheckoutHref: `/membresia/checkout?plan=${pendingPlanCode}&force=1`,
+                    planCode: pendingPlanCode,
+                  }
+                : null
+            }
+            checkoutStatus={checkoutStatus}
+            showOnboardingCta={shouldShowOnboardingCta}
+            onboardingStepSummary={onboardingStepSummary}
+          />
+        </div>
       </PageShell>
     </>
   );
