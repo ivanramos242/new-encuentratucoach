@@ -2,6 +2,8 @@ import { getQaMinAnswersIndexable } from "@/lib/seo";
 import { renderSitemapUrlset, xmlResponse } from "@/lib/sitemap-xml";
 import { qaQuestions } from "@/lib/v2-mock";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const minAnswers = getQaMinAnswersIndexable();
   const entries = qaQuestions

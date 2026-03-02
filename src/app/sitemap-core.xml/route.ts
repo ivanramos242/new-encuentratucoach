@@ -1,5 +1,7 @@
 import { renderSitemapUrlset, xmlResponse } from "@/lib/sitemap-xml";
 
+export const dynamic = "force-dynamic";
+
 const CORE_PATHS = [
   "/",
   "/coaches",

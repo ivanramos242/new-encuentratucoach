@@ -1,6 +1,8 @@
 import { renderSitemapUrlset, xmlResponse } from "@/lib/sitemap-xml";
 import { qaQuestions, qaTopics } from "@/lib/v2-mock";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const entries = qaTopics
     .filter((topic) => topic.curated)
