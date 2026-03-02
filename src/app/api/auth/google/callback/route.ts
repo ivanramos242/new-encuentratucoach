@@ -12,6 +12,18 @@ import {
 } from "@/lib/auth-google";
 import { loginOrRegisterUserWithGoogle } from "@/lib/auth-service";
 
+function getAppOrigin(requestUrl: URL) {
+  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (configured) {
+    try {
+      return new URL(configured).origin;
+    } catch {
+      // fallback to request origin
+    }
+  }
+  return requestUrl.origin;
+}
+
 function clearGoogleOauthCookie(response: NextResponse) {
   response.cookies.set(getGoogleOauthCookieName(), "", {
     httpOnly: true,
@@ -23,7 +35,7 @@ function clearGoogleOauthCookie(response: NextResponse) {
 }
 
 function buildLoginErrorRedirect(input: { requestUrl: URL; message: string }) {
-  const url = new URL("/iniciar-sesion", input.requestUrl.origin);
+  const url = new URL("/iniciar-sesion", getAppOrigin(input.requestUrl));
   url.searchParams.set("oauth", "google");
   url.searchParams.set("error", input.message);
   const response = NextResponse.redirect(url);
@@ -120,7 +132,7 @@ export async function GET(request: Request) {
       role: auth.user.role,
     });
 
-    const response = NextResponse.redirect(new URL(postAuthPath, requestUrl.origin));
+    const response = NextResponse.redirect(new URL(postAuthPath, getAppOrigin(requestUrl)));
     applySessionCookie(response, auth.session.rawToken, auth.session.expiresAt);
     clearGoogleOauthCookie(response);
     return response;
