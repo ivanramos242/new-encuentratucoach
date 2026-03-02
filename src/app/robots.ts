@@ -2,6 +2,8 @@ import type { MetadataRoute } from "next";
 import { isSeoIndexingAllowed } from "@/lib/seo";
 import { getSiteBaseUrl } from "@/lib/site-config";
 
+export const dynamic = "force-dynamic";
+
 export default function robots(): MetadataRoute.Robots {
   const baseUrl = getSiteBaseUrl();
   const allowIndexing = isSeoIndexingAllowed();

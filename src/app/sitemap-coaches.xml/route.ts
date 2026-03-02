@@ -1,6 +1,8 @@
 import { listPublicCoachesMerged } from "@/lib/public-coaches";
 import { renderSitemapUrlset, xmlResponse } from "@/lib/sitemap-xml";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const coaches = await listPublicCoachesMerged();
   return xmlResponse(

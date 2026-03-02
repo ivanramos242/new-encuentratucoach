@@ -1,5 +1,7 @@
 import { renderSitemapIndex, xmlResponse } from "@/lib/sitemap-xml";
 
+export const dynamic = "force-dynamic";
+
 const CHILD_SITEMAPS = [
   "/sitemap-core.xml",
   "/sitemap-coaches.xml",
