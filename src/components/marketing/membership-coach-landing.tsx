@@ -123,35 +123,35 @@ export function MembershipCoachLanding({
     monthly: [
       "Perfil profesional activo en el directorio",
       "SEO en directorio y landings por ciudad",
-      "Resenas y certificacion para confianza",
-      "Metricas para mejorar conversion",
+      "Reseñas y certificación para confianza",
+      "Métricas para mejorar conversión",
     ],
   } as const;
 
   return (
     <div className="etc-coach-landing" id="etcLanding">
       <div className="wrap">
-        <section className="hero" aria-label="Introduccion">
+        <section className="hero" aria-label="Introducción">
           <div className="hero-grid">
             <div>
               <div className="kicker">
-                <span>Guia + estrategia</span>
+                <span>Guía + estrategia</span>
                 <span style={{ opacity: 0.55 }}>-</span>
                 <span>
                   <b>SEO</b> para coaches
                 </span>
                 <span style={{ opacity: 0.55 }}>-</span>
-                <span>Enfoque conversion</span>
+                <span>Enfoque conversión</span>
               </div>
 
               <h1 className="hero-title">
-                Plataformas para trabajar como coach: como elegir y captar clientes en una plataforma de coaching online
+                Plataformas para trabajar como coach: cómo elegir y captar clientes en una plataforma de coaching online
               </h1>
 
               <p className="hero-lead">
                 Si eres coach y quieres crecer, una buena <strong>plataforma de coaching</strong> te da visibilidad,
-                confianza con resenas y contactos con intencion real de compra. Esta guia de{" "}
-                <strong>plataformas para trabajar como coach</strong> esta orientada a conversion.
+                confianza con reseñas y contactos con intención real de compra. Esta guía de{" "}
+                <strong>plataformas para trabajar como coach</strong> está orientada a conversión.
               </p>
 
               <div className="hero-cta">
@@ -189,14 +189,14 @@ export function MembershipCoachLanding({
                       strokeLinejoin="round"
                     />
                   </svg>
-                  <span>Sin comision por cliente</span>
+                  <span>Sin comisión por cliente</span>
                 </div>
                 <div className="item">
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="M12 20a8 8 0 1 0-8-8 8 8 0 0 0 8 8Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                     <path d="M12 8v4l3 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                   </svg>
-                  <span>Mas visibilidad y leads</span>
+                  <span>Más visibilidad y leads</span>
                 </div>
                 <div className="item">
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -207,7 +207,7 @@ export function MembershipCoachLanding({
                       strokeLinecap="round"
                     />
                   </svg>
-                  <span>Mensajeria interna</span>
+                  <span>Mensajería interna</span>
                 </div>
                 <Link className="item" href="/coaches" aria-label="Ir al directorio de coaches">
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -227,7 +227,7 @@ export function MembershipCoachLanding({
                       <i className="fa-solid fa-id-badge" aria-hidden="true" /> Perfil profesional
                     </span>
                     <span className="badge">
-                      <i className="fa-solid fa-chart-column" aria-hidden="true" /> Estadisticas
+                      <i className="fa-solid fa-chart-column" aria-hidden="true" /> Estadísticas
                     </span>
                   </div>
 
@@ -239,11 +239,9 @@ export function MembershipCoachLanding({
                       </div>
                       <div className="stat">
                         <b>+ Confianza</b>
-                        <span>Resenas verificables</span>
+                        <span>Reseñas verificables</span>
                       </div>
                     </div>
-
-                    <div className="note">Ejemplo real de como se ve un perfil de coach en la plataforma:</div>
 
                     {exampleCoach ? (
                       <div className="mock-img">
@@ -259,7 +257,7 @@ export function MembershipCoachLanding({
                           <p style={{ fontWeight: 900 }}>{exampleCoach.name}</p>
                           <p style={{ color: "rgba(11,18,32,.72)", fontWeight: 700, marginTop: 2 }}>{exampleCoach.headline}</p>
                           <p style={{ color: "rgba(11,18,32,.70)", fontSize: ".92rem", fontWeight: 700, marginTop: 6 }}>
-                            {exampleCoach.cityLabel} - Desde {exampleCoach.price}/sesion
+                            {exampleCoach.cityLabel} - Desde {exampleCoach.price}/sesión
                             {exampleCoach.certified ? " - Coach certificado" : ""}
                           </p>
                           <Link
@@ -289,34 +287,34 @@ export function MembershipCoachLanding({
             </aside>
           </div>
 
-          <div className="toc section-card" id="etc-indice" aria-label="Indice">
+          <div className="toc section-card" id="etc-indice" aria-label="Índice">
             <strong>
               <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ color: "var(--brand-1)", height: 18, width: 18 }}>
                 <path d="M8 6h13M8 12h13M8 18h13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                 <path d="M3 6h.01M3 12h.01M3 18h.01" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
               </svg>
-              Indice (SEO + lectura rapida)
+              Índice (SEO + lectura rápida)
             </strong>
             <ul>
-              <li><a href="#etc-que-es">Que es una plataforma para coaches</a></li>
+              <li><a href="#etc-que-es">Qué es una plataforma para coaches</a></li>
               <li><a href="#etc-tipos">Tipos de plataformas (comparativa)</a></li>
               <li><a href="#etc-ventajas">Ventajas de EncuentraTuCoach (8)</a></li>
-              <li><a href="#etc-como-funciona">Como funciona en 3 pasos</a></li>
-              <li><a href="#etc-membresia">Precio y que incluye</a></li>
-              <li><a href="#etc-guia">Guia + checklist SEO/ventas</a></li>
+              <li><a href="#etc-como-funciona">Cómo funciona en 3 pasos</a></li>
+              <li><a href="#etc-membresia">Precio y qué incluye</a></li>
+              <li><a href="#etc-guia">Guía + checklist SEO/ventas</a></li>
               <li><a href="#etc-faq">FAQs</a></li>
               <li><a href="#etc-contacto">Contacto</a></li>
             </ul>
           </div>
         </section>
 
-        <section id="etc-que-es" aria-label="Que es una plataforma para coaches">
+        <section id="etc-que-es" aria-label="Qué es una plataforma para coaches">
           <div className="section-head">
             <div>
-              <h2 className="h2">Que es una plataforma para trabajar como coach</h2>
+              <h2 className="h2">Qué es una plataforma para trabajar como coach</h2>
               <div className="sub">
-                Las <strong>plataformas para trabajar como coach</strong> mas rentables suelen combinar{" "}
-                <strong>trafico SEO</strong>, <strong>confianza con resenas</strong> y <strong>contacto directo</strong>.
+                Las <strong>plataformas para trabajar como coach</strong> más rentables suelen combinar{" "}
+                <strong>tráfico SEO</strong>, <strong>confianza con reseñas</strong> y <strong>contacto directo</strong>.
                 Si buscas ventas, prioriza una <strong>plataforma especializada</strong>.
               </div>
             </div>
@@ -331,7 +329,7 @@ export function MembershipCoachLanding({
                 </svg>
               </div>
               <h3>Directorio / marketplace</h3>
-              <p>Te encuentran buscando coach por ciudad o especialidad. Es el canal mas cercano a la compra.</p>
+              <p>Te encuentran buscando coach por ciudad o especialidad. Es el canal más cercano a la compra.</p>
             </div>
 
             <div className="card">
@@ -341,8 +339,8 @@ export function MembershipCoachLanding({
                   <path d="M6 5h12a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" stroke="currentColor" strokeWidth="2" />
                 </svg>
               </div>
-              <h3>Herramientas de gestion</h3>
-              <p>Agenda y pagos mejoran eficiencia, pero sin trafico no escalan ventas.</p>
+              <h3>Herramientas de gestión</h3>
+              <p>Agenda y pagos mejoran eficiencia, pero sin tráfico no escalan ventas.</p>
             </div>
 
             <div className="card">
@@ -362,8 +360,8 @@ export function MembershipCoachLanding({
         <section id="etc-tipos" aria-label="Tipos de plataformas para coaches">
           <div className="section-head">
             <div>
-              <h2 className="h2">Tipos de plataformas para coaches (comparativa rapida)</h2>
-              <div className="sub">Elige segun tu objetivo principal: captacion o gestion.</div>
+              <h2 className="h2">Tipos de plataformas para coaches (comparativa rápida)</h2>
+              <div className="sub">Elige según tu objetivo principal: captación o gestión.</div>
             </div>
           </div>
           <div className="section-card compare">
@@ -371,19 +369,19 @@ export function MembershipCoachLanding({
               <div className="compare-card recommend">
                 <div className="compare-head">
                   <div className="chip"><b>Recomendado</b> para ventas</div>
-                  <div className="chip">Captacion: <b>Alta</b></div>
+                  <div className="chip">Captación: <b>Alta</b></div>
                 </div>
                 <div className="compare-body">
                   <h3 style={{ fontWeight: 950, margin: 0 }}>Directorio especializado (EncuentraTuCoach)</h3>
-                  <div className="mini">Ideal para trabajar como coach online con SEO, resenas y contacto directo.</div>
+                  <div className="mini">Ideal para trabajar como coach online con SEO, reseñas y contacto directo.</div>
                   <ul className="compare-list">
-                    <li><strong>Pros:</strong> trafico SEO, prueba social y contacto directo.</li>
+                    <li><strong>Pros:</strong> tráfico SEO, prueba social y contacto directo.</li>
                     <li><strong>Mejor para:</strong> coach online y coach por ciudad/especialidad.</li>
-                    <li><strong>Clave:</strong> perfil con propuesta de valor + CTA + resenas.</li>
+                    <li><strong>Clave:</strong> perfil con propuesta de valor + CTA + reseñas.</li>
                   </ul>
                 </div>
                 <div className="compare-cta">
-                  <div className="hint">Accion rapida: mira el directorio y replica los mejores perfiles.</div>
+                  <div className="hint">Acción rápida: mira el directorio y replica los mejores perfiles.</div>
                   <Link className="btn primary" href="/coaches">Ver directorio de coaches</Link>
                 </div>
               </div>
@@ -391,20 +389,20 @@ export function MembershipCoachLanding({
               <div className="compare-card">
                 <div className="compare-head">
                   <div className="chip">Eficiencia: <b>Alta</b></div>
-                  <div className="chip">Captacion: <b>Baja</b></div>
+                  <div className="chip">Captación: <b>Baja</b></div>
                 </div>
                 <div className="compare-body">
                   <h3 style={{ fontWeight: 950, margin: 0 }}>Suite de herramientas (agenda / pagos)</h3>
-                  <div className="mini">Perfecta si ya tienes trafico y quieres operar mejor.</div>
+                  <div className="mini">Perfecta si ya tienes tráfico y quieres operar mejor.</div>
                   <ul className="compare-list">
                     <li><strong>Pros:</strong> menos no-shows y procesos.</li>
-                    <li><strong>Contras:</strong> no suele traer clientes por si misma.</li>
+                    <li><strong>Contras:</strong> no suele traer clientes por sí misma.</li>
                     <li><strong>Clave:</strong> combinar con una plataforma especializada.</li>
                   </ul>
                 </div>
                 <div className="compare-cta">
-                  <div className="hint">Si tu foco es vender, empieza por captacion.</div>
-                  <a className="btn" href="#etc-membresia">Ver membresia</a>
+                  <div className="hint">Si tu foco es vender, empieza por captación.</div>
+                  <a className="btn" href="#etc-membresia">Ver membresía</a>
                 </div>
               </div>
 
@@ -415,11 +413,11 @@ export function MembershipCoachLanding({
                 </div>
                 <div className="compare-body">
                   <h3 style={{ fontWeight: 950, margin: 0 }}>Plataforma corporativa</h3>
-                  <div className="mini">Util para acceso a empresas, pero con menos control de branding.</div>
+                  <div className="mini">Útil para acceso a empresas, pero con menos control de branding.</div>
                   <ul className="compare-list">
                     <li><strong>Pros:</strong> estabilidad si hay flujo constante.</li>
                     <li><strong>Contras:</strong> menos control de oferta.</li>
-                    <li><strong>Clave:</strong> canal extra, no unico.</li>
+                    <li><strong>Clave:</strong> canal extra, no único.</li>
                   </ul>
                 </div>
                 <div className="compare-cta">
@@ -437,13 +435,13 @@ export function MembershipCoachLanding({
                   <h3 style={{ fontWeight: 950, margin: 0 }}>Comunidad / formacion</h3>
                   <div className="mini">Buena para networking y aprendizaje, pero la venta depende de tu marca.</div>
                   <ul className="compare-list">
-                    <li><strong>Pros:</strong> soporte, metodo y colaboraciones.</li>
+                    <li><strong>Pros:</strong> soporte, método y colaboraciones.</li>
                     <li><strong>Contras:</strong> no asegura demanda.</li>
                     <li><strong>Clave:</strong> combinar con SEO transaccional.</li>
                   </ul>
                 </div>
                 <div className="compare-cta">
-                  <div className="hint">Si quieres cierre, reduce friccion en tu perfil.</div>
+                  <div className="hint">Si quieres cierre, reduce fricción en tu perfil.</div>
                   <a className="btn" href="#etc-ventajas">Ver ventajas</a>
                 </div>
               </div>
@@ -460,16 +458,16 @@ export function MembershipCoachLanding({
                 <strong>confianza</strong> + <strong>contacto directo</strong>.
               </div>
             </div>
-            <a className="btn primary" href="#etc-membresia" aria-label="Ver membresia">Ver precio</a>
+            <a className="btn primary" href="#etc-membresia" aria-label="Ver membresía">Ver precio</a>
           </div>
 
           <div className="adv-grid" aria-label="Lista de 8 ventajas">
             {[
-              ["Portal de coaches", "Perfil con propuesta clara, especialidad, ubicacion, precio y CTA."],
+              ["Portal de coaches", "Perfil con propuesta clara, especialidad, ubicación, precio y CTA."],
               ["Promociones y anuncios", "Impulso de visibilidad para captar demanda y no depender solo de redes."],
               ["Valoraciones", "Prueba social visible para aumentar conversiones en coach online."],
-              ["Comunicacion directa", "Mensajeria para responder rapido y cerrar antes."],
-              ["Estadisticas de perfil", "Datos para mejorar CTR y conversion por nicho."],
+              ["Comunicación directa", "Mensajería para responder rápido y cerrar antes."],
+              ["Estadísticas de perfil", "Datos para mejorar CTR y conversión por nicho."],
               ["Networking profesional", "Colaboraciones y referidos para conseguir clientes como coach."],
               ["Sin comisiones", "Tu margen no se reduce por cliente."],
               ["Descuentos por miembro", "Beneficios en servicios habituales para coaches."],
@@ -493,8 +491,8 @@ export function MembershipCoachLanding({
           <div style={{ marginTop: 16 }} className="section-card">
             <article>
               <div className="callout">
-                <b>Conversion:</b> el camino mas corto es <b>ver ventajas - ver precio - unirse</b>. Por eso repetimos
-                CTA y reducimos friccion.
+                <b>Conversión:</b> el camino más corto es <b>ver ventajas - ver precio - unirse</b>. Por eso repetimos
+                CTA y reducimos fricción.
               </div>
               <a className="btn primary" href="#etc-membresia" style={{ justifyContent: "center", width: "100%" }}>
                 Quiero unirme y crear mi perfil
@@ -503,17 +501,17 @@ export function MembershipCoachLanding({
           </div>
         </section>
 
-        <section id="etc-como-funciona" aria-label="Como funciona">
+        <section id="etc-como-funciona" aria-label="Cómo funciona">
           <div className="section-head">
             <div>
-              <h2 className="h2">Como funciona en 3 pasos</h2>
+              <h2 className="h2">Cómo funciona en 3 pasos</h2>
               <div className="sub">Simple y orientado a resultados: perfil listo, contacto y seguimiento.</div>
             </div>
           </div>
 
           <div className="steps">
             <div className="step">
-              <h3>Unete como profesional</h3>
+              <h3>Únete como profesional</h3>
               <p>Activa tu cuenta de coach.</p>
             </div>
             <div className="step">
@@ -522,15 +520,15 @@ export function MembershipCoachLanding({
             </div>
             <div className="step">
               <h3>Recibe solicitudes</h3>
-              <p>Mensajeria + resenas + estadisticas para mejorar conversion mes a mes.</p>
+              <p>Mensajería + reseñas + estadísticas para mejorar conversión mes a mes.</p>
             </div>
           </div>
         </section>
 
-        <section id="etc-membresia" aria-label="Membresia">
+        <section id="etc-membresia" aria-label="Membresía">
           <div className="section-head">
             <div>
-              <h2 className="h2">Membresia para coaches</h2>
+              <h2 className="h2">Membresía para coaches</h2>
               <div className="sub">
                 Precio claro y beneficios claros. Ideal para trabajar como coach online en plataforma especializada.
               </div>
@@ -582,26 +580,26 @@ export function MembershipCoachLanding({
 
           <div className="section-card" aria-label="Resumen" style={{ marginTop: 18 }}>
             <article>
-              <h3>Para quien es esta membresia</h3>
+              <h3>Para quién es esta membresía</h3>
               <p>
-                Para coaches que quieren un canal estable de captacion. Si comparas{" "}
-                <strong>plataformas para trabajar como coach</strong>, prioriza SEO, resenas y contacto directo.
+                Para coaches que quieren un canal estable de captación. Si comparas{" "}
+                <strong>plataformas para trabajar como coach</strong>, prioriza SEO, reseñas y contacto directo.
               </p>
 
               <div className="callout">
-                <b>Accion recomendada:</b> abre el{" "}
+                <b>Acción recomendada:</b> abre el{" "}
                 <Link href="/coaches" style={{ textDecoration: "underline", textUnderlineOffset: 3 }}>
                   directorio de coaches
                 </Link>{" "}
-                e identifica los perfiles mas completos.
+                e identifica los perfiles más completos.
               </div>
 
-              <h3>Que optimiza mas tu conversion</h3>
+              <h3>Qué optimiza más tu conversión</h3>
               <ul>
                 <li>Headline: Coach de nicho para tipo de cliente.</li>
-                <li>3 bullets: problema - metodo - resultado.</li>
-                <li>Oferta simple: sesion + pack.</li>
-                <li>Resenas visibles y actuales.</li>
+                <li>3 bullets: problema - método - resultado.</li>
+                <li>Oferta simple: sesión + pack.</li>
+                <li>Reseñas visibles y actuales.</li>
               </ul>
 
               <Link className="btn primary" href={joinHref} style={{ justifyContent: "center", width: "100%" }}>
@@ -609,49 +607,48 @@ export function MembershipCoachLanding({
               </Link>
 
               <div className="fine">
-                Tip SEO: usa variaciones como <strong>plataformas para trabajar como coach</strong>,{" "}
-                <strong>coach online</strong>, <strong>coach en ciudad</strong> y tu especialidad.
+                Tip SEO: en tu perfil usa frases como <strong>coach de [especialidad] en [ciudad]</strong>,{" "}
+                <strong>coach online para [objetivo]</strong> y <strong>coaching para [tipo de cliente]</strong>.
               </div>
             </article>
           </div>
         </section>
 
-        <section id="etc-guia" aria-label="Guia completa">
+        <section id="etc-guia" aria-label="Guía completa">
           <div className="section-head">
             <div>
-              <h2 className="h2">Guia: como elegir plataformas para trabajar como coach (SEO + ventas)</h2>
+              <h2 className="h2">Guía: cómo elegir plataformas para trabajar como coach (SEO + ventas)</h2>
               <div className="sub">
-                Bloque optimizado para captar coaches con keywords comerciales sin perder intencion transaccional.
+                Bloque optimizado para captar coaches con palabras clave comerciales sin perder intención transaccional.
               </div>
             </div>
           </div>
           <div className="section-card">
             <article>
-              <h3>1) Elige segun tu objetivo: clientes o eficiencia</h3>
+              <h3>1) Elige según tu objetivo: clientes o eficiencia</h3>
               <p>
-                Si tu prioridad es vender, necesitas una plataforma de coaching con SEO y demanda con intencion. Si
-                eliges solo herramientas, mejoras gestion pero no captacion.
+                Si tu prioridad es vender, necesitas una plataforma de coaching con SEO y demanda con intención. Si
+                eliges solo herramientas, mejoras gestión pero no captación.
               </p>
-              <h3>2) Senales de una plataforma que convierte</h3>
+              <h3>2) Señales de una plataforma que convierte</h3>
               <ul>
-                <li><strong>SEO:</strong> paginas por especialidad y ciudad.</li>
-                <li><strong>Prueba social:</strong> resenas visibles.</li>
-                <li><strong>Contacto directo:</strong> menos pasos, mas cierres.</li>
+                <li><strong>SEO:</strong> páginas por especialidad y ciudad.</li>
+                <li><strong>Prueba social:</strong> reseñas visibles.</li>
+                <li><strong>Contacto directo:</strong> menos pasos, más cierres.</li>
                 <li><strong>Perfil con estructura:</strong> propuesta + CTA + oferta.</li>
-                <li><strong>Medicion:</strong> estadisticas para iterar.</li>
+                <li><strong>Medición:</strong> estadísticas para iterar.</li>
               </ul>
               <div className="callout">
-                <b>Regla:</b> si no entienden en 5 segundos que haces y como contactarte, pierdes conversion.
+                <b>Regla:</b> si no entienden en 5 segundos qué haces y cómo contactarte, pierdes conversión.
               </div>
-              <h3>3) Keywords para tu perfil</h3>
+              <h3>3) Frases clave para posicionar mejor tu perfil</h3>
               <ul>
-                <li>plataformas para trabajar como coach</li>
-                <li>plataformas especializadas</li>
-                <li>plataforma coaching online</li>
-                <li>trabajar como coach online</li>
-                <li>plataforma de coaching en linea</li>
-                <li>plataforma de coaching</li>
-                <li>trabajar como coach</li>
+                <li>coach de [especialidad] en [ciudad]</li>
+                <li>coach online para [objetivo concreto]</li>
+                <li>coaching para [tipo de cliente]</li>
+                <li>sesiones de coaching [online o presencial] en [ciudad]</li>
+                <li>acompañamiento en [problema] para [resultado]</li>
+                <li>coach profesional de [nicho] con [metodología]</li>
               </ul>
               <a className="btn primary" href="#etc-membresia" style={{ justifyContent: "center", width: "100%" }}>
                 Ver precio y unirme ahora
@@ -664,56 +661,56 @@ export function MembershipCoachLanding({
           <div className="section-head">
             <div>
               <h2 className="h2">FAQs</h2>
-              <div className="sub">Respuestas para eliminar objeciones y aumentar conversion.</div>
+              <div className="sub">Respuestas para eliminar objeciones y aumentar conversión.</div>
             </div>
           </div>
           <div className="section-card faq">
             <details>
               <summary>
                 <div className="q">
-                  <span>Si trabajo con EncuentraTuCoach, mis clientes siguen siendo mios?</span>
+                  <span>¿Si trabajo con EncuentraTuCoach, mis clientes siguen siendo míos?</span>
                   <svg className="chev" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                   </svg>
                 </div>
               </summary>
-              <p>Si. La plataforma te da visibilidad y herramientas, pero tu gestionas tu relacion profesional.</p>
+              <p>Sí. La plataforma te da visibilidad y herramientas, pero tú gestionas tu relación profesional.</p>
             </details>
 
             <details>
               <summary>
                 <div className="q">
-                  <span>Puedo seguir desarrollando mi marca propia?</span>
+                  <span>¿Puedo seguir desarrollando mi marca propia?</span>
                   <svg className="chev" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                   </svg>
                 </div>
               </summary>
-              <p>Si. Puedes usar el directorio como canal adicional mientras construyes tu marca.</p>
+              <p>Sí. Puedes usar el directorio como canal adicional mientras construyes tu marca.</p>
             </details>
 
             <details>
               <summary>
                 <div className="q">
-                  <span>Cobrais comision por los clientes?</span>
+                  <span>¿Cobráis comisión por los clientes?</span>
                   <svg className="chev" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                   </svg>
                 </div>
               </summary>
-              <p>No. Tu defines tus honorarios y el cliente te contacta directamente.</p>
+              <p>No. Tú defines tus honorarios y el cliente te contacta directamente.</p>
             </details>
 
             <details>
               <summary>
                 <div className="q">
-                  <span>Que hago si no tengo resenas todavia?</span>
+                  <span>¿Qué hago si no tengo reseñas todavía?</span>
                   <svg className="chev" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                   </svg>
                 </div>
               </summary>
-              <p>Empieza con 3 a 5 testimonios reales y pide resena al finalizar cada proceso.</p>
+              <p>Empieza con 3 a 5 testimonios reales y pide reseña al finalizar cada proceso.</p>
             </details>
           </div>
         </section>
@@ -721,7 +718,7 @@ export function MembershipCoachLanding({
         <section id="etc-contacto" aria-label="Contacto">
           <div className="section-head">
             <div>
-              <h2 className="h2">Contacto y acciones rapidas</h2>
+              <h2 className="h2">Contacto y acciones rápidas</h2>
               <div className="sub">
                 Si ya decidiste trabajar como coach en una plataforma especializada, este es el siguiente paso.
               </div>
@@ -740,19 +737,19 @@ export function MembershipCoachLanding({
             </div>
             <div className="contact-card">
               <h3>Hablar con el equipo</h3>
-              <p>Resuelve dudas de membresia, onboarding y posicionamiento.</p>
+              <p>Resuelve dudas de membresía, onboarding y posicionamiento.</p>
               <Link className="btn" href="/contacto">Contactar</Link>
             </div>
           </div>
         </section>
       </div>
 
-      <div className="sticky-cta" id="etcSticky" aria-label="Accion rapida">
+      <div className="sticky-cta" id="etcSticky" aria-label="Acción rápida">
         <div className="bar">
           <div className="txt">
-            <b>Listo para captar clientes como coach?</b>
+            <b>¿Listo para captar clientes como coach?</b>
             <span>
-              Membresia: {monthlyPrice}/mes o {annualPrice}/ano (sin comision por cliente)
+              Membresía: {monthlyPrice}/mes o {annualPrice}/año (sin comisión por cliente)
             </span>
           </div>
           <Link className="btn primary" href={joinHref} aria-label={joinLabel}>

@@ -25,29 +25,29 @@ const MEMBERSHIP_KEYWORDS = [
 
 const FAQ_ITEMS = [
   {
-    q: "Si trabajo con EncuentraTuCoach, mis clientes siguen siendo mios?",
-    a: "Si. La plataforma te da visibilidad y herramientas, pero tu gestionas tu relacion profesional.",
+    q: "¿Si trabajo con EncuentraTuCoach, mis clientes siguen siendo míos?",
+    a: "Sí. La plataforma te da visibilidad y herramientas, pero tú gestionas tu relación profesional.",
   },
   {
-    q: "Puedo seguir desarrollando mi marca propia?",
-    a: "Si. Puedes usar el directorio como canal adicional mientras construyes tu marca.",
+    q: "¿Puedo seguir desarrollando mi marca propia?",
+    a: "Sí. Puedes usar el directorio como canal adicional mientras construyes tu marca.",
   },
   {
-    q: "Cobrais comision por los clientes?",
-    a: "No. El modelo es de membresia fija, sin comision por contacto.",
+    q: "¿Cobráis comisión por los clientes?",
+    a: "No. El modelo es de membresía fija, sin comisión por contacto.",
   },
   {
-    q: "Que hago si no tengo resenas todavia?",
-    a: "Empieza con 3 a 5 testimonios reales y pide resena al finalizar cada proceso.",
+    q: "¿Qué hago si no tengo reseñas todavía?",
+    a: "Empieza con 3 a 5 testimonios reales y pide reseña al finalizar cada proceso.",
   },
 ] as const;
 
 export const dynamic = "force-dynamic";
 
 export const metadata = buildMetadata({
-  title: "Plataformas para trabajar como coach | Membresia",
+  title: "Plataformas para trabajar como coach | Membresía",
   description:
-    "Plataforma coaching online para trabajar como coach con SEO, resenas y contacto directo. Membresia para coaches en una plataforma de coaching en linea.",
+    "Plataforma coaching online para trabajar como coach con SEO, reseñas y contacto directo. Membresía para coaches en una plataforma de coaching en línea.",
   path: "/membresia",
   keywords: MEMBERSHIP_KEYWORDS as string[],
 });
@@ -110,11 +110,11 @@ function getPlanAction(
   }
 
   if (options?.coachHasPendingActivation) {
-    return { primaryHref: "/membresia/confirmacion", primaryLabel: "Procesando activacion" };
+    return { primaryHref: "/membresia/confirmacion", primaryLabel: "Procesando activación" };
   }
 
   if (sessionUser.role === "client") {
-    return { primaryHref: `/membresia/checkout?plan=${planCode}`, primaryLabel: "Pagar membresia" };
+    return { primaryHref: `/membresia/checkout?plan=${planCode}`, primaryLabel: "Pagar membresía" };
   }
 
   if (sessionUser.role === "coach" || sessionUser.role === "admin") {
@@ -127,7 +127,7 @@ function getPlanAction(
         primaryLabel: planCode === "monthly" ? "Cambiar a plan mensual" : "Cambiar a plan anual",
       };
     }
-    return { primaryHref: `/mi-cuenta/coach/membresia?plan=${planCode}`, primaryLabel: "Pagar membresia" };
+    return { primaryHref: `/mi-cuenta/coach/membresia?plan=${planCode}`, primaryLabel: "Pagar membresía" };
   }
 
   return { primaryHref: "/registro?intent=coach", primaryLabel: "Crear cuenta de coach" };
@@ -205,22 +205,23 @@ export default async function MembershipPage({ searchParams }: { searchParams: S
     };
   });
 
-  const exampleCoach = publicCoaches[0]
+  const featuredCoach = publicCoaches.find((coach) => coach.slug === "carla-gomez-rodriguez");
+  const exampleCoach = featuredCoach
     ? {
-        slug: publicCoaches[0].slug,
-        name: publicCoaches[0].name,
-        headline: publicCoaches[0].headline,
-        cityLabel: publicCoaches[0].cityLabel,
-        heroImageUrl: publicCoaches[0].heroImageUrl,
-        price: formatEuro(publicCoaches[0].basePriceEur),
-        certified: publicCoaches[0].certifiedStatus === "approved",
+        slug: featuredCoach.slug,
+        name: featuredCoach.name,
+        headline: featuredCoach.headline,
+        cityLabel: featuredCoach.cityLabel,
+        heroImageUrl: featuredCoach.heroImageUrl,
+        price: formatEuro(featuredCoach.basePriceEur),
+        certified: featuredCoach.certifiedStatus === "approved",
       }
     : null;
 
   const baseUrl = getSiteBaseUrl();
   const breadcrumb = buildBreadcrumbJsonLd([
     { name: "Inicio", path: "/" },
-    { name: "Membresia", path: "/membresia" },
+    { name: "Membresía", path: "/membresia" },
   ]);
   const faqSchema = {
     "@context": "https://schema.org",
@@ -240,7 +241,7 @@ export default async function MembershipPage({ searchParams }: { searchParams: S
     name: "Plataformas para trabajar como coach",
     url: `${baseUrl}/membresia`,
     description:
-      "Plataforma de coaching en linea para trabajar como coach online y captar clientes con SEO, resenas y contacto directo.",
+      "Plataforma de coaching en línea para trabajar como coach online y captar clientes con SEO, reseñas y contacto directo.",
     keywords: MEMBERSHIP_KEYWORDS.join(", "),
   };
 
@@ -251,7 +252,7 @@ export default async function MembershipPage({ searchParams }: { searchParams: S
       {checkout === "cancel" ? (
         <section className="mx-auto mt-6 w-full max-w-6xl rounded-2xl border border-zinc-200 bg-white px-4 py-4 shadow-sm">
           <p className="text-sm font-semibold text-zinc-900">
-            Pago cancelado. No se ha activado ninguna membresia. Puedes volver a intentarlo cuando quieras.
+            Pago cancelado. No se ha activado ninguna membresía. Puedes volver a intentarlo cuando quieras.
           </p>
         </section>
       ) : null}
@@ -259,7 +260,7 @@ export default async function MembershipPage({ searchParams }: { searchParams: S
       {coachHasPendingActivation ? (
         <section className="mx-auto mt-6 w-full max-w-6xl rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 shadow-sm">
           <p className="text-sm font-semibold text-amber-900">
-            Estamos procesando tu activacion en Stripe. Te activaremos automaticamente en cuanto se confirme el pago.
+            Estamos procesando tu activación en Stripe. Te activaremos automáticamente en cuanto se confirme el pago.
           </p>
         </section>
       ) : null}
