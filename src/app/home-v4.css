@@ -23,7 +23,6 @@
 .etc-home-v4 a:hover{text-decoration:underline}
 .etc-home-v4 img{max-width:100%;height:auto;display:block}
 .etc-home-v4 p{margin:0}
-.etc-home-v4 i::before{content:"•";display:inline-block}
 .etc-home-v4 .wrap{width:min(var(--max),calc(100% - 32px));margin:0 auto;padding:30px 0 78px}
 .etc-home-v4 section{padding:66px 0}
 .etc-home-v4 .section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:22px;margin:0 0 32px;flex-wrap:wrap}

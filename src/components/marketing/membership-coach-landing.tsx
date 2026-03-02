@@ -6,12 +6,38 @@ import { useEffect } from "react";
 
 type MembershipCoachLandingProps = {
   annualPrice: string;
+  exampleCoach: {
+    certified: boolean;
+    cityLabel: string;
+    headline: string;
+    heroImageUrl: string;
+    name: string;
+    price: string;
+    slug: string;
+  } | null;
   joinHref: string;
   joinLabel: string;
+  plans: Array<{
+    code: "monthly" | "annual";
+    ctaHref: string;
+    ctaLabel: string;
+    discountLabel: string | null;
+    intervalLabel: string;
+    name: string;
+    originalPrice: string | null;
+    price: string;
+  }>;
   monthlyPrice: string;
 };
 
-export function MembershipCoachLanding({ annualPrice, joinHref, joinLabel, monthlyPrice }: MembershipCoachLandingProps) {
+export function MembershipCoachLanding({
+  annualPrice,
+  exampleCoach,
+  joinHref,
+  joinLabel,
+  monthlyPrice,
+  plans,
+}: MembershipCoachLandingProps) {
   useEffect(() => {
     const root = document.getElementById("etcLanding");
     if (!root) return;
@@ -86,6 +112,21 @@ export function MembershipCoachLanding({ annualPrice, joinHref, joinLabel, month
       io?.disconnect();
     };
   }, []);
+
+  const planFeatures = {
+    annual: [
+      "Todo lo del plan mensual",
+      "Ahorro anual frente al pago mes a mes",
+      "Prioridad en mejoras y roadmap",
+      "Preparado para nuevas funciones premium",
+    ],
+    monthly: [
+      "Perfil profesional activo en el directorio",
+      "SEO en directorio y landings por ciudad",
+      "Resenas y certificacion para confianza",
+      "Metricas para mejorar conversion",
+    ],
+  } as const;
 
   return (
     <div className="etc-coach-landing" id="etcLanding">
@@ -183,10 +224,10 @@ export function MembershipCoachLanding({ annualPrice, joinHref, joinLabel, month
                 <div className="preview">
                   <div className="top">
                     <span className="badge">
-                      <small>-</small> Perfil profesional
+                      <i className="fa-solid fa-id-badge" aria-hidden="true" /> Perfil profesional
                     </span>
                     <span className="badge">
-                      <small>-</small> Estadisticas
+                      <i className="fa-solid fa-chart-column" aria-hidden="true" /> Estadisticas
                     </span>
                   </div>
 
@@ -202,18 +243,46 @@ export function MembershipCoachLanding({ annualPrice, joinHref, joinLabel, month
                       </div>
                     </div>
 
-                    <div className="note">Asi se ve un perfil dentro de un directorio de coaches:</div>
+                    <div className="note">Ejemplo real de como se ve un perfil de coach en la plataforma:</div>
 
-                    <div className="mock-img">
-                      <Image
-                        src="https://encuentratucoach.es/wp-content/uploads/2026/01/descarga.png"
-                        alt="Ejemplo de perfil de coach en EncuentraTuCoach con especialidad, precio y ubicacion"
-                        loading="lazy"
-                        width={900}
-                        height={900}
-                        sizes="(max-width: 980px) 100vw, 520px"
-                      />
-                    </div>
+                    {exampleCoach ? (
+                      <div className="mock-img">
+                        <Image
+                          src={exampleCoach.heroImageUrl}
+                          alt={`Perfil real de ${exampleCoach.name}`}
+                          loading="lazy"
+                          width={900}
+                          height={900}
+                          sizes="(max-width: 980px) 100vw, 520px"
+                        />
+                        <div style={{ padding: "12px 14px" }}>
+                          <p style={{ fontWeight: 900 }}>{exampleCoach.name}</p>
+                          <p style={{ color: "rgba(11,18,32,.72)", fontWeight: 700, marginTop: 2 }}>{exampleCoach.headline}</p>
+                          <p style={{ color: "rgba(11,18,32,.70)", fontSize: ".92rem", fontWeight: 700, marginTop: 6 }}>
+                            {exampleCoach.cityLabel} - Desde {exampleCoach.price}/sesion
+                            {exampleCoach.certified ? " - Coach certificado" : ""}
+                          </p>
+                          <Link
+                            className="btn"
+                            href={`/coaches/${exampleCoach.slug}`}
+                            style={{ marginTop: 10, width: "100%" }}
+                          >
+                            Ver perfil real
+                          </Link>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mock-img">
+                        <Image
+                          src="https://encuentratucoach.es/wp-content/uploads/2026/01/pexels-tima-miroshnichenko-5336951.jpg"
+                          alt="Ejemplo de perfil de coach en EncuentraTuCoach"
+                          loading="lazy"
+                          width={900}
+                          height={900}
+                          sizes="(max-width: 980px) 100vw, 520px"
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -468,94 +537,82 @@ export function MembershipCoachLanding({ annualPrice, joinHref, joinLabel, month
             </div>
           </div>
 
-          <div className="pricing">
-            <div className="pricebox" aria-label="Precio">
-              <div className="headline">
-                <span className="badge"><small>-</small> Plan principal (todo incluido)</span>
+          <div className="grid grid2">
+            {plans.map((plan) => (
+              <div className="pricebox" aria-label={`Precio ${plan.name}`} key={plan.code}>
+                <div className="headline">
+                  <span className="badge">
+                    <i className="fa-solid fa-layer-group" aria-hidden="true" /> {plan.name}
+                  </span>
+                </div>
+
+                <div className="price">
+                  {plan.price} <span style={{ fontSize: "1.05rem", fontWeight: 950 }}>/ {plan.intervalLabel}</span>
+                  {plan.originalPrice ? <small>Antes {plan.originalPrice}</small> : null}
+                </div>
+
+                {plan.discountLabel ? (
+                  <div className="callout" style={{ marginTop: 6 }}>
+                    <b>Descuento activo:</b> {plan.discountLabel}
+                  </div>
+                ) : null}
+
+                <ul className="features">
+                  {planFeatures[plan.code].map((feature) => (
+                    <li key={`${plan.code}-${feature}`}>
+                      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M20 7 10 17l-5-5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="price-actions">
+                  <Link className="btn primary" href={plan.ctaHref} style={{ flex: 1 }} aria-label={plan.ctaLabel}>
+                    {plan.ctaLabel}
+                  </Link>
+                  <Link className="btn" href="/coaches" style={{ flex: 1 }} aria-label="Ver directorio de coaches">
+                    Ver directorio
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="section-card" aria-label="Resumen" style={{ marginTop: 18 }}>
+            <article>
+              <h3>Para quien es esta membresia</h3>
+              <p>
+                Para coaches que quieren un canal estable de captacion. Si comparas{" "}
+                <strong>plataformas para trabajar como coach</strong>, prioriza SEO, resenas y contacto directo.
+              </p>
+
+              <div className="callout">
+                <b>Accion recomendada:</b> abre el{" "}
+                <Link href="/coaches" style={{ textDecoration: "underline", textUnderlineOffset: 3 }}>
+                  directorio de coaches
+                </Link>{" "}
+                e identifica los perfiles mas completos.
               </div>
 
-              <div className="price">
-                {monthlyPrice} <span style={{ fontSize: "1.05rem", fontWeight: 950 }}>/mes</span>
-                <small>o {annualPrice} /ano</small>
-              </div>
-
-              <ul className="features">
-                <li>
-                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M20 7 10 17l-5-5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  Perfil profesional en el directorio de coaches (especialidad + ciudad + online)
-                </li>
-                <li>
-                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M20 7 10 17l-5-5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  Contacto directo con clientes (sin comisiones por cliente)
-                </li>
-                <li>
-                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M20 7 10 17l-5-5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  Resenas para elevar confianza y conversion
-                </li>
-                <li>
-                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M20 7 10 17l-5-5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  Estadisticas para mejorar resultados
-                </li>
-                <li>
-                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M20 7 10 17l-5-5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  Comunidad y networking (referidos)
-                </li>
+              <h3>Que optimiza mas tu conversion</h3>
+              <ul>
+                <li>Headline: Coach de nicho para tipo de cliente.</li>
+                <li>3 bullets: problema - metodo - resultado.</li>
+                <li>Oferta simple: sesion + pack.</li>
+                <li>Resenas visibles y actuales.</li>
               </ul>
 
-              <div className="price-actions">
-                <Link className="btn primary" href={joinHref} style={{ flex: 1 }} aria-label={joinLabel}>
-                  {joinLabel}
-                </Link>
-                <Link className="btn" href="/coaches" style={{ flex: 1 }} aria-label="Ver directorio de coaches">
-                  Ver directorio
-                </Link>
-              </div>
+              <Link className="btn primary" href={joinHref} style={{ justifyContent: "center", width: "100%" }}>
+                {joinLabel}
+              </Link>
 
               <div className="fine">
                 Tip SEO: usa variaciones como <strong>plataformas para trabajar como coach</strong>,{" "}
                 <strong>coach online</strong>, <strong>coach en ciudad</strong> y tu especialidad.
               </div>
-            </div>
-
-            <div className="section-card" aria-label="Resumen">
-              <article>
-                <h3>Para quien es esta membresia</h3>
-                <p>
-                  Para coaches que quieren un canal estable de captacion. Si comparas{" "}
-                  <strong>plataformas para trabajar como coach</strong>, prioriza SEO, resenas y contacto directo.
-                </p>
-
-                <div className="callout">
-                  <b>Accion recomendada:</b> abre el{" "}
-                  <Link href="/coaches" style={{ textDecoration: "underline", textUnderlineOffset: 3 }}>
-                    directorio de coaches
-                  </Link>{" "}
-                  e identifica los perfiles mas completos.
-                </div>
-
-                <h3>Que optimiza mas tu conversion</h3>
-                <ul>
-                  <li>Headline: Coach de nicho para tipo de cliente.</li>
-                  <li>3 bullets: problema - metodo - resultado.</li>
-                  <li>Oferta simple: sesion + pack.</li>
-                  <li>Resenas visibles y actuales.</li>
-                </ul>
-
-                <Link className="btn primary" href={joinHref} style={{ justifyContent: "center", width: "100%" }}>
-                  {joinLabel}
-                </Link>
-              </article>
-            </div>
+            </article>
           </div>
         </section>
 
@@ -706,3 +763,4 @@ export function MembershipCoachLanding({ annualPrice, joinHref, joinLabel, month
     </div>
   );
 }
+

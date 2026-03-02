@@ -3,6 +3,7 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { getOptionalSessionUser } from "@/lib/auth-server";
 import { listMembershipPlansForPublic } from "@/lib/membership-plan-service";
 import { prisma } from "@/lib/prisma";
+import { listPublicCoachesMerged } from "@/lib/public-coaches";
 import { buildBreadcrumbJsonLd, buildMetadata } from "@/lib/seo";
 import { getSiteBaseUrl } from "@/lib/site-config";
 import { formatEuro } from "@/lib/utils";
@@ -158,6 +159,7 @@ export default async function MembershipPage({ searchParams }: { searchParams: S
   const coachHasPendingActivation = isRecentPendingCoachActivation(latestSubscription?.status, latestSubscription?.updatedAt);
   const coachActivePlanCode = coachHasActivePlan && isPlanCode(latestSubscription?.planCode) ? latestSubscription.planCode : null;
   const plans = await listMembershipPlansForPublic();
+  const publicCoaches = await listPublicCoachesMerged();
 
   const monthlyPlan = plans.find((plan) => plan.code === "monthly") ?? plans[0];
   const annualPlan = plans.find((plan) => plan.code === "annual");
@@ -173,6 +175,47 @@ export default async function MembershipPage({ searchParams }: { searchParams: S
     coachActivePlanCode,
     coachHasPendingActivation,
   });
+
+  const plansForLanding = [...plans].sort((a, b) => {
+    if (a.code === b.code) return 0;
+    if (a.code === "monthly") return -1;
+    if (b.code === "monthly") return 1;
+    return 0;
+  });
+
+  const landingPlans = plansForLanding.map((plan) => {
+    const action = getPlanAction(sessionUser, plan.code, {
+      coachHasActivePlan,
+      coachActivePlanCode,
+      coachHasPendingActivation,
+    });
+
+    const hasDiscount = plan.discountActive && plan.effectivePriceCents < plan.priceCents;
+    return {
+      code: plan.code,
+      name: plan.name,
+      intervalLabel: plan.intervalLabel,
+      price: formatEuro(plan.effectivePriceCents / 100),
+      originalPrice: hasDiscount ? formatEuro(plan.priceCents / 100) : null,
+      discountLabel: hasDiscount
+        ? `${plan.discountPercent ?? 0}%${plan.discountLabel ? ` · ${plan.discountLabel}` : ""}`
+        : null,
+      ctaHref: action.primaryHref,
+      ctaLabel: action.primaryLabel,
+    };
+  });
+
+  const exampleCoach = publicCoaches[0]
+    ? {
+        slug: publicCoaches[0].slug,
+        name: publicCoaches[0].name,
+        headline: publicCoaches[0].headline,
+        cityLabel: publicCoaches[0].cityLabel,
+        heroImageUrl: publicCoaches[0].heroImageUrl,
+        price: formatEuro(publicCoaches[0].basePriceEur),
+        certified: publicCoaches[0].certifiedStatus === "approved",
+      }
+    : null;
 
   const baseUrl = getSiteBaseUrl();
   const breadcrumb = buildBreadcrumbJsonLd([
@@ -223,8 +266,10 @@ export default async function MembershipPage({ searchParams }: { searchParams: S
 
       <MembershipCoachLanding
         annualPrice={annualPrice}
+        exampleCoach={exampleCoach}
         joinHref={monthlyPlanAction.primaryHref}
         joinLabel={monthlyPlanAction.primaryLabel}
+        plans={landingPlans}
         monthlyPrice={monthlyPrice}
       />
     </>
