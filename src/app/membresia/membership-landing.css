@@ -785,6 +785,12 @@
   font-weight: 950;
 }
 
+.etc-coach-landing .badge i {
+  color: var(--brand-1);
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
 .etc-coach-landing .preview .body {
   display: grid;
   gap: 14px;

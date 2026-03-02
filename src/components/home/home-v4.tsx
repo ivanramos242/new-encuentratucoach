@@ -228,7 +228,7 @@ export function HomeV4({ coaches }: HomeV4Props) {
                     }}
                   >
                     <div className="inputwrap" role="search" aria-label="Buscar coach por ciudad o especialidad">
-                      <i aria-hidden="true" />
+                      <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
                       <input
                         value={query}
                         onChange={(event) => {
@@ -271,7 +271,7 @@ export function HomeV4({ coaches }: HomeV4Props) {
                         type="button"
                         onMouseDown={() => goToSuggestion(index)}
                       >
-                        <i aria-hidden="true" />
+                        <i className="fa-solid fa-location-dot" aria-hidden="true" />
                         <span className="label">{item.label}</span>
                         <span className="meta">{item.meta}</span>
                       </button>
@@ -280,22 +280,22 @@ export function HomeV4({ coaches }: HomeV4Props) {
 
                   <div className="chips" aria-label="Accesos rapidos">
                     <button className="chip" type="button" onClick={() => router.push("/coaches/certificados")}>
-                      <i aria-hidden="true" /> Certificados
+                      <i className="fa-solid fa-check-double" aria-hidden="true" /> Certificados
                     </button>
                     <button className="chip" type="button" onClick={() => router.push("/coaches/modalidad/online")}>
-                      <i aria-hidden="true" /> Online
+                      <i className="fa-solid fa-video" aria-hidden="true" /> Online
                     </button>
                     <button className="chip" type="button" onClick={() => router.push("/coaches")}>
-                      <i aria-hidden="true" /> Presencial
+                      <i className="fa-solid fa-location-dot" aria-hidden="true" /> Presencial
                     </button>
                     <button className="chip" type="button" onClick={() => router.push("/coaches/categoria/personal")}>
-                      <i aria-hidden="true" /> Coaching personal
+                      <i className="fa-solid fa-compass" aria-hidden="true" /> Coaching personal
                     </button>
                     <button className="chip" type="button" onClick={() => router.push("/coaches/categoria/carrera")}>
-                      <i aria-hidden="true" /> Carrera
+                      <i className="fa-solid fa-briefcase" aria-hidden="true" /> Carrera
                     </button>
                     <button className="chip" type="button" onClick={() => router.push("/coaches/categoria/liderazgo")}>
-                      <i aria-hidden="true" /> Liderazgo
+                      <i className="fa-solid fa-people-group" aria-hidden="true" /> Liderazgo
                     </button>
                   </div>
 
@@ -305,7 +305,7 @@ export function HomeV4({ coaches }: HomeV4Props) {
                       <div className="popular-links">
                         {CITY_SUGGESTIONS.slice(0, 4).map((city) => (
                           <Link key={city.label} className="plink" href={city.href}>
-                            <i aria-hidden="true" /> {city.label.replace("Coach ", "")}
+                            <i className="fa-solid fa-arrow-right" aria-hidden="true" /> {city.label.replace("Coach ", "")}
                           </Link>
                         ))}
                       </div>
@@ -315,16 +315,16 @@ export function HomeV4({ coaches }: HomeV4Props) {
                       <h3>Especialidades populares</h3>
                       <div className="popular-links">
                         <Link className="plink" href="/coaches/categoria/personal">
-                          <i aria-hidden="true" /> Coaching personal
+                          <i className="fa-solid fa-arrow-right" aria-hidden="true" /> Coaching personal
                         </Link>
                         <Link className="plink" href="/coaches/categoria/carrera">
-                          <i aria-hidden="true" /> Carrera
+                          <i className="fa-solid fa-arrow-right" aria-hidden="true" /> Carrera
                         </Link>
                         <Link className="plink" href="/coaches/categoria/liderazgo">
-                          <i aria-hidden="true" /> Liderazgo
+                          <i className="fa-solid fa-arrow-right" aria-hidden="true" /> Liderazgo
                         </Link>
                         <Link className="plink" href="/coaches/modalidad/online">
-                          <i aria-hidden="true" /> Coach online
+                          <i className="fa-solid fa-arrow-right" aria-hidden="true" /> Coach online
                         </Link>
                       </div>
                     </div>
@@ -333,7 +333,7 @@ export function HomeV4({ coaches }: HomeV4Props) {
                   <div className="coach-cta-hero" aria-label="Acceso para coaches">
                     <div className="left">
                       <div className="ico" aria-hidden="true">
-                        <i aria-hidden="true" />
+                        <i className="fa-solid fa-id-badge" aria-hidden="true" />
                       </div>
                       <div>
                         <b>Eres coach?</b>
@@ -354,10 +354,10 @@ export function HomeV4({ coaches }: HomeV4Props) {
                   <div className="mini">
                     <div className="top">
                       <span className="badge">
-                        <i aria-hidden="true" /> Busqueda guiada
+                        <i className="fa-solid fa-wand-magic-sparkles" aria-hidden="true" /> Busqueda guiada
                       </span>
                       <span className="badge">
-                        <i aria-hidden="true" /> Perfiles verificados
+                        <i className="fa-solid fa-shield-halved" aria-hidden="true" /> Perfiles verificados
                       </span>
                     </div>
 
@@ -374,7 +374,7 @@ export function HomeV4({ coaches }: HomeV4Props) {
 
                       <div className="feature-list" aria-label="Puntos clave">
                         <div className="feat">
-                          <i aria-hidden="true" />
+                          <i className="fa-solid fa-compass" aria-hidden="true" />
                           <div>
                             <b>Elige por objetivo</b>
                             <span>Vida, carrera, liderazgo, pareja, bioemocional y mas.</span>
@@ -382,7 +382,7 @@ export function HomeV4({ coaches }: HomeV4Props) {
                         </div>
 
                         <div className="feat">
-                          <i aria-hidden="true" />
+                          <i className="fa-solid fa-check-double" aria-hidden="true" />
                           <div>
                             <b>Distintivo de verificacion</b>
                             <span>Visible cuando hay documentacion revisada.</span>
@@ -435,42 +435,42 @@ export function HomeV4({ coaches }: HomeV4Props) {
               <h3>Bioemocional</h3>
               <p>Gestion emocional, creencias y cambios profundos con estructura.</p>
               <span className="go">
-                <i aria-hidden="true" /> Ver coaches bioemocionales
+                <i className="fa-solid fa-arrow-right" aria-hidden="true" /> Ver coaches bioemocionales
               </span>
             </Link>
             <Link className="cat-card" href="/coaches/categoria/personal">
               <h3>Coaching personal</h3>
               <p>Autoestima, habitos, disciplina, foco y objetivos personales.</p>
               <span className="go">
-                <i aria-hidden="true" /> Ver coaching personal
+                <i className="fa-solid fa-arrow-right" aria-hidden="true" /> Ver coaching personal
               </span>
             </Link>
             <Link className="cat-card" href="/coaches/categoria/carrera">
               <h3>Carrera</h3>
               <p>Cambio laboral, entrevistas y claridad profesional.</p>
               <span className="go">
-                <i aria-hidden="true" /> Ver coaching de carrera
+                <i className="fa-solid fa-arrow-right" aria-hidden="true" /> Ver coaching de carrera
               </span>
             </Link>
             <Link className="cat-card" href="/coaches/categoria/liderazgo">
               <h3>Liderazgo</h3>
               <p>Comunicacion, equipos, decisiones y rendimiento directivo.</p>
               <span className="go">
-                <i aria-hidden="true" /> Ver liderazgo
+                <i className="fa-solid fa-arrow-right" aria-hidden="true" /> Ver liderazgo
               </span>
             </Link>
             <Link className="cat-card" href="/coaches/categoria/pareja">
               <h3>Pareja</h3>
               <p>Comunicacion, acuerdos, limites y objetivos compartidos.</p>
               <span className="go">
-                <i aria-hidden="true" /> Ver pareja
+                <i className="fa-solid fa-arrow-right" aria-hidden="true" /> Ver pareja
               </span>
             </Link>
             <Link className="cat-card" href="/coaches/categoria/deportivo">
               <h3>Deportivo</h3>
               <p>Mentalidad, consistencia y rendimiento.</p>
               <span className="go">
-                <i aria-hidden="true" /> Ver deportivo
+                <i className="fa-solid fa-arrow-right" aria-hidden="true" /> Ver deportivo
               </span>
             </Link>
           </div>
@@ -497,7 +497,7 @@ export function HomeV4({ coaches }: HomeV4Props) {
                   ["Necesitas accountability", "Con seguimiento semanal avanzas mas rapido."],
                 ].map(([title, text]) => (
                   <div className="need-item" key={title}>
-                    <i aria-hidden="true" />
+                    <i className="fa-solid fa-circle-check" aria-hidden="true" />
                     <div>
                       <b>{title}</b>
                       <span>{text}</span>
@@ -547,13 +547,13 @@ export function HomeV4({ coaches }: HomeV4Props) {
             ].map(([title, href, src]) => (
               <Link key={title} className="city-card" href={href} aria-label={title}>
                 <Image src={src} alt={title} width={1400} height={900} sizes="(max-width: 980px) 100vw, 31vw" />
-                <div className="label">
-                  <b>{title}</b>
-                  <span>
-                    <i aria-hidden="true" /> Ver
-                  </span>
-                </div>
-              </Link>
+                  <div className="label">
+                    <b>{title}</b>
+                    <span>
+                      <i className="fa-solid fa-arrow-right" aria-hidden="true" /> Ver
+                    </span>
+                  </div>
+                </Link>
             ))}
           </div>
 
@@ -619,10 +619,10 @@ export function HomeV4({ coaches }: HomeV4Props) {
             <div className="choose-side">
               <div className="top">
                 <span className="pill">
-                  <i aria-hidden="true" /> 2 minutos
+                  <i className="fa-solid fa-clock" aria-hidden="true" /> 2 minutos
                 </span>
                 <span className="pill">
-                  <i aria-hidden="true" /> Mejor encaje
+                  <i className="fa-solid fa-star" aria-hidden="true" /> Mejor encaje
                 </span>
               </div>
 
@@ -668,16 +668,16 @@ export function HomeV4({ coaches }: HomeV4Props) {
                 <h3>Online</h3>
                 <ul>
                   <li>
-                    <i aria-hidden="true" /> Flexibilidad y cero desplazamientos
+                    <i className="fa-solid fa-check" aria-hidden="true" /> Flexibilidad y cero desplazamientos
                   </li>
                   <li>
-                    <i aria-hidden="true" /> Acceso a profesionales de toda Espana
+                    <i className="fa-solid fa-check" aria-hidden="true" /> Acceso a profesionales de toda Espana
                   </li>
                   <li>
-                    <i aria-hidden="true" /> Suele ser mas economico
+                    <i className="fa-solid fa-check" aria-hidden="true" /> Suele ser mas economico
                   </li>
                   <li>
-                    <i aria-hidden="true" /> Ideal para agendas apretadas
+                    <i className="fa-solid fa-check" aria-hidden="true" /> Ideal para agendas apretadas
                   </li>
                 </ul>
                 <div className="actions">
@@ -694,16 +694,16 @@ export function HomeV4({ coaches }: HomeV4Props) {
                 <h3>Presencial</h3>
                 <ul>
                   <li>
-                    <i aria-hidden="true" /> Conexion y compromiso
+                    <i className="fa-solid fa-check" aria-hidden="true" /> Conexion y compromiso
                   </li>
                   <li>
-                    <i aria-hidden="true" /> Lectura completa del lenguaje corporal
+                    <i className="fa-solid fa-check" aria-hidden="true" /> Lectura completa del lenguaje corporal
                   </li>
                   <li>
-                    <i aria-hidden="true" /> Util si valoras cercania
+                    <i className="fa-solid fa-check" aria-hidden="true" /> Util si valoras cercania
                   </li>
                   <li>
-                    <i aria-hidden="true" /> Perfecto para contexto local
+                    <i className="fa-solid fa-check" aria-hidden="true" /> Perfecto para contexto local
                   </li>
                 </ul>
                 <div className="actions">
@@ -785,6 +785,7 @@ export function HomeV4({ coaches }: HomeV4Props) {
               <div className="sub">Si tienes dudas, publica tu pregunta y recibe respuestas de coaches de la plataforma.</div>
             </div>
             <Link className="btn coach-outline" href="/pregunta-a-un-coach" aria-label="Ir a Pregunta a un Coach">
+              <i className="fa-solid fa-circle-question" aria-hidden="true" />
               Pregunta Coach
             </Link>
           </div>
@@ -798,9 +799,11 @@ export function HomeV4({ coaches }: HomeV4Props) {
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 6 }}>
                   <Link className="btn coach-solid" href="/pregunta-a-un-coach">
+                    <i className="fa-solid fa-paper-plane" aria-hidden="true" />
                     Hacer una pregunta
                   </Link>
                   <Link className="btn coach-outline" href="/pregunta-a-un-coach">
+                    <i className="fa-solid fa-comments" aria-hidden="true" />
                     Ver preguntas
                   </Link>
                 </div>
@@ -831,7 +834,7 @@ export function HomeV4({ coaches }: HomeV4Props) {
             <div className="trust-top">
               <div className="rating-line" aria-label="Valoracion media">
                 <div className="stars" aria-hidden="true">
-                  <i aria-hidden="true" /> <i aria-hidden="true" /> <i aria-hidden="true" /> <i aria-hidden="true" /> <i aria-hidden="true" />
+                  <i className="fa-solid fa-star" aria-hidden="true" /> <i className="fa-solid fa-star" aria-hidden="true" /> <i className="fa-solid fa-star" aria-hidden="true" /> <i className="fa-solid fa-star" aria-hidden="true" /> <i className="fa-solid fa-star-half-stroke" aria-hidden="true" />
                 </div>
                 <div className="rating">
                   4.8/5 <small>media de valoraciones</small>
@@ -849,7 +852,7 @@ export function HomeV4({ coaches }: HomeV4Props) {
                     {slide.map((review) => (
                       <div className="quote" key={review.name}>
                         <div className="stars" aria-hidden="true">
-                          <i aria-hidden="true" /> <i aria-hidden="true" /> <i aria-hidden="true" /> <i aria-hidden="true" /> <i aria-hidden="true" />
+                          <i className="fa-solid fa-star" aria-hidden="true" /> <i className="fa-solid fa-star" aria-hidden="true" /> <i className="fa-solid fa-star" aria-hidden="true" /> <i className="fa-solid fa-star" aria-hidden="true" /> <i className="fa-solid fa-star-half-stroke" aria-hidden="true" />
                         </div>
                         <p>{`"${review.text}"`}</p>
                         <div className="who">
@@ -872,7 +875,7 @@ export function HomeV4({ coaches }: HomeV4Props) {
                   onClick={() => setActiveReviewSlide((prev) => (prev - 1 + REVIEWS.length) % REVIEWS.length)}
                   aria-label="Anterior"
                 >
-                  <i aria-hidden="true" />
+                  <i className="fa-solid fa-arrow-left" aria-hidden="true" />
                 </button>
                 <div className="dots" aria-label="Indicadores">
                   {REVIEWS.map((_, index) => (
@@ -891,7 +894,7 @@ export function HomeV4({ coaches }: HomeV4Props) {
                   onClick={() => setActiveReviewSlide((prev) => (prev + 1) % REVIEWS.length)}
                   aria-label="Siguiente"
                 >
-                  <i aria-hidden="true" />
+                  <i className="fa-solid fa-arrow-right" aria-hidden="true" />
                 </button>
               </div>
             </div>
@@ -921,9 +924,11 @@ export function HomeV4({ coaches }: HomeV4Props) {
                   <b>Eres coach?</b> Unete a la plataforma y activa tu perfil para conseguir clientes.
                   <div className="row">
                     <Link className="btn coach-outline" href="/membresia" aria-label="Ver membresia para coaches">
+                      <i className="fa-solid fa-circle-question" aria-hidden="true" />
                       Ver membresia
                     </Link>
                     <Link className="btn coach-solid" href="/membresia" aria-label="Unirme como coach">
+                      <i className="fa-solid fa-id-badge" aria-hidden="true" />
                       Unirme como coach
                     </Link>
                   </div>
@@ -953,3 +958,4 @@ export function HomeV4({ coaches }: HomeV4Props) {
     </div>
   );
 }
+

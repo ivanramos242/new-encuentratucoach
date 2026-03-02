@@ -6,6 +6,7 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { isSeoIndexingAllowed } from "@/lib/seo";
 import { siteConfig } from "@/lib/site-config";
+import "@fortawesome/fontawesome-free/css/all.min.css";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -56,14 +57,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <head>
-        <link
-          rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
-          crossOrigin="anonymous"
-          referrerPolicy="no-referrer"
-        />
-      </head>
       <body className={`${poppins.variable} bg-zinc-50 text-zinc-950 antialiased`}>
         <Script id="crisp-chat" strategy="afterInteractive">
           {`
