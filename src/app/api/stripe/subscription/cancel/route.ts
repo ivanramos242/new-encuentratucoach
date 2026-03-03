@@ -23,7 +23,11 @@ export async function POST(request: Request) {
     if (!auth.user.coachProfileId) return jsonError("No se encontro perfil de coach", 400);
 
     const sub = await prisma.coachSubscription.findFirst({
-      where: { coachProfileId: auth.user.coachProfileId },
+      where: {
+        coachProfileId: auth.user.coachProfileId,
+        stripeSubscriptionId: { not: null },
+        status: { in: ["active", "trialing", "past_due"] },
+      },
       orderBy: [{ updatedAt: "desc" }],
     });
     if (!sub || !sub.stripeSubscriptionId) return jsonError("No hay suscripcion de Stripe activa para cancelar", 404);

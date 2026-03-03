@@ -74,20 +74,81 @@ async function ensureCoachProfileForCheckout(input: {
   });
 }
 
-async function ensureStripeCustomer(input: { userId: string; email: string; name?: string | null }) {
-  const existing = await prisma.stripeCustomer.findUnique({ where: { userId: input.userId } });
-  if (existing) return existing;
+function extractStripeCustomerId(customer: string | Stripe.Customer | Stripe.DeletedCustomer | null | undefined) {
+  if (!customer) return null;
+  if (typeof customer === "string") return customer;
+  if ("id" in customer && typeof customer.id === "string") return customer.id;
+  return null;
+}
 
+function stripeErrorCode(error: unknown) {
+  if (!error || typeof error !== "object") return "";
+  const maybe = error as { code?: string; raw?: { code?: string } };
+  return maybe.code || maybe.raw?.code || "";
+}
+
+async function recoverCustomerIdByEmail(stripe: Stripe, email: string) {
+  const list = await stripe.customers.list({ email, limit: 10 });
+  const candidates = list.data
+    .filter((customer) => !("deleted" in customer && customer.deleted))
+    .map((customer) => extractStripeCustomerId(customer))
+    .filter((id): id is string => Boolean(id));
+
+  if (!candidates.length) return null;
+  if (candidates.length === 1) return candidates[0];
+
+  const activeish: string[] = [];
+  for (const customerId of candidates) {
+    const subs = await stripe.subscriptions.list({ customer: customerId, status: "all", limit: 5 });
+    const hasActiveish = subs.data.some((sub) =>
+      ["active", "trialing", "past_due", "unpaid", "incomplete"].includes(sub.status),
+    );
+    if (hasActiveish) activeish.push(customerId);
+  }
+
+  if (activeish.length === 1) return activeish[0];
+  return null;
+}
+
+async function ensureStripeCustomer(input: { userId: string; email: string; name?: string | null }) {
   const stripe = getStripeServer();
+  const existing = await prisma.stripeCustomer.findUnique({ where: { userId: input.userId } });
+  if (existing?.stripeCustomerId) {
+    try {
+      const customer = await stripe.customers.retrieve(existing.stripeCustomerId);
+      if (!("deleted" in customer && customer.deleted)) return existing;
+    } catch (error) {
+      if (stripeErrorCode(error) !== "resource_missing") throw error;
+    }
+  }
+
+  const recoveredCustomerId = await recoverCustomerIdByEmail(stripe, input.email).catch(() => null);
+  if (recoveredCustomerId) {
+    return prisma.stripeCustomer.upsert({
+      where: { userId: input.userId },
+      create: {
+        userId: input.userId,
+        stripeCustomerId: recoveredCustomerId,
+      },
+      update: {
+        stripeCustomerId: recoveredCustomerId,
+      },
+    });
+  }
+
   const customer = await stripe.customers.create({
     email: input.email,
     name: input.name || undefined,
     metadata: { userId: input.userId },
   });
 
-  return prisma.stripeCustomer.create({
-    data: {
+  return prisma.stripeCustomer.upsert({
+    where: { userId: input.userId },
+    create: {
       userId: input.userId,
+      stripeCustomerId: customer.id,
+    },
+    update: {
       stripeCustomerId: customer.id,
     },
   });
