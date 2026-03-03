@@ -5,6 +5,8 @@ import { PageShell } from "@/components/layout/page-shell";
 import { listPublishedBlogPosts } from "@/lib/blog-service";
 import { buildMetadata } from "@/lib/seo";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = buildMetadata({
   title: "Blog",
   description: "Guias, comparativas y contenido SEO sobre coaching en España.",

@@ -11,6 +11,8 @@ import { getSiteBaseUrl } from "@/lib/site-config";
 
 type ParamsInput = Promise<{ postSlug: string }>;
 
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata({ params }: { params: ParamsInput }): Promise<Metadata> {
   const { postSlug } = await params;
   const post = await getPublishedBlogPostBySlug(postSlug);

@@ -213,9 +213,6 @@ export default async function CoachesDirectoryPage({
             <div className="rounded-3xl border border-black/10 bg-white p-4 shadow-sm sm:p-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-2xl font-black tracking-tight text-zinc-950">
-                    {allResults.length} {allResults.length === 1 ? "resultado" : "resultados"}
-                  </h2>
                   <p className="mt-1 text-sm text-zinc-600">
                     {hasFilters
                       ? "Resultados según los filtros seleccionados."
@@ -223,10 +220,6 @@ export default async function CoachesDirectoryPage({
                   </p>
                 </div>
                 <div className="w-full text-left text-sm text-zinc-600 sm:w-auto sm:text-right">
-                  <p>
-                    Página {paginated.currentPage} de {paginated.totalPages}
-                  </p>
-                  <p>{PAGE_SIZE} por página</p>
                   <DirectorySortForm filters={filters} />
                 </div>
               </div>
