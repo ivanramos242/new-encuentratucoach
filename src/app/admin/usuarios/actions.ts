@@ -596,6 +596,106 @@ export async function syncUserStripeSubscriptionAction(formData: FormData) {
   redirect(`/admin/usuarios?${successParams.toString()}`);
 }
 
+export async function activateUserMembershipManualAction(formData: FormData) {
+  await requireRole("admin", { returnTo: "/admin/usuarios" });
+
+  const userId = getString(formData, "userId");
+  const planCodeRaw = getString(formData, "planCode");
+  if (!userId || !planCodeRaw) redirect("/admin/usuarios?error=manual-membership-invalid-payload");
+  if (planCodeRaw !== "monthly" && planCodeRaw !== "annual") {
+    redirect("/admin/usuarios?error=manual-membership-invalid-plan");
+  }
+  const planCode: "monthly" | "annual" = planCodeRaw;
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      role: true,
+      email: true,
+      displayName: true,
+    },
+  });
+  if (!user) redirect("/admin/usuarios?error=manual-membership-not-found");
+  if (user.role === "admin") redirect("/admin/usuarios?error=manual-membership-admin-not-editable");
+
+  const coachProfileId = await ensureCoachProfileForUser(user);
+  const now = new Date();
+  const periodEnd = new Date(now);
+  periodEnd.setMonth(periodEnd.getMonth() + (planCode === "monthly" ? 1 : 12));
+
+  const plan = await prisma.subscriptionPlan.upsert({
+    where: { code: planCode },
+    create: {
+      code: planCode,
+      name: planCode === "monthly" ? "Plan mensual" : "Plan anual",
+      intervalLabel: planCode === "monthly" ? "mensual" : "anual",
+      priceCents: 0,
+      currency: "EUR",
+      stripePriceId: null,
+      isActive: true,
+    },
+    update: {
+      isActive: true,
+    },
+  });
+
+  const latestLocalSub = await prisma.coachSubscription.findFirst({
+    where: { coachProfileId },
+    orderBy: { updatedAt: "desc" },
+    select: { id: true },
+  });
+
+  if (latestLocalSub) {
+    await prisma.coachSubscription.update({
+      where: { id: latestLocalSub.id },
+      data: {
+        planId: plan.id,
+        planCode,
+        status: "active",
+        currentPeriodStart: now,
+        currentPeriodEnd: periodEnd,
+        cancelAtPeriodEnd: false,
+        graceUntil: null,
+      },
+    });
+  } else {
+    await prisma.coachSubscription.create({
+      data: {
+        coachProfileId,
+        planId: plan.id,
+        planCode,
+        status: "active",
+        stripeSubscriptionId: null,
+        currentPeriodStart: now,
+        currentPeriodEnd: periodEnd,
+        cancelAtPeriodEnd: false,
+        graceUntil: null,
+      },
+    });
+  }
+
+  await prisma.user
+    .updateMany({
+      where: { id: user.id, role: "client" },
+      data: { role: "coach" },
+    })
+    .catch(() => undefined);
+
+  revalidatePath("/admin/usuarios");
+  revalidatePath("/admin/coaches");
+  revalidatePath("/coaches");
+  revalidatePath("/membresia");
+  revalidatePath("/mi-cuenta/coach/membresia");
+
+  const successParams = new URLSearchParams({
+    manualMembershipActivated: "1",
+    manualMembershipEmail: user.email,
+    manualMembershipPlanCode: planCode,
+  });
+  redirect(`/admin/usuarios?${successParams.toString()}`);
+}
+
 export async function changeUserRoleAction(formData: FormData) {
   await requireRole("admin", { returnTo: "/admin/usuarios" });
 
