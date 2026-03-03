@@ -49,6 +49,17 @@ function isStripeSubscriptionId(value: string) {
   return /^sub_[A-Za-z0-9]+$/.test(value);
 }
 
+function isStripeSubscriptionScheduleId(value: string) {
+  return /^sub_sched_[A-Za-z0-9]+$/.test(value);
+}
+
+function extractStripeSubscriptionId(subscription: string | Stripe.Subscription | null | undefined) {
+  if (!subscription) return "";
+  if (typeof subscription === "string") return subscription;
+  if ("id" in subscription && typeof subscription.id === "string") return subscription.id;
+  return "";
+}
+
 function normalizeStripeStatus(status: string): "trialing" | "active" | "past_due" | "canceled" | "unpaid" | "incomplete" | "incomplete_expired" {
   switch (status) {
     case "trialing":
@@ -73,6 +84,10 @@ function planCodeFromSubscription(subscription: Stripe.Subscription): "monthly" 
   if (metadataPlanCode === "monthly" || metadataPlanCode === "annual") return metadataPlanCode;
 
   const interval = subscription.items.data[0]?.price?.recurring?.interval;
+  return interval === "year" ? "annual" : "monthly";
+}
+
+function planCodeFromRecurringInterval(interval?: string | null): "monthly" | "annual" {
   return interval === "year" ? "annual" : "monthly";
 }
 
@@ -107,6 +122,104 @@ function pickBestStripeSubscription(subs: Stripe.Subscription[]) {
     return b.created - a.created;
   });
   return sorted[0] || null;
+}
+
+function scheduleRank(status: string) {
+  switch (status) {
+    case "active":
+      return 5;
+    case "not_started":
+      return 4;
+    case "released":
+      return 3;
+    case "completed":
+      return 2;
+    case "canceled":
+      return 1;
+    default:
+      return 0;
+  }
+}
+
+function pickBestStripeSchedule(schedules: Stripe.SubscriptionSchedule[]) {
+  const sorted = [...schedules].sort((a, b) => {
+    const rankDiff = scheduleRank(b.status) - scheduleRank(a.status);
+    if (rankDiff !== 0) return rankDiff;
+
+    const aStart = a.current_phase?.start_date || a.phases[0]?.start_date || 0;
+    const bStart = b.current_phase?.start_date || b.phases[0]?.start_date || 0;
+    if (bStart !== aStart) return bStart - aStart;
+    return b.created - a.created;
+  });
+  return sorted[0] || null;
+}
+
+function normalizeScheduleStatusWithoutSubscription(
+  status: Stripe.SubscriptionSchedule.Status,
+): "trialing" | "active" | "past_due" | "canceled" | "unpaid" | "incomplete" | "incomplete_expired" {
+  if (status === "canceled" || status === "completed" || status === "released") return "canceled";
+  return "incomplete";
+}
+
+async function resolveBillingFromSchedule(input: {
+  stripe: Stripe;
+  schedule: Stripe.SubscriptionSchedule;
+}): Promise<{
+  planCode: "monthly" | "annual";
+  currency: string;
+  priceId: string | null;
+  currentPeriodStart: Date | null;
+  currentPeriodEnd: Date | null;
+  status: "trialing" | "active" | "past_due" | "canceled" | "unpaid" | "incomplete" | "incomplete_expired";
+}> {
+  const { stripe, schedule } = input;
+  const matchingCurrentPhase =
+    schedule.current_phase
+      ? schedule.phases.find(
+          (phase) =>
+            phase.start_date === schedule.current_phase?.start_date && phase.end_date === schedule.current_phase?.end_date,
+        ) || null
+      : null;
+  const phase = matchingCurrentPhase || schedule.phases[0] || null;
+
+  let interval: string | null = null;
+  let priceId: string | null = null;
+  let currency = String(phase?.currency || "eur").toUpperCase();
+
+  const firstItem = phase?.items?.[0];
+  const phasePrice = firstItem?.price;
+  if (typeof phasePrice === "string") {
+    priceId = phasePrice;
+  } else if (phasePrice && typeof phasePrice === "object") {
+    priceId = typeof phasePrice.id === "string" ? phasePrice.id : null;
+    if ("currency" in phasePrice && typeof phasePrice.currency === "string") {
+      currency = phasePrice.currency.toUpperCase();
+    }
+    if ("recurring" in phasePrice && phasePrice.recurring?.interval) {
+      interval = phasePrice.recurring.interval;
+    }
+  }
+
+  if (!interval && priceId) {
+    try {
+      const retrievedPrice = await stripe.prices.retrieve(priceId);
+      if (!("deleted" in retrievedPrice && retrievedPrice.deleted)) {
+        currency = String(retrievedPrice.currency || currency).toUpperCase();
+        interval = retrievedPrice.recurring?.interval || null;
+      }
+    } catch {
+      // best-effort only
+    }
+  }
+
+  return {
+    planCode: planCodeFromRecurringInterval(interval),
+    currency,
+    priceId,
+    currentPeriodStart: phase?.start_date ? new Date(phase.start_date * 1000) : null,
+    currentPeriodEnd: phase?.end_date ? new Date(phase.end_date * 1000) : null,
+    status: normalizeScheduleStatusWithoutSubscription(schedule.status),
+  };
 }
 
 async function uniqueCoachSlugForSubscriptionSync(base: string) {
@@ -230,7 +343,11 @@ export async function syncUserStripeSubscriptionAction(formData: FormData) {
   const userId = getString(formData, "userId");
   const forcedStripeSubscriptionId = getString(formData, "stripeSubscriptionId");
   if (!userId) redirect("/admin/usuarios?error=stripe-sync-invalid-payload");
-  if (forcedStripeSubscriptionId && !isStripeSubscriptionId(forcedStripeSubscriptionId)) {
+  if (
+    forcedStripeSubscriptionId &&
+    !isStripeSubscriptionId(forcedStripeSubscriptionId) &&
+    !isStripeSubscriptionScheduleId(forcedStripeSubscriptionId)
+  ) {
     redirect("/admin/usuarios?error=stripe-sync-invalid-subscription-format");
   }
 
@@ -250,23 +367,59 @@ export async function syncUserStripeSubscriptionAction(formData: FormData) {
 
   const stripe = getStripeServer();
   let stripeSubscription: Stripe.Subscription | null = null;
+  let stripeSchedule: Stripe.SubscriptionSchedule | null = null;
   let stripeCustomerId = user.stripeCustomer.stripeCustomerId;
 
   try {
     if (forcedStripeSubscriptionId) {
-      const forcedSub = await stripe.subscriptions.retrieve(forcedStripeSubscriptionId);
-      const subCustomerId = extractStripeCustomerId(forcedSub.customer);
-      if (!subCustomerId) redirect("/admin/usuarios?error=stripe-sync-subscription-without-customer");
-      stripeSubscription = forcedSub;
-      stripeCustomerId = subCustomerId;
+      if (isStripeSubscriptionScheduleId(forcedStripeSubscriptionId)) {
+        const forcedSchedule = await stripe.subscriptionSchedules.retrieve(forcedStripeSubscriptionId);
+        const scheduleCustomerId = extractStripeCustomerId(forcedSchedule.customer);
+        if (!scheduleCustomerId) redirect("/admin/usuarios?error=stripe-sync-subscription-without-customer");
+        stripeSchedule = forcedSchedule;
+        stripeCustomerId = scheduleCustomerId;
+
+        const managedSubId =
+          extractStripeSubscriptionId(forcedSchedule.subscription) || forcedSchedule.released_subscription || "";
+        if (managedSubId) {
+          stripeSubscription = await stripe.subscriptions.retrieve(managedSubId);
+        } else {
+          const list = await stripe.subscriptions.list({
+            customer: stripeCustomerId,
+            status: "all",
+            limit: 20,
+          });
+          stripeSubscription = pickBestStripeSubscription(list.data);
+        }
+      } else {
+        const forcedSub = await stripe.subscriptions.retrieve(forcedStripeSubscriptionId);
+        const subCustomerId = extractStripeCustomerId(forcedSub.customer);
+        if (!subCustomerId) redirect("/admin/usuarios?error=stripe-sync-subscription-without-customer");
+        stripeSubscription = forcedSub;
+        stripeCustomerId = subCustomerId;
+      }
     } else {
       const list = await stripe.subscriptions.list({
         customer: stripeCustomerId,
         status: "all",
         limit: 20,
       });
-      if (!list.data.length) redirect("/admin/usuarios?error=stripe-sync-no-subscriptions");
       stripeSubscription = pickBestStripeSubscription(list.data);
+
+      if (!stripeSubscription) {
+        const scheduleList = await stripe.subscriptionSchedules.list({
+          customer: stripeCustomerId,
+          limit: 20,
+        });
+        const bestSchedule = pickBestStripeSchedule(scheduleList.data);
+        if (!bestSchedule) redirect("/admin/usuarios?error=stripe-sync-no-subscriptions");
+
+        stripeSchedule = bestSchedule;
+        const managedSubId = extractStripeSubscriptionId(bestSchedule.subscription) || bestSchedule.released_subscription || "";
+        if (managedSubId) {
+          stripeSubscription = await stripe.subscriptions.retrieve(managedSubId);
+        }
+      }
     }
   } catch (error) {
     const code = stripeErrorCode(error);
@@ -274,7 +427,7 @@ export async function syncUserStripeSubscriptionAction(formData: FormData) {
     redirect("/admin/usuarios?error=stripe-sync-fetch-failed");
   }
 
-  if (!stripeSubscription) redirect("/admin/usuarios?error=stripe-sync-no-subscriptions");
+  if (!stripeSubscription && !stripeSchedule) redirect("/admin/usuarios?error=stripe-sync-no-subscriptions");
 
   // If admin forced a subscription from a different customer, reconcile local mapping when possible.
   if (stripeCustomerId !== user.stripeCustomer.stripeCustomerId) {
@@ -294,10 +447,37 @@ export async function syncUserStripeSubscriptionAction(formData: FormData) {
 
   const coachProfileId = await ensureCoachProfileForUser(user);
 
-  const firstItem = stripeSubscription.items.data[0];
-  const priceId = firstItem?.price?.id || null;
-  const currency = String(firstItem?.price?.currency || "eur").toUpperCase();
-  const planCode = planCodeFromSubscription(stripeSubscription);
+  let stripeSubscriptionId: string | null = null;
+  let planCode: "monthly" | "annual";
+  let currency: string;
+  let priceId: string | null;
+  let status: "trialing" | "active" | "past_due" | "canceled" | "unpaid" | "incomplete" | "incomplete_expired";
+  let currentPeriodStart: Date | null;
+  let currentPeriodEnd: Date | null;
+  let cancelAtPeriodEnd = false;
+
+  if (stripeSubscription) {
+    const firstItem = stripeSubscription.items.data[0];
+    stripeSubscriptionId = stripeSubscription.id;
+    planCode = planCodeFromSubscription(stripeSubscription);
+    priceId = firstItem?.price?.id || null;
+    currency = String(firstItem?.price?.currency || "eur").toUpperCase();
+    status = normalizeStripeStatus(stripeSubscription.status);
+    currentPeriodStart = firstItem?.current_period_start ? new Date(firstItem.current_period_start * 1000) : null;
+    currentPeriodEnd = firstItem?.current_period_end ? new Date(firstItem.current_period_end * 1000) : null;
+    cancelAtPeriodEnd = Boolean(stripeSubscription.cancel_at_period_end);
+  } else {
+    const fromSchedule = await resolveBillingFromSchedule({
+      stripe,
+      schedule: stripeSchedule!,
+    });
+    planCode = fromSchedule.planCode;
+    currency = fromSchedule.currency;
+    priceId = fromSchedule.priceId;
+    status = fromSchedule.status;
+    currentPeriodStart = fromSchedule.currentPeriodStart;
+    currentPeriodEnd = fromSchedule.currentPeriodEnd;
+  }
 
   const plan = await prisma.subscriptionPlan.upsert({
     where: { code: planCode },
@@ -317,42 +497,78 @@ export async function syncUserStripeSubscriptionAction(formData: FormData) {
     },
   });
 
-  const status = normalizeStripeStatus(stripeSubscription.status);
-  const currentPeriodStart = firstItem?.current_period_start ? new Date(firstItem.current_period_start * 1000) : null;
-  const currentPeriodEnd = firstItem?.current_period_end ? new Date(firstItem.current_period_end * 1000) : null;
+  let subscriptionRecord: { id: string };
+  if (stripeSubscriptionId) {
+    subscriptionRecord = await prisma.coachSubscription.upsert({
+      where: { stripeSubscriptionId },
+      create: {
+        coachProfileId,
+        planId: plan.id,
+        planCode,
+        status,
+        stripeSubscriptionId,
+        currentPeriodStart,
+        currentPeriodEnd,
+        cancelAtPeriodEnd,
+        graceUntil: status === "past_due" ? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) : null,
+      },
+      update: {
+        coachProfileId,
+        planId: plan.id,
+        planCode,
+        status,
+        currentPeriodStart,
+        currentPeriodEnd,
+        cancelAtPeriodEnd,
+        graceUntil: status === "past_due" ? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) : null,
+      },
+      select: { id: true },
+    });
 
-  const subscriptionRecord = await prisma.coachSubscription.upsert({
-    where: { stripeSubscriptionId: stripeSubscription.id },
-    create: {
-      coachProfileId,
-      planId: plan.id,
-      planCode,
-      status,
-      stripeSubscriptionId: stripeSubscription.id,
-      currentPeriodStart,
-      currentPeriodEnd,
-      cancelAtPeriodEnd: Boolean(stripeSubscription.cancel_at_period_end),
-      graceUntil: status === "past_due" ? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) : null,
-    },
-    update: {
-      coachProfileId,
-      planId: plan.id,
-      planCode,
-      status,
-      currentPeriodStart,
-      currentPeriodEnd,
-      cancelAtPeriodEnd: Boolean(stripeSubscription.cancel_at_period_end),
-      graceUntil: status === "past_due" ? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) : null,
-    },
-  });
-
-  await prisma.stripeSubscriptionSnapshot.create({
-    data: {
-      coachSubscriptionId: subscriptionRecord.id,
-      stripeSubscriptionId: stripeSubscription.id,
-      payload: stripeSubscription as unknown as object,
-    },
-  });
+    await prisma.stripeSubscriptionSnapshot.create({
+      data: {
+        coachSubscriptionId: subscriptionRecord.id,
+        stripeSubscriptionId,
+        payload: stripeSubscription as unknown as object,
+      },
+    });
+  } else {
+    const existingPlaceholder = await prisma.coachSubscription.findFirst({
+      where: { coachProfileId, stripeSubscriptionId: null },
+      orderBy: { updatedAt: "desc" },
+      select: { id: true },
+    });
+    if (existingPlaceholder) {
+      subscriptionRecord = await prisma.coachSubscription.update({
+        where: { id: existingPlaceholder.id },
+        data: {
+          planId: plan.id,
+          planCode,
+          status,
+          currentPeriodStart,
+          currentPeriodEnd,
+          cancelAtPeriodEnd: false,
+          graceUntil: status === "past_due" ? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) : null,
+        },
+        select: { id: true },
+      });
+    } else {
+      subscriptionRecord = await prisma.coachSubscription.create({
+        data: {
+          coachProfileId,
+          planId: plan.id,
+          planCode,
+          status,
+          stripeSubscriptionId: null,
+          currentPeriodStart,
+          currentPeriodEnd,
+          cancelAtPeriodEnd: false,
+          graceUntil: status === "past_due" ? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) : null,
+        },
+        select: { id: true },
+      });
+    }
+  }
 
   if (isActiveishStatus(status)) {
     await prisma.user
@@ -372,7 +588,8 @@ export async function syncUserStripeSubscriptionAction(formData: FormData) {
   const successParams = new URLSearchParams({
     stripeSynced: "1",
     stripeEmail: user.email,
-    stripeSubscriptionId: stripeSubscription.id,
+    stripeSubscriptionId: stripeSubscriptionId || stripeSchedule?.id || "",
+    stripeSyncSource: stripeSubscriptionId ? "subscription" : "schedule",
     stripeStatus: status,
     stripePlanCode: planCode,
   });

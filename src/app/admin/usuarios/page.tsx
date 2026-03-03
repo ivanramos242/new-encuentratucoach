@@ -41,6 +41,7 @@ export default async function AdminUsuariosPage({
   const linkedStripeCustomerId = pickOne(params.stripeCustomerId);
   const stripeSynced = pickOne(params.stripeSynced) === "1";
   const syncedStripeSubscriptionId = pickOne(params.stripeSubscriptionId);
+  const stripeSyncSource = pickOne(params.stripeSyncSource);
   const syncedStripeStatus = pickOne(params.stripeStatus);
   const syncedStripePlanCode = pickOne(params.stripePlanCode);
   const errorCode = pickOne(params.error);
@@ -111,7 +112,8 @@ export default async function AdminUsuariosPage({
         ) : null}
         {stripeSynced && stripeEmail && syncedStripeSubscriptionId ? (
           <p className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-            Suscripcion Stripe sincronizada para <strong>{stripeEmail}</strong>: {syncedStripeSubscriptionId} ({syncedStripeStatus} /{" "}
+            {stripeSyncSource === "schedule" ? "Schedule Stripe sincronizado" : "Suscripcion Stripe sincronizada"} para{" "}
+            <strong>{stripeEmail}</strong>: {syncedStripeSubscriptionId} ({syncedStripeStatus} /{" "}
             {syncedStripePlanCode})
           </p>
         ) : null}
@@ -150,7 +152,7 @@ export default async function AdminUsuariosPage({
                                           : errorCode === "stripe-sync-invalid-payload"
                                             ? "Datos invalidos para sincronizar la suscripcion."
                                             : errorCode === "stripe-sync-invalid-subscription-format"
-                                              ? "Formato invalido de suscripcion. Usa sub_xxx."
+                                              ? "Formato invalido. Usa sub_xxx o sub_sched_xxx."
                                               : errorCode === "stripe-sync-not-found"
                                                 ? "No se encontro el usuario para sincronizar."
                                                 : errorCode === "stripe-sync-admin-not-editable"
@@ -158,15 +160,15 @@ export default async function AdminUsuariosPage({
                                                   : errorCode === "stripe-sync-missing-customer"
                                                     ? "Primero debes guardar el Stripe customer (cus_xxx)."
                                                     : errorCode === "stripe-sync-no-subscriptions"
-                                                      ? "Ese customer no tiene suscripciones en Stripe."
+                                                      ? "Ese customer no tiene suscripciones ni schedules en Stripe."
                                                       : errorCode === "stripe-sync-subscription-not-found"
-                                                        ? "No se encontro la suscripcion indicada en Stripe."
+                                                        ? "No se encontro la suscripcion/schedule indicado en Stripe."
                                                         : errorCode === "stripe-sync-subscription-without-customer"
-                                                          ? "La suscripcion no tiene customer asociado."
+                                                          ? "La suscripcion o schedule no tiene customer asociado."
                                                           : errorCode === "stripe-sync-customer-linked-to-other-user"
-                                                            ? "La suscripcion pertenece a un customer ya enlazado a otro usuario."
+                                                            ? "La suscripcion/schedule pertenece a un customer ya enlazado a otro usuario."
                                                             : errorCode === "stripe-sync-fetch-failed"
-                                                              ? "No se pudo leer la suscripcion en Stripe."
+                                                              ? "No se pudo leer la suscripcion/schedule en Stripe."
                   : "No se pudo actualizar el rol."}
           </p>
         ) : null}
@@ -305,7 +307,7 @@ export default async function AdminUsuariosPage({
                             <input type="hidden" name="userId" value={user.id} />
                             <input
                               name="stripeSubscriptionId"
-                              placeholder="sub_xxx (opcional)"
+                              placeholder="sub_xxx o sub_sched_xxx (opcional)"
                               className="w-44 rounded-lg border border-black/10 px-2.5 py-1.5 text-xs outline-none focus:border-cyan-400"
                             />
                             <button
