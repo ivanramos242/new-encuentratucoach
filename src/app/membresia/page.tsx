@@ -205,18 +205,7 @@ export default async function MembershipPage({ searchParams }: { searchParams: S
     };
   });
 
-  const featuredCoach = publicCoaches.find((coach) => coach.slug === "carla-gomez-rodriguez");
-  const exampleCoach = featuredCoach
-    ? {
-        slug: featuredCoach.slug,
-        name: featuredCoach.name,
-        headline: featuredCoach.headline,
-        cityLabel: featuredCoach.cityLabel,
-        heroImageUrl: featuredCoach.heroImageUrl,
-        price: formatEuro(featuredCoach.basePriceEur),
-        certified: featuredCoach.certifiedStatus === "approved",
-      }
-    : null;
+  const exampleCoach = publicCoaches.find((coach) => coach.slug === "carla-gomez-rodriguez") ?? null;
 
   const baseUrl = getSiteBaseUrl();
   const breadcrumb = buildBreadcrumbJsonLd([
