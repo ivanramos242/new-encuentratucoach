@@ -12,6 +12,8 @@ type Plan = {
   discountPercent: number | null;
   discountLabel: string | null;
   discountEndsAt: string | Date | null;
+  effectivePriceCents: number;
+  checkoutDisplayPriceCents: number;
   isActive: boolean;
 };
 
@@ -23,6 +25,15 @@ function euroInputToCents(value: string) {
   const n = Number(String(value).replace(",", "."));
   if (!Number.isFinite(n) || n < 0) return 0;
   return Math.round(n * 100);
+}
+
+function formatEuroFromCents(cents: number) {
+  return new Intl.NumberFormat("es-ES", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format((cents || 0) / 100);
 }
 
 async function savePlan(payload: unknown) {
@@ -100,6 +111,17 @@ export function SubscriptionPlanDiscounts({ plans }: { plans: Plan[] }) {
               </span>
             </div>
 
+            <div className="mt-4 rounded-2xl border border-black/10 bg-zinc-50 p-3 text-sm text-zinc-700">
+              <p>
+                Precio final visible: <strong>{formatEuroFromCents(plan.checkoutDisplayPriceCents)}</strong>
+              </p>
+              {plan.discountPercent && plan.discountPercent > 0 ? (
+                <p className="mt-1 text-xs text-zinc-600">
+                  Base {formatEuroFromCents(plan.priceCents)} con descuento aplicado ({plan.discountPercent}%).
+                </p>
+              ) : null}
+            </div>
+
             <div className="mt-5 grid gap-4">
               <label className="grid gap-1 text-sm font-medium text-zinc-800">
                 Precio base (EUR)
@@ -170,4 +192,3 @@ export function SubscriptionPlanDiscounts({ plans }: { plans: Plan[] }) {
     </div>
   );
 }
-

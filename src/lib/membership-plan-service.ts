@@ -1,5 +1,6 @@
 import type { SubscriptionPlanCode } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { getStripeServer, resolveStripePlanPriceConfig } from "@/lib/stripe-server";
 
 export type MembershipPlanView = {
   id: string;
@@ -14,6 +15,7 @@ export type MembershipPlanView = {
   discountLabel: string | null;
   discountEndsAt: Date | null;
   effectivePriceCents: number;
+  checkoutDisplayPriceCents: number;
   discountActive: boolean;
 };
 
@@ -35,6 +37,27 @@ function isDiscountActive(input: { percent: number | null; endsAt: Date | null; 
 function effectivePrice(priceCents: number, discountPercent: number | null, active: boolean) {
   if (!active || !discountPercent) return priceCents;
   return Math.max(0, Math.round(priceCents * (1 - discountPercent / 100)));
+}
+
+async function resolveStripeConfiguredAmountCents(planCode: SubscriptionPlanCode): Promise<number | null> {
+  const priceConfig = resolveStripePlanPriceConfig(planCode);
+  if (!priceConfig) return null;
+
+  if (priceConfig.mode === "inline_amount") {
+    return priceConfig.unitAmountCents;
+  }
+
+  try {
+    const stripe = getStripeServer();
+    const stripePrice = await stripe.prices.retrieve(priceConfig.stripePriceId);
+    if (!stripePrice.active) return null;
+    if (stripePrice.currency !== "eur") return null;
+    if (stripePrice.type !== "recurring") return null;
+    if (typeof stripePrice.unit_amount !== "number") return null;
+    return stripePrice.unit_amount;
+  } catch {
+    return null;
+  }
 }
 
 export async function ensureDefaultSubscriptionPlans() {
@@ -74,15 +97,25 @@ export async function listMembershipPlansForPublic(): Promise<MembershipPlanView
   await ensureDefaultSubscriptionPlans();
   const plans = await prisma.subscriptionPlan.findMany({ where: { isActive: true }, orderBy: { code: "asc" } });
   const now = new Date();
+  const configuredAmountEntries = await Promise.all(
+    plans.map(async (plan) => [plan.code, await resolveStripeConfiguredAmountCents(plan.code)] as const),
+  );
+  const configuredAmountByCode = new Map<SubscriptionPlanCode, number | null>(configuredAmountEntries);
+
   return plans.map((plan) => {
     const discountActive = isDiscountActive({
       percent: plan.discountPercent,
       endsAt: plan.discountEndsAt,
       now,
     });
+    const effectivePriceCents = effectivePrice(plan.priceCents, plan.discountPercent, discountActive);
+    const checkoutDisplayPriceCents = discountActive
+      ? effectivePriceCents
+      : (configuredAmountByCode.get(plan.code) ?? plan.priceCents);
     return {
       ...plan,
-      effectivePriceCents: effectivePrice(plan.priceCents, plan.discountPercent, discountActive),
+      effectivePriceCents,
+      checkoutDisplayPriceCents,
       discountActive,
     };
   });
@@ -127,4 +160,3 @@ export async function upsertMembershipPlanDiscount(input: {
     },
   });
 }
-

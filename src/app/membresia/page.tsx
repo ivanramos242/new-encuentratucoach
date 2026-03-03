@@ -163,11 +163,11 @@ export default async function MembershipPage({ searchParams }: { searchParams: S
 
   const monthlyPlan = plans.find((plan) => plan.code === "monthly") ?? plans[0];
   const annualPlan = plans.find((plan) => plan.code === "annual");
-  const monthlyPrice = monthlyPlan ? formatEuro(monthlyPlan.effectivePriceCents / 100) : "19,99 EUR";
+  const monthlyPrice = monthlyPlan ? formatEuro(monthlyPlan.checkoutDisplayPriceCents / 100) : "19,99 EUR";
   const annualPrice = annualPlan
-    ? formatEuro(annualPlan.effectivePriceCents / 100)
+    ? formatEuro(annualPlan.checkoutDisplayPriceCents / 100)
     : monthlyPlan
-      ? formatEuro((monthlyPlan.effectivePriceCents * 12) / 100)
+      ? formatEuro((monthlyPlan.checkoutDisplayPriceCents * 12) / 100)
       : "220 EUR";
 
   const monthlyPlanAction = getPlanAction(sessionUser, "monthly", {
@@ -190,12 +190,12 @@ export default async function MembershipPage({ searchParams }: { searchParams: S
       coachHasPendingActivation,
     });
 
-    const hasDiscount = plan.discountActive && plan.effectivePriceCents < plan.priceCents;
+    const hasDiscount = plan.discountActive && plan.checkoutDisplayPriceCents < plan.priceCents;
     return {
       code: plan.code,
       name: plan.name,
       intervalLabel: plan.intervalLabel,
-      price: formatEuro(plan.effectivePriceCents / 100),
+      price: formatEuro(plan.checkoutDisplayPriceCents / 100),
       originalPrice: hasDiscount ? formatEuro(plan.priceCents / 100) : null,
       discountLabel: hasDiscount
         ? `${plan.discountPercent ?? 0}%${plan.discountLabel ? ` · ${plan.discountLabel}` : ""}`
