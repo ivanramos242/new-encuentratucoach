@@ -2,6 +2,7 @@ import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
 import { prisma } from "@/lib/prisma";
 import {
+  activateUserMembershipManualAction,
   changeUserRoleAction,
   impersonateUserAction,
   setUserStripeCustomerIdAction,
@@ -44,6 +45,9 @@ export default async function AdminUsuariosPage({
   const stripeSyncSource = pickOne(params.stripeSyncSource);
   const syncedStripeStatus = pickOne(params.stripeStatus);
   const syncedStripePlanCode = pickOne(params.stripePlanCode);
+  const manualMembershipActivated = pickOne(params.manualMembershipActivated) === "1";
+  const manualMembershipEmail = pickOne(params.manualMembershipEmail);
+  const manualMembershipPlanCode = pickOne(params.manualMembershipPlanCode);
   const errorCode = pickOne(params.error);
 
   const users = await prisma.user.findMany({
@@ -117,6 +121,11 @@ export default async function AdminUsuariosPage({
             {syncedStripePlanCode})
           </p>
         ) : null}
+        {manualMembershipActivated && manualMembershipEmail && manualMembershipPlanCode ? (
+          <p className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+            Membresia activada manualmente para <strong>{manualMembershipEmail}</strong> ({manualMembershipPlanCode}).
+          </p>
+        ) : null}
         {errorCode ? (
           <p className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
             {errorCode === "invalid-payload"
@@ -169,6 +178,14 @@ export default async function AdminUsuariosPage({
                                                             ? "La suscripcion/schedule pertenece a un customer ya enlazado a otro usuario."
                                                             : errorCode === "stripe-sync-fetch-failed"
                                                               ? "No se pudo leer la suscripcion/schedule en Stripe."
+                                                              : errorCode === "manual-membership-invalid-payload"
+                                                                ? "Datos invalidos para activar la membresia manual."
+                                                                : errorCode === "manual-membership-invalid-plan"
+                                                                  ? "Plan invalido. Usa monthly o annual."
+                                                                  : errorCode === "manual-membership-not-found"
+                                                                    ? "No se encontro el usuario para activar membresia."
+                                                                    : errorCode === "manual-membership-admin-not-editable"
+                                                                      ? "No se permite activar membresia manual en admins."
                   : "No se pudo actualizar el rol."}
           </p>
         ) : null}
@@ -317,6 +334,28 @@ export default async function AdminUsuariosPage({
                               Sincronizar suscripcion
                             </button>
                           </form>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <form action={activateUserMembershipManualAction}>
+                              <input type="hidden" name="userId" value={user.id} />
+                              <input type="hidden" name="planCode" value="monthly" />
+                              <button
+                                type="submit"
+                                className="rounded-lg border border-violet-300 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-900 hover:bg-violet-100"
+                              >
+                                Activar mensual (manual)
+                              </button>
+                            </form>
+                            <form action={activateUserMembershipManualAction}>
+                              <input type="hidden" name="userId" value={user.id} />
+                              <input type="hidden" name="planCode" value="annual" />
+                              <button
+                                type="submit"
+                                className="rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-900 hover:bg-indigo-100"
+                              >
+                                Activar anual (manual)
+                              </button>
+                            </form>
+                          </div>
                         </div>
                       )}
                     </td>
