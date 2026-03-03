@@ -597,7 +597,7 @@ export async function syncUserStripeSubscriptionAction(formData: FormData) {
 }
 
 export async function activateUserMembershipManualAction(formData: FormData) {
-  await requireRole("admin", { returnTo: "/admin/usuarios" });
+  const adminUser = await requireRole("admin", { returnTo: "/admin/usuarios" });
 
   const userId = getString(formData, "userId");
   const planCodeRaw = getString(formData, "planCode");
@@ -646,8 +646,9 @@ export async function activateUserMembershipManualAction(formData: FormData) {
     select: { id: true },
   });
 
+  let subscriptionRecord: { id: string };
   if (latestLocalSub) {
-    await prisma.coachSubscription.update({
+    subscriptionRecord = await prisma.coachSubscription.update({
       where: { id: latestLocalSub.id },
       data: {
         planId: plan.id,
@@ -658,9 +659,10 @@ export async function activateUserMembershipManualAction(formData: FormData) {
         cancelAtPeriodEnd: false,
         graceUntil: null,
       },
+      select: { id: true },
     });
   } else {
-    await prisma.coachSubscription.create({
+    subscriptionRecord = await prisma.coachSubscription.create({
       data: {
         coachProfileId,
         planId: plan.id,
@@ -672,8 +674,25 @@ export async function activateUserMembershipManualAction(formData: FormData) {
         cancelAtPeriodEnd: false,
         graceUntil: null,
       },
+      select: { id: true },
     });
   }
+
+  await prisma.billingEventLog
+    .create({
+      data: {
+        eventType: "manual_membership_activation",
+        userId: user.id,
+        coachSubscriptionId: subscriptionRecord.id,
+        payload: {
+          adminUserId: adminUser.id,
+          adminEmail: adminUser.email,
+          planCode,
+        },
+        processedAt: new Date(),
+      },
+    })
+    .catch(() => undefined);
 
   await prisma.user
     .updateMany({

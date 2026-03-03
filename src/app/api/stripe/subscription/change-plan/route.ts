@@ -149,7 +149,11 @@ export async function POST(request: Request) {
     if (!parsed.success) return jsonError("Payload invalido", 400, { issues: parsed.error.flatten() });
 
     const localSub = await prisma.coachSubscription.findFirst({
-      where: { coachProfileId: auth.user.coachProfileId },
+      where: {
+        coachProfileId: auth.user.coachProfileId,
+        stripeSubscriptionId: { not: null },
+        status: { in: ["active", "trialing", "past_due"] },
+      },
       orderBy: [{ updatedAt: "desc" }],
       select: {
         id: true,
@@ -237,7 +241,7 @@ export async function POST(request: Request) {
         quantity: firstItem.quantity ?? 1,
         targetPriceId,
         metadata: updateMetadata,
-        idempotencyKey,
+        idempotencyKey: `${idempotencyKey}:fallback`,
       });
     }
 

@@ -22,6 +22,22 @@ function isActiveish(status: string) {
   return status === "active" || status === "trialing";
 }
 
+function hasMembershipMetadata(subscription: Stripe.Subscription) {
+  const planCode = subscription.metadata?.planCode;
+  return (
+    planCode === "monthly" ||
+    planCode === "annual" ||
+    Boolean(subscription.metadata?.coachProfileId) ||
+    Boolean(subscription.metadata?.userId)
+  );
+}
+
+function planCodeFromRecurringInterval(interval: string | null | undefined): "monthly" | "annual" | null {
+  if (interval === "year") return "annual";
+  if (interval === "month") return "monthly";
+  return null;
+}
+
 function isUniqueConstraintError(error: unknown) {
   return (
     typeof error === "object" &&
@@ -51,7 +67,7 @@ async function upsertSubscriptionFromStripe(subscription: Stripe.Subscription) {
 
   const existingByStripeId = await prisma.coachSubscription.findUnique({
     where: { stripeSubscriptionId: subscription.id },
-    select: { id: true, coachProfileId: true },
+    select: { id: true, coachProfileId: true, planCode: true },
   });
   if (!coachProfileId) coachProfileId = existingByStripeId?.coachProfileId || "";
 
@@ -66,7 +82,17 @@ async function upsertSubscriptionFromStripe(subscription: Stripe.Subscription) {
 
   const firstItem = subscription.items.data[0];
   const priceId = firstItem?.price?.id || null;
-  if (!planCode) planCode = planCodeFromStripePriceId(priceId) || "monthly";
+  if (!planCode) planCode = planCodeFromStripePriceId(priceId) || undefined;
+  if (!planCode) {
+    planCode = planCodeFromRecurringInterval(firstItem?.price?.recurring?.interval || null) || undefined;
+  }
+  if (!planCode) planCode = existingByStripeId?.planCode;
+  if (!planCode) {
+    console.warn("[stripe/webhooks] skipping subscription without resolvable planCode", {
+      stripeSubscriptionId: subscription.id,
+    });
+    return { subscriptionRecord: null, coachProfileId: coachProfileId || null };
+  }
 
   const plan = await prisma.subscriptionPlan.upsert({
     where: { code: planCode },
@@ -188,6 +214,17 @@ async function processStripeEvent(event: Stripe.Event) {
     case "customer.subscription.updated":
     case "customer.subscription.deleted": {
       const subscription = event.data.object as Stripe.Subscription;
+      const existing = await prisma.coachSubscription.findUnique({
+        where: { stripeSubscriptionId: subscription.id },
+        select: { id: true },
+      });
+      if (!existing && !hasMembershipMetadata(subscription)) {
+        console.warn("[stripe/webhooks] ignoring non-linked subscription event", {
+          stripeSubscriptionId: subscription.id,
+          eventType: event.type,
+        });
+        break;
+      }
       await upsertSubscriptionFromStripe(subscription);
       break;
     }
@@ -281,5 +318,4 @@ export async function POST(request: Request) {
     return jsonError("Webhook de Stripe no procesado", 400);
   }
 }
-
 

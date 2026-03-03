@@ -52,17 +52,25 @@ async function pickCustomerByEmailWithActiveSubscription(stripe: Stripe, email: 
   const list = await stripe.customers.list({ email, limit: 10 });
   if (!list.data.length) return null;
 
-  for (const customer of list.data) {
-    const customerId = extractStripeCustomerId(customer);
-    if (!customerId) continue;
+  const candidates = list.data
+    .filter((customer) => !("deleted" in customer && customer.deleted))
+    .map((customer) => extractStripeCustomerId(customer))
+    .filter((id): id is string => Boolean(id));
+
+  if (!candidates.length) return null;
+  if (candidates.length === 1) return candidates[0];
+
+  const activeish: string[] = [];
+  for (const customerId of candidates) {
     const subs = await stripe.subscriptions.list({ customer: customerId, status: "all", limit: 5 });
     const hasActiveish = subs.data.some((sub) =>
       ["active", "trialing", "past_due", "unpaid", "incomplete"].includes(sub.status),
     );
-    if (hasActiveish) return customerId;
+    if (hasActiveish) activeish.push(customerId);
   }
 
-  return extractStripeCustomerId(list.data[0]) || null;
+  if (activeish.length === 1) return activeish[0];
+  return null;
 }
 
 async function recoverStripeCustomerIdFromLatestSubscription(stripe: Stripe, userId: string) {
