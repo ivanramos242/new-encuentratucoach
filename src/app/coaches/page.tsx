@@ -1,6 +1,7 @@
 ﻿import Link from "next/link";
 import type { Metadata } from "next";
 import { CoachCard } from "@/components/directory/coach-card";
+import { DirectoryFiltersForm } from "@/components/directory/directory-filters-form";
 import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -65,171 +66,39 @@ function resolveCanonicalForDirectory(input: {
   return "/coaches";
 }
 
-function FiltersForm({
-  filters,
-  availableCategorySlugs,
-}: {
-  filters: ReturnType<typeof parseDirectoryFilters>;
-  availableCategorySlugs: string[];
-}) {
+function DirectorySortForm({ filters }: { filters: ReturnType<typeof parseDirectoryFilters> }) {
   return (
-    <form action="/coaches" className="mt-6 grid gap-5" aria-label="Formulario de filtros">
-      <section className="grid gap-3 rounded-2xl border border-black/10 bg-zinc-50/60 p-4">
-        <label className="grid gap-1 text-sm font-semibold text-zinc-800">
-          <span className="inline-flex items-center gap-2">
-            <i className="fa-solid fa-magnifying-glass text-zinc-500" aria-hidden="true" />
-            Buscar
-          </span>
-          <input
-            name="q"
-            defaultValue={filters.q}
-            placeholder="Ciudad, especialidad o nombre"
-            className="rounded-xl border border-black/10 bg-white px-3 py-2.5 outline-none focus:border-cyan-400"
-          />
-        </label>
+    <form action="/coaches" className="mt-2 flex flex-col gap-2">
+      {filters.q ? <input type="hidden" name="q" value={filters.q} /> : null}
+      {filters.cat ? <input type="hidden" name="cat" value={filters.cat} /> : null}
+      {filters.location ? <input type="hidden" name="location" value={filters.location} /> : null}
+      {filters.session?.map((mode) => <input key={mode} type="hidden" name="session" value={mode} />)}
+      {filters.certified ? <input type="hidden" name="certified" value="certified" /> : null}
+      {filters.idioma ? <input type="hidden" name="idioma" value={filters.idioma} /> : null}
+      {typeof filters.priceMin === "number" ? <input type="hidden" name="price_min" value={filters.priceMin} /> : null}
+      {typeof filters.priceMax === "number" ? <input type="hidden" name="price_max" value={filters.priceMax} /> : null}
 
-        <label className="grid gap-1 text-sm font-semibold text-zinc-800">
-          <span className="inline-flex items-center gap-2">
-            <i className="fa-solid fa-layer-group text-zinc-500" aria-hidden="true" />
-            Categoría
-          </span>
-          <select
-            name="cat"
-            defaultValue={filters.cat ?? ""}
-            className="rounded-xl border border-black/10 bg-white px-3 py-2.5 outline-none focus:border-cyan-400"
-          >
-            <option value="">Todas</option>
-            {availableCategorySlugs.map((categorySlug) => (
-              <option key={categorySlug} value={categorySlug}>
-                {getCategoryBySlug(categorySlug)?.name ?? categorySlug}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="grid gap-1 text-sm font-semibold text-zinc-800">
-          <span className="inline-flex items-center gap-2">
-            <i className="fa-solid fa-location-dot text-zinc-500" aria-hidden="true" />
-            Ciudad
-          </span>
-          <select
-            name="location"
-            defaultValue={filters.location ?? ""}
-            className="rounded-xl border border-black/10 bg-white px-3 py-2.5 outline-none focus:border-cyan-400"
-          >
-            <option value="">Toda España</option>
-            {cities.map((city) => (
-              <option key={city.slug} value={city.slug}>
-                {city.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      </section>
-
-      <section className="grid gap-3 rounded-2xl border border-black/10 bg-zinc-50/60 p-4">
-        <p className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-800">
-          <i className="fa-solid fa-sliders text-zinc-500" aria-hidden="true" />
-          Modalidad y confianza
-        </p>
-        <label className="flex items-center gap-2 text-sm text-zinc-700">
-          <input type="checkbox" name="session" value="online" defaultChecked={filters.session?.includes("online")} />
-          <i className="fa-solid fa-globe text-zinc-500" aria-hidden="true" />
-          Online
-        </label>
-        <label className="flex items-center gap-2 text-sm text-zinc-700">
-          <input type="checkbox" name="session" value="presencial" defaultChecked={filters.session?.includes("presencial")} />
-          <i className="fa-solid fa-building text-zinc-500" aria-hidden="true" />
-          Presencial
-        </label>
-        <label className="flex items-center gap-2 text-sm text-zinc-700">
-          <input type="checkbox" name="certified" value="certified" defaultChecked={filters.certified} />
-          <i className="fa-solid fa-circle-check text-zinc-500" aria-hidden="true" />
-          Solo coaches certificados
-        </label>
-      </section>
-
-      <section className="grid gap-3 rounded-2xl border border-black/10 bg-zinc-50/60 p-4">
-        <label className="grid gap-1 text-sm font-semibold text-zinc-800">
-          <span className="inline-flex items-center gap-2">
-            <i className="fa-solid fa-language text-zinc-500" aria-hidden="true" />
-            Idioma
-          </span>
-          <input
-            name="idioma"
-            defaultValue={filters.idioma}
-            placeholder="Ej: inglés"
-            className="rounded-xl border border-black/10 bg-white px-3 py-2.5 outline-none focus:border-cyan-400"
-          />
-        </label>
-
-        <div className="grid gap-3 rounded-xl border border-black/10 bg-white p-3">
-          <div className="flex items-center justify-between text-sm font-semibold text-zinc-800">
-            <span className="inline-flex items-center gap-2">
-              <i className="fa-solid fa-euro-sign text-zinc-500" aria-hidden="true" />
-              Precio por sesión
-            </span>
-            <span className="text-xs font-semibold text-zinc-600">
-              {formatEuro(filters.priceMin ?? 0)} - {formatEuro(filters.priceMax ?? 500)}
-            </span>
-          </div>
-
-          <label className="grid gap-1 text-sm text-zinc-700">
-            <span>Mínimo: {formatEuro(filters.priceMin ?? 0)}</span>
-            <input
-              type="range"
-              name="price_min"
-              min={0}
-              max={500}
-              step={5}
-              defaultValue={filters.priceMin ?? 0}
-              className="accent-zinc-900"
-            />
-          </label>
-
-          <label className="grid gap-1 text-sm text-zinc-700">
-            <span>Máximo: {formatEuro(filters.priceMax ?? 500)}</span>
-            <input
-              type="range"
-              name="price_max"
-              min={0}
-              max={500}
-              step={5}
-              defaultValue={filters.priceMax ?? 500}
-              className="accent-zinc-900"
-            />
-          </label>
-        </div>
-
-        <label className="grid gap-1 text-sm font-semibold text-zinc-800">
-          <span className="inline-flex items-center gap-2">
-            <i className="fa-solid fa-arrow-down-wide-short text-zinc-500" aria-hidden="true" />
-            Ordenar
-          </span>
+      <label className="grid gap-1 text-left text-sm font-semibold text-zinc-800 sm:text-right">
+        <span className="inline-flex items-center gap-2 sm:justify-end">
+          <i className="fa-solid fa-arrow-down-wide-short text-zinc-500" aria-hidden="true" />
+          Ordenar
+        </span>
+        <div className="flex gap-2 sm:justify-end">
           <select
             name="sort"
             defaultValue={filters.sort ?? "recent"}
-            className="rounded-xl border border-black/10 bg-white px-3 py-2.5 outline-none focus:border-cyan-400"
+            className="min-w-[190px] rounded-xl border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400"
           >
             <option value="recent">Más recientes</option>
             <option value="price_asc">Precio ascendente</option>
             <option value="price_desc">Precio descendente</option>
             <option value="rating_desc">Mejor valoración</option>
           </select>
-        </label>
-      </section>
-
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <button className="flex-1 rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800">
-          Aplicar filtros
-        </button>
-        <Link
-          href="/coaches"
-          className="rounded-xl border border-black/10 bg-white px-4 py-2.5 text-center text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
-        >
-          Limpiar
-        </Link>
-      </div>
+          <button className="rounded-xl bg-zinc-950 px-3 py-2 text-sm font-semibold text-white hover:bg-zinc-800">
+            Aplicar
+          </button>
+        </div>
+      </label>
     </form>
   );
 }
@@ -291,6 +160,10 @@ export default async function CoachesDirectoryPage({
   const availableCategorySlugs = [...new Set(sourceCoaches.flatMap((coach) => coach.categories))].sort((a, b) =>
     a.localeCompare(b, "es"),
   );
+  const availableCategories = availableCategorySlugs.map((categorySlug) => ({
+    slug: categorySlug,
+    label: getCategoryBySlug(categorySlug)?.name ?? categorySlug,
+  }));
   const allResults = filterAndSortCoachesFrom(sourceCoaches, filters);
   const paginated = paginateCoaches(allResults, filters.page ?? 1, PAGE_SIZE);
   const hasFilters = hasMeaningfulQueryParams(raw);
@@ -325,14 +198,14 @@ export default async function CoachesDirectoryPage({
                     aria-hidden="true"
                   />
                 </summary>
-                <FiltersForm filters={filters} availableCategorySlugs={availableCategorySlugs} />
+                <DirectoryFiltersForm filters={filters} categories={availableCategories} />
               </details>
             </div>
 
             <div className="hidden xl:block">
               <h2 className="text-xl font-black tracking-tight text-zinc-950">Filtros</h2>
               <p className="mt-1 text-sm text-zinc-600">Diseñados para encontrar encaje rápido.</p>
-              <FiltersForm filters={filters} availableCategorySlugs={availableCategorySlugs} />
+              <DirectoryFiltersForm filters={filters} categories={availableCategories} />
             </div>
           </aside>
 
@@ -354,6 +227,7 @@ export default async function CoachesDirectoryPage({
                     Página {paginated.currentPage} de {paginated.totalPages}
                   </p>
                   <p>{PAGE_SIZE} por página</p>
+                  <DirectorySortForm filters={filters} />
                 </div>
               </div>
 
@@ -450,5 +324,3 @@ export default async function CoachesDirectoryPage({
     </>
   );
 }
-
-

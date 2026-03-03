@@ -91,7 +91,6 @@ export async function listPublishedBlogPosts(limit = 60): Promise<PublicBlogPost
     const rows = await prisma.blogPost.findMany({
       where: {
         isPublished: true,
-        OR: [{ publishedAt: null }, { publishedAt: { lte: new Date() } }],
       },
       include: { category: { select: { name: true } } },
       orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
@@ -123,7 +122,6 @@ export async function getPublishedBlogPostBySlug(slug: string): Promise<PublicBl
       where: {
         slug,
         isPublished: true,
-        OR: [{ publishedAt: null }, { publishedAt: { lte: new Date() } }],
       },
       include: {
         category: { select: { name: true } },
