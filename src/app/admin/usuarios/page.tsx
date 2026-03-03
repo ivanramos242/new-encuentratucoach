@@ -23,6 +23,18 @@ function formatDate(value: Date) {
   return new Intl.DateTimeFormat("es-ES", { dateStyle: "medium", timeStyle: "short" }).format(value);
 }
 
+function pickFilter<T extends string>(value: string | undefined, allowed: readonly T[], fallback: T): T {
+  if (value && (allowed as readonly string[]).includes(value)) return value as T;
+  return fallback;
+}
+
+type RoleFilter = "all" | "admin" | "coach" | "client";
+type AccountFilter = "all" | "active" | "inactive" | "reset_pending";
+type StripeFilter = "all" | "linked" | "missing";
+type CoachProfileFilter = "all" | "with" | "without";
+type MembershipFilter = "all" | "activeish" | "past_due" | "incomplete" | "canceled" | "unpaid" | "none";
+type PlanFilter = "all" | "monthly" | "annual";
+
 export default async function AdminUsuariosPage({
   searchParams,
 }: {
@@ -31,6 +43,18 @@ export default async function AdminUsuariosPage({
   const params = await searchParams;
   const qRaw = pickOne(params.q) || "";
   const q = qRaw.trim().toLowerCase();
+
+  const roleFilter = pickFilter<RoleFilter>(pickOne(params.fRole), ["all", "admin", "coach", "client"], "all");
+  const accountFilter = pickFilter<AccountFilter>(pickOne(params.fAccount), ["all", "active", "inactive", "reset_pending"], "all");
+  const stripeFilter = pickFilter<StripeFilter>(pickOne(params.fStripe), ["all", "linked", "missing"], "all");
+  const coachProfileFilter = pickFilter<CoachProfileFilter>(pickOne(params.fCoach), ["all", "with", "without"], "all");
+  const membershipFilter = pickFilter<MembershipFilter>(
+    pickOne(params.fMembership),
+    ["all", "activeish", "past_due", "incomplete", "canceled", "unpaid", "none"],
+    "all",
+  );
+  const planFilter = pickFilter<PlanFilter>(pickOne(params.fPlan), ["all", "monthly", "annual"], "all");
+
   const updated = pickOne(params.updated) === "1";
   const fromRole = pickOne(params.from);
   const toRole = pickOne(params.to);
@@ -68,6 +92,15 @@ export default async function AdminUsuariosPage({
           slug: true,
           profileStatus: true,
           visibilityStatus: true,
+          subscriptions: {
+            select: {
+              status: true,
+              planCode: true,
+              updatedAt: true,
+            },
+            orderBy: { updatedAt: "desc" },
+            take: 1,
+          },
         },
         orderBy: { createdAt: "asc" },
       },
@@ -76,36 +109,86 @@ export default async function AdminUsuariosPage({
     take: 800,
   });
 
-  const filtered = q
-    ? users.filter((user) => {
-        const haystack = [
-          user.email,
-          user.displayName || "",
-          user.role,
-          user.stripeCustomer?.stripeCustomerId || "",
-          user.coachProfiles.map((profile) => profile.slug).join(" "),
-        ]
-          .join(" ")
-          .toLowerCase();
-        return haystack.includes(q);
+  const usersWithSummary = users.map((user) => {
+    const latestCoachSub = user.coachProfiles
+      .map((profile) => {
+        const sub = profile.subscriptions[0];
+        if (!sub) return null;
+        return {
+          coachProfileId: profile.id,
+          status: sub.status,
+          planCode: sub.planCode,
+          updatedAt: sub.updatedAt,
+        };
       })
-    : users;
+      .filter((value): value is NonNullable<typeof value> => Boolean(value))
+      .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())[0] || null;
 
-  const adminsCount = users.filter((item) => item.role === "admin").length;
-  const coachesCount = users.filter((item) => item.role === "coach").length;
-  const clientsCount = users.filter((item) => item.role === "client").length;
+    return {
+      ...user,
+      latestCoachSub,
+    };
+  });
+
+  const filtered = usersWithSummary.filter((user) => {
+    const haystack = [
+      user.email,
+      user.displayName || "",
+      user.role,
+      user.stripeCustomer?.stripeCustomerId || "",
+      user.latestCoachSub?.status || "",
+      user.latestCoachSub?.planCode || "",
+      user.coachProfiles.map((profile) => profile.slug).join(" "),
+    ]
+      .join(" ")
+      .toLowerCase();
+
+    if (q && !haystack.includes(q)) return false;
+    if (roleFilter !== "all" && user.role !== roleFilter) return false;
+
+    if (accountFilter === "active" && !user.isActive) return false;
+    if (accountFilter === "inactive" && user.isActive) return false;
+    if (accountFilter === "reset_pending" && !user.mustResetPassword) return false;
+
+    const hasStripeCustomer = Boolean(user.stripeCustomer?.stripeCustomerId);
+    if (stripeFilter === "linked" && !hasStripeCustomer) return false;
+    if (stripeFilter === "missing" && hasStripeCustomer) return false;
+
+    const hasCoachProfile = user.coachProfiles.length > 0;
+    if (coachProfileFilter === "with" && !hasCoachProfile) return false;
+    if (coachProfileFilter === "without" && hasCoachProfile) return false;
+
+    const latestStatus = user.latestCoachSub?.status;
+    if (membershipFilter === "none") {
+      if (latestStatus) return false;
+    } else if (membershipFilter === "activeish") {
+      if (!(latestStatus === "active" || latestStatus === "trialing")) return false;
+    } else if (membershipFilter !== "all") {
+      if (latestStatus !== membershipFilter) return false;
+    }
+
+    if (planFilter !== "all") {
+      if (user.latestCoachSub?.planCode !== planFilter) return false;
+    }
+
+    return true;
+  });
+
+  const adminsCount = usersWithSummary.filter((item) => item.role === "admin").length;
+  const coachesCount = usersWithSummary.filter((item) => item.role === "coach").length;
+  const clientsCount = usersWithSummary.filter((item) => item.role === "client").length;
 
   return (
     <>
       <PageHero
         badge="Admin"
         title="Usuarios y roles"
-        description="Cambia el rol de cliente a coach y viceversa, con control de sesión y perfiles asociados."
+        description="Cambia el rol de cliente a coach y viceversa, con control de sesion y perfiles asociados."
       />
       <PageShell className="pt-8">
         {updated && targetEmail ? (
           <p className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-            Rol actualizado para <strong>{targetEmail}</strong>: {fromRole} -&gt; {toRole}. Perfil coach creado:{" "}
+            Rol actualizado para <strong>{targetEmail}</strong>: {fromRole} -&gt; {toRole}. Perfil coach creado: {" "}
             {createdCoach}. Perfiles pasados a draft/inactive: {drafted}.
           </p>
         ) : null}
@@ -117,8 +200,7 @@ export default async function AdminUsuariosPage({
         {stripeSynced && stripeEmail && syncedStripeSubscriptionId ? (
           <p className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
             {stripeSyncSource === "schedule" ? "Schedule Stripe sincronizado" : "Suscripcion Stripe sincronizada"} para{" "}
-            <strong>{stripeEmail}</strong>: {syncedStripeSubscriptionId} ({syncedStripeStatus} /{" "}
-            {syncedStripePlanCode})
+            <strong>{stripeEmail}</strong>: {syncedStripeSubscriptionId} ({syncedStripeStatus} / {syncedStripePlanCode})
           </p>
         ) : null}
         {manualMembershipActivated && manualMembershipEmail && manualMembershipPlanCode ? (
@@ -186,41 +268,108 @@ export default async function AdminUsuariosPage({
                                                                     ? "No se encontro el usuario para activar membresia."
                                                                     : errorCode === "manual-membership-admin-not-editable"
                                                                       ? "No se permite activar membresia manual en admins."
-                  : "No se pudo actualizar el rol."}
+                                                                      : "No se pudo actualizar el rol."}
           </p>
         ) : null}
 
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard label="Total usuarios" value={String(users.length)} />
+          <StatCard label="Total usuarios" value={String(usersWithSummary.length)} />
           <StatCard label="Admins" value={String(adminsCount)} />
           <StatCard label="Coaches" value={String(coachesCount)} />
           <StatCard label="Clientes" value={String(clientsCount)} />
         </section>
 
         <section className="mt-6 rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
-          <form className="flex flex-wrap items-center gap-3">
+          <form className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
             <input
               name="q"
               defaultValue={qRaw}
-              placeholder="Buscar por email, nombre, rol o slug de perfil coach"
-              className="min-w-72 flex-1 rounded-xl border border-black/10 px-3 py-2 text-sm outline-none focus:border-cyan-400"
+              placeholder="Buscar por email, nombre, rol, Stripe o slug"
+              className="min-w-0 rounded-xl border border-black/10 px-3 py-2 text-sm outline-none focus:border-cyan-400 md:col-span-2 xl:col-span-2"
             />
-            <button
-              type="submit"
-              className="rounded-xl border border-black/10 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
+            <select
+              name="fRole"
+              defaultValue={roleFilter}
+              className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400"
             >
-              Buscar
-            </button>
-            <a
-              href="/admin/usuarios"
-              className="rounded-xl border border-black/10 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
+              <option value="all">Rol: todos</option>
+              <option value="admin">Rol: admin</option>
+              <option value="coach">Rol: coach</option>
+              <option value="client">Rol: client</option>
+            </select>
+            <select
+              name="fAccount"
+              defaultValue={accountFilter}
+              className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400"
             >
-              Limpiar
-            </a>
+              <option value="all">Cuenta: todas</option>
+              <option value="active">Cuenta activa</option>
+              <option value="inactive">Cuenta inactiva</option>
+              <option value="reset_pending">Reset pendiente</option>
+            </select>
+            <select
+              name="fStripe"
+              defaultValue={stripeFilter}
+              className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400"
+            >
+              <option value="all">Stripe: todos</option>
+              <option value="linked">Stripe vinculado</option>
+              <option value="missing">Stripe sin vincular</option>
+            </select>
+            <select
+              name="fCoach"
+              defaultValue={coachProfileFilter}
+              className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400"
+            >
+              <option value="all">Perfil coach: todos</option>
+              <option value="with">Con perfil coach</option>
+              <option value="without">Sin perfil coach</option>
+            </select>
+            <select
+              name="fMembership"
+              defaultValue={membershipFilter}
+              className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400"
+            >
+              <option value="all">Membresia: todas</option>
+              <option value="activeish">Membresia activa/trial</option>
+              <option value="past_due">Membresia past_due</option>
+              <option value="incomplete">Membresia incomplete</option>
+              <option value="canceled">Membresia canceled</option>
+              <option value="unpaid">Membresia unpaid</option>
+              <option value="none">Sin membresia local</option>
+            </select>
+            <select
+              name="fPlan"
+              defaultValue={planFilter}
+              className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400"
+            >
+              <option value="all">Plan: todos</option>
+              <option value="monthly">Plan mensual</option>
+              <option value="annual">Plan anual</option>
+            </select>
+
+            <div className="flex items-center gap-2 md:col-span-2 xl:col-span-2">
+              <button
+                type="submit"
+                className="rounded-xl border border-black/10 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
+              >
+                Aplicar filtros
+              </button>
+              <a
+                href="/admin/usuarios"
+                className="rounded-xl border border-black/10 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
+              >
+                Limpiar
+              </a>
+            </div>
           </form>
 
+          <p className="mt-3 text-xs text-zinc-500">
+            Mostrando {filtered.length} de {usersWithSummary.length} usuarios.
+          </p>
+
           <div className="mt-5 overflow-x-auto">
-            <table className="w-full min-w-[980px] text-left text-sm">
+            <table className="w-full min-w-[1100px] text-left text-sm">
               <thead>
                 <tr className="border-b border-black/10 text-xs uppercase tracking-wide text-zinc-500">
                   <th className="px-3 py-2">Usuario</th>
@@ -237,9 +386,7 @@ export default async function AdminUsuariosPage({
                     <td className="px-3 py-3">
                       <p className="font-semibold text-zinc-900">{user.displayName || "Sin nombre"}</p>
                       <p className="mt-0.5 text-xs text-zinc-500">{user.email}</p>
-                      <p className="mt-0.5 text-xs text-zinc-500">
-                        Stripe: {user.stripeCustomer?.stripeCustomerId || "sin vincular"}
-                      </p>
+                      <p className="mt-0.5 text-xs text-zinc-500">Stripe: {user.stripeCustomer?.stripeCustomerId || "sin vincular"}</p>
                     </td>
                     <td className="px-3 py-3">
                       <span
@@ -259,6 +406,9 @@ export default async function AdminUsuariosPage({
                       {user.coachProfiles.length ? (
                         <p className="mt-0.5 text-xs text-zinc-500">{user.coachProfiles.map((p) => p.slug).join(", ")}</p>
                       ) : null}
+                      <p className="mt-0.5 text-xs text-zinc-500">
+                        Membresia: {user.latestCoachSub ? `${user.latestCoachSub.status} (${user.latestCoachSub.planCode})` : "sin membresia local"}
+                      </p>
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex flex-wrap gap-1.5">
@@ -325,7 +475,7 @@ export default async function AdminUsuariosPage({
                             <input
                               name="stripeSubscriptionId"
                               placeholder="sub_xxx o sub_sched_xxx (opcional)"
-                              className="w-44 rounded-lg border border-black/10 px-2.5 py-1.5 text-xs outline-none focus:border-cyan-400"
+                              className="w-52 rounded-lg border border-black/10 px-2.5 py-1.5 text-xs outline-none focus:border-cyan-400"
                             />
                             <button
                               type="submit"
@@ -364,7 +514,7 @@ export default async function AdminUsuariosPage({
                 {!filtered.length ? (
                   <tr>
                     <td colSpan={6} className="px-3 py-10 text-center text-sm text-zinc-600">
-                      No hay resultados para esa busqueda.
+                      No hay resultados para esos filtros.
                     </td>
                   </tr>
                 ) : null}
