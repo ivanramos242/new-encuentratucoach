@@ -2,6 +2,7 @@ import type Stripe from "stripe";
 import { jsonError, jsonOk } from "@/lib/api-handlers";
 import { prisma } from "@/lib/prisma";
 import { getStripeServer, getStripeWebhookSecret, planCodeFromStripePriceId } from "@/lib/stripe-server";
+import { sendSubscriptionNotification } from "@/lib/notification-workflows";
 
 function normalizeStripeStatus(status: string): "trialing" | "active" | "past_due" | "canceled" | "unpaid" | "incomplete" | "incomplete_expired" {
   switch (status) {
@@ -67,7 +68,7 @@ async function upsertSubscriptionFromStripe(subscription: Stripe.Subscription) {
 
   const existingByStripeId = await prisma.coachSubscription.findUnique({
     where: { stripeSubscriptionId: subscription.id },
-    select: { id: true, coachProfileId: true, planCode: true },
+    select: { id: true, coachProfileId: true, planCode: true, status: true, cancelAtPeriodEnd: true },
   });
   if (!coachProfileId) coachProfileId = existingByStripeId?.coachProfileId || "";
 
@@ -91,7 +92,16 @@ async function upsertSubscriptionFromStripe(subscription: Stripe.Subscription) {
     console.warn("[stripe/webhooks] skipping subscription without resolvable planCode", {
       stripeSubscriptionId: subscription.id,
     });
-    return { subscriptionRecord: null, coachProfileId: coachProfileId || null };
+    return {
+      subscriptionRecord: null,
+      coachProfileId: coachProfileId || null,
+      userId: userId || null,
+      status: null as string | null,
+      planCode: null as string | null,
+      cancelAtPeriodEnd: null as boolean | null,
+      previousStatus: existingByStripeId?.status || null,
+      previousCancelAtPeriodEnd: existingByStripeId?.cancelAtPeriodEnd ?? null,
+    };
   }
 
   const plan = await prisma.subscriptionPlan.upsert({
@@ -112,12 +122,21 @@ async function upsertSubscriptionFromStripe(subscription: Stripe.Subscription) {
     },
   });
 
+  const status = normalizeStripeStatus(subscription.status);
+
   if (!coachProfileId) {
     // We can still store the snapshot, but not fully sync a local subscription without the local coach profile.
-    return { subscriptionRecord: null, coachProfileId: null as string | null };
+    return {
+      subscriptionRecord: null,
+      coachProfileId: null as string | null,
+      userId: userId || null,
+      status,
+      planCode,
+      cancelAtPeriodEnd: Boolean(subscription.cancel_at_period_end),
+      previousStatus: existingByStripeId?.status || null,
+      previousCancelAtPeriodEnd: existingByStripeId?.cancelAtPeriodEnd ?? null,
+    };
   }
-
-  const status = normalizeStripeStatus(subscription.status);
   const currentPeriodStart = subscription.items.data[0]?.current_period_start
     ? new Date(subscription.items.data[0].current_period_start * 1000)
     : null;
@@ -183,7 +202,16 @@ async function upsertSubscriptionFromStripe(subscription: Stripe.Subscription) {
       .catch(() => undefined);
   }
 
-  return { subscriptionRecord, coachProfileId };
+  return {
+    subscriptionRecord,
+    coachProfileId,
+    userId: userId || null,
+    status,
+    planCode,
+    cancelAtPeriodEnd: Boolean(subscription.cancel_at_period_end),
+    previousStatus: existingByStripeId?.status || null,
+    previousCancelAtPeriodEnd: existingByStripeId?.cancelAtPeriodEnd ?? null,
+  };
 }
 
 async function processStripeEvent(event: Stripe.Event) {
@@ -206,7 +234,27 @@ async function processStripeEvent(event: Stripe.Event) {
 
       if (subscriptionId) {
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-        await upsertSubscriptionFromStripe(subscription);
+        const sync = await upsertSubscriptionFromStripe(subscription);
+        if (sync.userId && sync.status) {
+          const activated = sync.status === "active" || sync.status === "trialing";
+          await sendSubscriptionNotification({
+            userId: sync.userId,
+            type: activated ? "subscription_activated" : "subscription_state_changed",
+            title: activated ? "Membresia activada" : "Checkout completado",
+            body: activated
+              ? `Tu plan ${sync.planCode || "de membresia"} ya esta activo.`
+              : `Se ha completado el checkout. Estado actual: ${sync.status}.`,
+            data: {
+              source: "stripe_webhook",
+              eventType: event.type,
+              planCode: sync.planCode,
+              status: sync.status,
+              subscriptionId: sync.subscriptionRecord?.id ?? null,
+              stripeSubscriptionId: subscription.id,
+            },
+            alertAdmin: true,
+          });
+        }
       }
       break;
     }
@@ -225,7 +273,103 @@ async function processStripeEvent(event: Stripe.Event) {
         });
         break;
       }
-      await upsertSubscriptionFromStripe(subscription);
+      const sync = await upsertSubscriptionFromStripe(subscription);
+      if (sync.userId && sync.status) {
+        const becameCanceled = sync.status === "canceled" && sync.previousStatus !== "canceled";
+        const scheduledCancel = Boolean(sync.cancelAtPeriodEnd) && !Boolean(sync.previousCancelAtPeriodEnd);
+        const resumed = !Boolean(sync.cancelAtPeriodEnd) && Boolean(sync.previousCancelAtPeriodEnd);
+        const becameActive =
+          (sync.status === "active" || sync.status === "trialing") &&
+          sync.previousStatus !== "active" &&
+          sync.previousStatus !== "trialing";
+
+        if (becameCanceled) {
+          await sendSubscriptionNotification({
+            userId: sync.userId,
+            type: "subscription_canceled",
+            title: "Membresia cancelada",
+            body: "Stripe ha confirmado la cancelacion de la membresia.",
+            data: {
+              source: "stripe_webhook",
+              eventType: event.type,
+              status: sync.status,
+              planCode: sync.planCode,
+              subscriptionId: sync.subscriptionRecord?.id ?? null,
+              stripeSubscriptionId: subscription.id,
+            },
+            alertAdmin: true,
+          });
+        } else if (scheduledCancel) {
+          await sendSubscriptionNotification({
+            userId: sync.userId,
+            type: "subscription_canceled",
+            title: "Cancelacion programada",
+            body: "La membresia se cancelara al final del periodo actual.",
+            data: {
+              source: "stripe_webhook",
+              eventType: event.type,
+              status: sync.status,
+              planCode: sync.planCode,
+              cancelAtPeriodEnd: sync.cancelAtPeriodEnd,
+              subscriptionId: sync.subscriptionRecord?.id ?? null,
+              stripeSubscriptionId: subscription.id,
+            },
+            alertAdmin: true,
+          });
+        } else if (resumed) {
+          await sendSubscriptionNotification({
+            userId: sync.userId,
+            type: "subscription_resumed",
+            title: "Renovacion reactivada",
+            body: "Stripe confirma que tu membresia volvera a renovarse.",
+            data: {
+              source: "stripe_webhook",
+              eventType: event.type,
+              status: sync.status,
+              planCode: sync.planCode,
+              cancelAtPeriodEnd: sync.cancelAtPeriodEnd,
+              subscriptionId: sync.subscriptionRecord?.id ?? null,
+              stripeSubscriptionId: subscription.id,
+            },
+            alertAdmin: true,
+          });
+        } else if (becameActive) {
+          await sendSubscriptionNotification({
+            userId: sync.userId,
+            type: "subscription_activated",
+            title: "Membresia activa",
+            body: `Tu plan ${sync.planCode || "de membresia"} esta activo.`,
+            data: {
+              source: "stripe_webhook",
+              eventType: event.type,
+              status: sync.status,
+              planCode: sync.planCode,
+              subscriptionId: sync.subscriptionRecord?.id ?? null,
+              stripeSubscriptionId: subscription.id,
+            },
+            alertAdmin: true,
+          });
+        } else {
+          await sendSubscriptionNotification({
+            userId: sync.userId,
+            type: "subscription_state_changed",
+            title: "Cambio de estado en membresia",
+            body: `Tu suscripcion cambio de estado a ${sync.status}.`,
+            data: {
+              source: "stripe_webhook",
+              eventType: event.type,
+              status: sync.status,
+              planCode: sync.planCode,
+              previousStatus: sync.previousStatus,
+              cancelAtPeriodEnd: sync.cancelAtPeriodEnd,
+              previousCancelAtPeriodEnd: sync.previousCancelAtPeriodEnd,
+              subscriptionId: sync.subscriptionRecord?.id ?? null,
+              stripeSubscriptionId: subscription.id,
+            },
+            alertAdmin: true,
+          });
+        }
+      }
       break;
     }
     case "invoice.paid":
@@ -239,7 +383,11 @@ async function processStripeEvent(event: Stripe.Event) {
       if (stripeSubscriptionId) {
         const existing = await prisma.coachSubscription.findUnique({
           where: { stripeSubscriptionId },
-          select: { id: true },
+          select: {
+            id: true,
+            planCode: true,
+            coachProfile: { select: { userId: true } },
+          },
         });
         if (existing) {
           const status = event.type === "invoice.paid" ? "active" : "past_due";
@@ -250,6 +398,58 @@ async function processStripeEvent(event: Stripe.Event) {
               graceUntil: status === "past_due" ? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) : null,
             },
           });
+
+          const ownerUserId = existing.coachProfile.userId;
+          const amountCents =
+            event.type === "invoice.paid"
+              ? typeof invoice.amount_paid === "number"
+                ? invoice.amount_paid
+                : null
+              : typeof invoice.amount_due === "number"
+                ? invoice.amount_due
+                : null;
+          const amountLabel =
+            typeof amountCents === "number" ? `${(amountCents / 100).toFixed(2)} ${(invoice.currency || "eur").toUpperCase()}` : null;
+          if (ownerUserId) {
+            if (event.type === "invoice.paid") {
+              const renewal = invoice.billing_reason === "subscription_cycle";
+              await sendSubscriptionNotification({
+                userId: ownerUserId,
+                type: renewal ? "subscription_renewed" : "subscription_payment_succeeded",
+                title: renewal ? "Membresia renovada" : "Pago confirmado",
+                body: renewal
+                  ? `La renovacion de tu plan ${existing.planCode} se ha cobrado correctamente${amountLabel ? ` (${amountLabel})` : ""}.`
+                  : `Se ha confirmado tu pago${amountLabel ? ` por ${amountLabel}` : ""}.`,
+                data: {
+                  source: "stripe_webhook",
+                  eventType: event.type,
+                  subscriptionId: existing.id,
+                  stripeSubscriptionId,
+                  amountCents,
+                  currency: invoice.currency || "eur",
+                  billingReason: invoice.billing_reason,
+                },
+                alertAdmin: true,
+              });
+            } else {
+              await sendSubscriptionNotification({
+                userId: ownerUserId,
+                type: "subscription_payment_failed",
+                title: "Pago de membresia fallido",
+                body: `No se pudo procesar el pago${amountLabel ? ` de ${amountLabel}` : ""}. Revisa tu metodo de pago.`,
+                data: {
+                  source: "stripe_webhook",
+                  eventType: event.type,
+                  subscriptionId: existing.id,
+                  stripeSubscriptionId,
+                  amountCents,
+                  currency: invoice.currency || "eur",
+                  billingReason: invoice.billing_reason,
+                },
+                alertAdmin: true,
+              });
+            }
+          }
         }
       }
       break;
@@ -318,4 +518,3 @@ export async function POST(request: Request) {
     return jsonError("Webhook de Stripe no procesado", 400);
   }
 }
-

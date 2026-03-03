@@ -1,18 +1,16 @@
 import { jsonOk } from "@/lib/api-handlers";
-import { resolveApiActorFromRequest } from "@/lib/mock-auth-context";
-import { pollNotifications } from "@/lib/v2-service";
+import { requireApiRole } from "@/lib/api-auth";
+import { pollNotificationsForUser } from "@/lib/notification-service";
 
 export async function GET(request: Request) {
-  const actorResolved = await resolveApiActorFromRequest(request, "client");
-  if (!actorResolved.ok) return actorResolved.response;
-  const actor = actorResolved.actor;
+  const auth = await requireApiRole(request, ["client", "coach", "admin"]);
+  if (!auth.ok) return auth.response;
   const since = new URL(request.url).searchParams.get("since");
-  const result = pollNotifications(actor, since);
+  const result = await pollNotificationsForUser(auth.user.id, since);
   return jsonOk({
-    actor,
+    actor: { role: auth.user.role, userId: auth.user.id, displayName: auth.user.displayName ?? auth.user.email },
     ...result,
     pollIntervalMs: Number(process.env.MESSAGE_POLL_INTERVAL_MS ?? 300_000),
   });
 }
-
 

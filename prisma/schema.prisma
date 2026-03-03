@@ -153,8 +153,11 @@ enum QaVoteType {
 }
 
 enum NotificationType {
+  account_registered
+  account_welcome
   message_new
   message_reply
+  pending_message_reminder
   message_thread_reported
   qa_question_answered
   qa_answer_accepted
@@ -162,7 +165,16 @@ enum NotificationType {
   qa_content_moderated
   review_new_pending
   review_coach_action_required
+  subscription_checkout_started
+  subscription_activated
+  subscription_payment_succeeded
+  subscription_payment_failed
+  subscription_renewed
+  subscription_canceled
+  subscription_resumed
   subscription_state_changed
+  admin_mass_email
+  admin_activity_alert
   system_announcement
 }
 

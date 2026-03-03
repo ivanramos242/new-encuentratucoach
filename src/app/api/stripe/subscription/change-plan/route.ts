@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { applyEndpointRateLimit } from "@/lib/rate-limit";
 import { getStripeServer, resolveStripePlanPriceConfig } from "@/lib/stripe-server";
 import { getStripeIdempotencyKey } from "@/lib/stripe-idempotency";
+import { sendSubscriptionNotification } from "@/lib/notification-workflows";
 
 const schema = z.object({
   planCode: z.enum(["monthly", "annual"]),
@@ -279,6 +280,22 @@ export async function POST(request: Request) {
         currentPeriodEnd,
         graceUntil: status === "past_due" ? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) : null,
       },
+    });
+
+    void sendSubscriptionNotification({
+      userId: auth.user.id,
+      type: "subscription_state_changed",
+      title: "Plan de membresia actualizado",
+      body: `Has cambiado del plan ${localSub.planCode} al plan ${parsed.data.planCode}.`,
+      data: {
+        subscriptionId: localSub.id,
+        fromPlanCode: localSub.planCode,
+        toPlanCode: parsed.data.planCode,
+        stripeSubscriptionId: localSub.stripeSubscriptionId,
+      },
+      alertAdmin: true,
+    }).catch((error) => {
+      console.error("[stripe/subscription/change-plan] notification error", error);
     });
 
     return jsonOk({

@@ -1,15 +1,17 @@
 import { jsonError, jsonOk } from "@/lib/api-handlers";
-import { resolveApiActorFromRequest } from "@/lib/mock-auth-context";
-import { markNotificationRead } from "@/lib/v2-service";
+import { requireApiRole } from "@/lib/api-auth";
+import { markNotificationReadForUser } from "@/lib/notification-service";
 
 type ParamsInput = Promise<{ id: string }>;
 
 export async function POST(request: Request, { params }: { params: ParamsInput }) {
-  const actorResolved = await resolveApiActorFromRequest(request, "client");
-  if (!actorResolved.ok) return actorResolved.response;
-  const actor = actorResolved.actor;
+  const auth = await requireApiRole(request, ["client", "coach", "admin"]);
+  if (!auth.ok) return auth.response;
   const { id } = await params;
-  const result = markNotificationRead(actor, id);
+  const result = await markNotificationReadForUser({ userId: auth.user.id, notificationId: id });
   if ("error" in result) return jsonError(String(result.error), 404);
-  return jsonOk({ actor, notification: result.notification });
+  return jsonOk({
+    actor: { role: auth.user.role, userId: auth.user.id, displayName: auth.user.displayName ?? auth.user.email },
+    notification: result.notification,
+  });
 }
