@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -25,7 +25,7 @@ const CITY_SUGGESTIONS: Suggestion[] = [
   { href: "/coaches/ciudad/valencia", label: "Coach en Valencia", meta: "Ciudad" },
   { href: "/coaches/ciudad/sevilla", label: "Coach en Sevilla", meta: "Ciudad" },
   { href: "/coaches/ciudad/bilbao", label: "Coach en Bilbao", meta: "Ciudad" },
-  { href: "/coaches/ciudad/malaga", label: "Coach en MÃ¡laga", meta: "Ciudad" },
+  { href: "/coaches/ciudad/malaga", label: "Coach en Málaga", meta: "Ciudad" },
 ];
 
 const SPECIALTY_SUGGESTIONS: Suggestion[] = [
@@ -42,19 +42,19 @@ const SPECIALTY_SUGGESTIONS: Suggestion[] = [
   { href: "/coaches", label: "Buscar coach", meta: "Directorio" },
   { href: "/coaches", label: "Encontrar coach", meta: "Directorio" },
   { href: "/coaches", label: "Busco coach", meta: "Directorio" },
-  { href: "/coaches", label: "Ãlvaro MÃ¡ximo psicÃ³logo", meta: "BÃºsqueda" },
+  { href: "/coaches", label: "Álvaro Máximo psicólogo", meta: "Búsqueda" },
 ];
 
 const REVIEWS = [
   [
     {
-      text: "Estaba buscando un coach que entendiera mi momento profesional y en dos dÃ­as ya tenÃ­a una primera sesiÃ³n definida.",
+      text: "Estaba buscando un coach que entendiera mi momento profesional y en dos días ya tenía una primera sesión definida.",
       name: "Carlos Martinez",
       tag: "Emprendimiento",
       avatar: GENERIC_REVIEW_AVATAR,
     },
     {
-      text: "ProbÃ© coaching online por primera vez y fue muy prÃ¡ctico. En pocas sesiones conseguÃ­ claridad y foco.",
+      text: "Probé coaching online por primera vez y fue muy práctico. En pocas sesiones conseguí claridad y foco.",
       name: "Laura Serrano",
       tag: "Coaching personal",
       avatar: GENERIC_REVIEW_AVATAR,
@@ -62,13 +62,13 @@ const REVIEWS = [
   ],
   [
     {
-      text: "Buscaba un coach directivo en Madrid. ComparÃ© perfiles, enfoque y precio, y elegÃ­ rÃ¡pido.",
+      text: "Buscaba un coach directivo en Madrid. Comparé perfiles, enfoque y precio, y elegí rápido.",
       name: "David Gomez",
       tag: "Liderazgo",
       avatar: GENERIC_REVIEW_AVATAR,
     },
     {
-      text: "Me ayudÃ³ mucho poder filtrar por precio y por modalidad. En menos de una semana ya estaba trabajando objetivos concretos.",
+      text: "Me ayudó mucho poder filtrar por precio y por modalidad. En menos de una semana ya estaba trabajando objetivos concretos.",
       name: "Marta Rios",
       tag: "Habitos",
       avatar: GENERIC_REVIEW_AVATAR,
@@ -76,13 +76,13 @@ const REVIEWS = [
   ],
   [
     {
-      text: "Estaba bloqueado con una decisiÃ³n de carrera y con coaching profesional conseguÃ­ un plan accionable.",
+      text: "Estaba bloqueado con una decisión de carrera y con coaching profesional conseguí un plan accionable.",
       name: "Javier Molina",
       tag: "Carrera",
       avatar: GENERIC_REVIEW_AVATAR,
     },
     {
-      text: "El sello de coach certificado y las reseÃ±as me dieron mucha confianza para elegir mejor coach en Madrid.",
+      text: "El sello de coach certificado y las reseñas me dieron mucha confianza para elegir mejor coach en Madrid.",
       name: "Nuria Pardo",
       tag: "Autoestima",
       avatar: GENERIC_REVIEW_AVATAR,
@@ -207,21 +207,21 @@ export function HomeV4({ coaches }: HomeV4Props) {
                   <span>Directorio de</span>
                   <span style={{ opacity: 0.55 }}>-</span>
                   <span>
-                    <b>coaches en EspaÃ±a</b>
+                    <b>coaches en España</b>
                   </span>
                   <span style={{ opacity: 0.55 }}>-</span>
                   <span>online o presencial</span>
                 </div>
 
-                <h1 className="h1">Buscar un coach nunca ha sido tan fÃ¡cil</h1>
+                <h1 className="h1">Buscar un coach nunca ha sido tan fácil</h1>
 
                 <p className="lead">
                   Compara perfiles por especialidad, ciudad, modalidad y presupuesto. Contacta directamente con el
                   profesional y empieza con un plan claro. Si ves el distintivo de <strong>coach certificado</strong>,
-                  revisamos documentaciÃ³n real.
+                  revisamos documentación real.
                 </p>
 
-                <div className="searchwrap" aria-label="BÃºsqueda principal">
+                <div className="searchwrap" aria-label="Búsqueda principal">
                   <form
                     className="searchbar"
                     onSubmit={(event) => {
@@ -280,7 +280,7 @@ export function HomeV4({ coaches }: HomeV4Props) {
                     ))}
                   </div>
 
-                  <div className="chips" aria-label="Accesos rÃ¡pidos">
+                  <div className="chips" aria-label="Accesos rápidos">
                     <button className="chip" type="button" onClick={() => router.push("/coaches/certificados")}>
                       <i className="fa-solid fa-check-double" aria-hidden="true" /> Certificados
                     </button>
@@ -301,9 +301,9 @@ export function HomeV4({ coaches }: HomeV4Props) {
                     </button>
                   </div>
 
-                  <div className="popular-grid" aria-label="BÃºsquedas populares">
+                  <div className="popular-grid" aria-label="Búsquedas populares">
                     <div className="popular-card">
-                      <h3>BÃºsquedas por ciudad</h3>
+                      <h3>Búsquedas por ciudad</h3>
                       <div className="popular-links">
                         {CITY_SUGGESTIONS.slice(0, 4).map((city) => (
                           <Link key={city.label} className="plink" href={city.href}>
@@ -338,13 +338,13 @@ export function HomeV4({ coaches }: HomeV4Props) {
                         <i className="fa-solid fa-id-badge" aria-hidden="true" />
                       </div>
                       <div>
-                        <b>Â¿Eres coach?</b>
-                        <p>Ãšnete a la plataforma y crea tu perfil para conseguir clientes en Madrid, Barcelona y online.</p>
+                        <b>¿Eres coach?</b>
+                        <p>Únete a la plataforma y crea tu perfil para conseguir clientes en Madrid, Barcelona y online.</p>
                       </div>
                     </div>
                     <div className="actions">
-                      <Link className="btn ghost" href="/membresia" aria-label="Ir a membresÃ­a para coaches">
-                        Ver membresÃ­a
+                      <Link className="btn ghost" href="/membresia" aria-label="Ir a membresía para coaches">
+                        Ver membresía
                       </Link>
                     </div>
                   </div>
@@ -356,7 +356,7 @@ export function HomeV4({ coaches }: HomeV4Props) {
                   <div className="mini">
                     <div className="top">
                       <span className="badge">
-                        <i className="fa-solid fa-wand-magic-sparkles" aria-hidden="true" /> BÃºsqueda guiada
+                        <i className="fa-solid fa-wand-magic-sparkles" aria-hidden="true" /> Búsqueda guiada
                       </span>
                       <span className="badge">
                         <i className="fa-solid fa-shield-halved" aria-hidden="true" /> Perfiles verificados
@@ -367,7 +367,7 @@ export function HomeV4({ coaches }: HomeV4Props) {
                       <div className="mock-img">
                         <Image
                           src="/home-images/coach-generic-1.jpeg"
-                          alt="Imagen de ejemplo de sesiÃ³n de coaching"
+                          alt="Imagen de ejemplo de sesión de coaching"
                           width={1400}
                           height={900}
                           sizes="(max-width: 980px) 100vw, 38vw"
@@ -379,20 +379,20 @@ export function HomeV4({ coaches }: HomeV4Props) {
                           <i className="fa-solid fa-compass" aria-hidden="true" />
                           <div>
                             <b>Elige por objetivo</b>
-                            <span>Vida, carrera, liderazgo, pareja, bioemocional y mÃ¡s.</span>
+                            <span>Vida, carrera, liderazgo, pareja, bioemocional y más.</span>
                           </div>
                         </div>
 
                         <div className="feat">
                           <i className="fa-solid fa-check-double" aria-hidden="true" />
                           <div>
-                            <b>Distintivo de verificaciÃ³n</b>
-                            <span>Visible cuando hay documentaciÃ³n revisada.</span>
+                            <b>Distintivo de verificación</b>
+                            <span>Visible cuando hay documentación revisada.</span>
                           </div>
                         </div>
                       </div>
 
-                      <div className="mini-actions" aria-label="Acciones rÃ¡pidas">
+                      <div className="mini-actions" aria-label="Acciones rápidas">
                         <Link className="btn primary" href="/coaches" aria-label="Ver coaches en el directorio">
                           Ver coaches ahora
                         </Link>
@@ -405,10 +405,10 @@ export function HomeV4({ coaches }: HomeV4Props) {
           </div>
         </section>
 
-        <section aria-label="Ãšltimos coaches destacados" className="etc-reveal">
+        <section aria-label="Últimos coaches destacados" className="etc-reveal">
           <div className="section-head">
             <div>
-              <h2 className="h2">Ãšltimos perfiles aÃ±adidos</h2>
+              <h2 className="h2">Últimos perfiles añadidos</h2>
               <div className="sub">Explora perfiles del directorio y elige por encaje real.</div>
             </div>
             <Link className="btn" href="/coaches" aria-label="Ver todos">
@@ -442,7 +442,7 @@ export function HomeV4({ coaches }: HomeV4Props) {
             </Link>
             <Link className="cat-card" href="/coaches/categoria/personal">
               <h3>Coaching personal</h3>
-              <p>Autoestima, hÃ¡bitos, disciplina, foco y objetivos personales.</p>
+              <p>Autoestima, hábitos, disciplina, foco y objetivos personales.</p>
               <span className="go">
                 <i className="fa-solid fa-arrow-right" aria-hidden="true" /> Ver coaching personal
               </span>
@@ -456,7 +456,7 @@ export function HomeV4({ coaches }: HomeV4Props) {
             </Link>
             <Link className="cat-card" href="/coaches/categoria/liderazgo">
               <h3>Liderazgo</h3>
-              <p>ComunicaciÃ³n, equipos, decisiones y rendimiento directivo.</p>
+              <p>Comunicación, equipos, decisiones y rendimiento directivo.</p>
               <span className="go">
                 <i className="fa-solid fa-arrow-right" aria-hidden="true" /> Ver liderazgo
               </span>
@@ -478,25 +478,25 @@ export function HomeV4({ coaches }: HomeV4Props) {
           </div>
         </section>
 
-        <section aria-label="CÃ³mo sÃ© si necesito un coach" className="etc-reveal">
+        <section aria-label="Cómo sé si necesito un coach" className="etc-reveal">
           <div className="section-head">
             <div>
-              <h2 className="h2">CÃ³mo saber si te conviene trabajar con un coach</h2>
+              <h2 className="h2">Cómo saber si te conviene trabajar con un coach</h2>
               <div className="sub">Si te identificas con varios puntos, un coach acelera tu avance.</div>
             </div>
           </div>
 
           <div className="need-grid" aria-label="Indicadores">
             <div className="need-card">
-              <h3>SeÃ±ales claras y comunes</h3>
-              <p>Especialmente Ãºtil cuando sabes lo que quieres, pero te falta estructura o constancia.</p>
+              <h3>Señales claras y comunes</h3>
+              <p>Especialmente útil cuando sabes lo que quieres, pero te falta estructura o constancia.</p>
 
               <div className="need-list">
                 {[
                   ["Te cuesta decidir", "Das vueltas a lo mismo y sientes bloqueo."],
                   ["Empiezas fuerte y lo dejas", "Falta un sistema realista para sostener el cambio."],
                   ["Quieres mejorar sin plan", "Objetivos difusos y sin pasos concretos."],
-                  ["Necesitas accountability", "Con seguimiento semanal avanzas mÃ¡s rÃ¡pido."],
+                  ["Necesitas accountability", "Con seguimiento semanal avanzas más rápido."],
                 ].map(([title, text]) => (
                   <div className="need-item" key={title}>
                     <i className="fa-solid fa-circle-check" aria-hidden="true" />
@@ -534,7 +534,7 @@ export function HomeV4({ coaches }: HomeV4Props) {
           <div className="section-head">
             <div>
               <h2 className="h2">Buscar por ciudad</h2>
-              <div className="sub">Si prefieres presencial, entra por ciudad. Para online, busca en toda EspaÃ±a.</div>
+              <div className="sub">Si prefieres presencial, entra por ciudad. Para online, busca en toda España.</div>
             </div>
           </div>
 
@@ -545,7 +545,7 @@ export function HomeV4({ coaches }: HomeV4Props) {
               ["Coaches en Valencia", "/coaches/ciudad/valencia", "/home-images/city-valencia.jpeg"],
               ["Coaches en Sevilla", "/coaches/ciudad/sevilla", "/home-images/city-sevilla.jpeg"],
               ["Coaches en Bilbao", "/coaches/ciudad/bilbao", "/home-images/city-bilbao.jpeg"],
-              ["Coaches en MÃ¡laga", "/coaches/ciudad/malaga", "/home-images/city-malaga.jpeg"],
+              ["Coaches en Málaga", "/coaches/ciudad/malaga", "/home-images/city-malaga.jpeg"],
             ].map(([title, href, src]) => (
               <Link key={title} className="city-card" href={href} aria-label={title}>
                 <Image src={src} alt={title} width={1400} height={900} sizes="(max-width: 980px) 100vw, 31vw" />
@@ -580,11 +580,11 @@ export function HomeV4({ coaches }: HomeV4Props) {
           </div>
         </section>
 
-        <section aria-label="CÃ³mo elegir un coach" className="etc-reveal">
+        <section aria-label="Cómo elegir un coach" className="etc-reveal">
           <div className="section-head">
             <div>
-              <h2 className="h2">CÃ³mo elegir un coach sin perder tiempo</h2>
-              <div className="sub">Checklist rÃ¡pida para elegir por encaje y avanzar desde la primera sesiÃ³n.</div>
+              <h2 className="h2">Cómo elegir un coach sin perder tiempo</h2>
+              <div className="sub">Checklist rápida para elegir por encaje y avanzar desde la primera sesión.</div>
             </div>
           </div>
 
@@ -596,7 +596,7 @@ export function HomeV4({ coaches }: HomeV4Props) {
                 {[
                   ["Define el objetivo", "Ejemplo: quiero cambiar de trabajo sin bajar ingresos."],
                   ["Elige modalidad", "Online para flexibilidad, presencial para contexto local."],
-                  ["Valida confianza", "Revisa certificaciÃ³n, especialidad y reseÃ±as."],
+                  ["Valida confianza", "Revisa certificación, especialidad y reseñas."],
                 ].map(([title, text], index) => (
                   <div className="choose-item" key={title}>
                     <div className="num">{index + 1}</div>
@@ -631,7 +631,7 @@ export function HomeV4({ coaches }: HomeV4Props) {
               <div className="body">
                 <div className="mini-card">
                   <b>Pregunta inicial recomendada</b>
-                  <p>Mi objetivo es X, ahora estoy en Y y mi mayor bloqueo es Z. Â¿CÃ³mo lo trabajarÃ­amos?</p>
+                  <p>Mi objetivo es X, ahora estoy en Y y mi mayor bloqueo es Z. ¿Cómo lo trabajaríamos?</p>
                   <div className="tags">
                     <span className="tag">Mensaje claro</span>
                     <span className="tag">Objetivo</span>
@@ -640,8 +640,8 @@ export function HomeV4({ coaches }: HomeV4Props) {
                 </div>
 
                 <div className="mini-card">
-                  <b>Regla prÃ¡ctica</b>
-                  <p>Si tras la primera sesiÃ³n no tienes claridad y siguiente paso concreto, cambia de perfil.</p>
+                  <b>Regla práctica</b>
+                  <p>Si tras la primera sesión no tienes claridad y siguiente paso concreto, cambia de perfil.</p>
                   <div className="tags">
                     <span className="tag">Claridad</span>
                     <span className="tag">Plan</span>
@@ -673,10 +673,10 @@ export function HomeV4({ coaches }: HomeV4Props) {
                     <i className="fa-solid fa-check" aria-hidden="true" /> Flexibilidad y cero desplazamientos
                   </li>
                   <li>
-                    <i className="fa-solid fa-check" aria-hidden="true" /> Acceso a profesionales de toda EspaÃ±a
+                    <i className="fa-solid fa-check" aria-hidden="true" /> Acceso a profesionales de toda España
                   </li>
                   <li>
-                    <i className="fa-solid fa-check" aria-hidden="true" /> Suele ser mÃ¡s econÃ³mico
+                    <i className="fa-solid fa-check" aria-hidden="true" /> Suele ser más económico
                   </li>
                   <li>
                     <i className="fa-solid fa-check" aria-hidden="true" /> Ideal para agendas apretadas
@@ -702,7 +702,7 @@ export function HomeV4({ coaches }: HomeV4Props) {
                     <i className="fa-solid fa-check" aria-hidden="true" /> Lectura completa del lenguaje corporal
                   </li>
                   <li>
-                    <i className="fa-solid fa-check" aria-hidden="true" /> Ãštil si valoras cercanÃ­a
+                    <i className="fa-solid fa-check" aria-hidden="true" /> Útil si valoras cercanía
                   </li>
                   <li>
                     <i className="fa-solid fa-check" aria-hidden="true" /> Perfecto para contexto local
@@ -733,49 +733,49 @@ export function HomeV4({ coaches }: HomeV4Props) {
             <details>
               <summary>
                 <div className="q">
-                  <span>Â¿CuÃ¡nto cuesta una sesiÃ³n de coaching en Madrid?</span>
+                  <span>¿Cuánto cuesta una sesión de coaching en Madrid?</span>
                   <svg className="chev" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                   </svg>
                 </div>
               </summary>
-              <div className="a">El rango habitual estÃ¡ entre 60 EUR y 150 EUR segÃºn especialidad, experiencia y modalidad.</div>
+              <div className="a">El rango habitual está entre 60 EUR y 150 EUR según especialidad, experiencia y modalidad.</div>
             </details>
 
             <details>
               <summary>
                 <div className="q">
-                  <span>Â¿Funciona igual el coaching online que el presencial?</span>
+                  <span>¿Funciona igual el coaching online que el presencial?</span>
                   <svg className="chev" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                   </svg>
                 </div>
               </summary>
-              <div className="a">En muchos objetivos, sÃ­. Online aporta flexibilidad y presencial puede aportar cercanÃ­a local.</div>
+              <div className="a">En muchos objetivos, sí. Online aporta flexibilidad y presencial puede aportar cercanía local.</div>
             </details>
 
             <details>
               <summary>
                 <div className="q">
-                  <span>Â¿CÃ³mo encontrar coach profesional en Madrid mÃ¡s rÃ¡pido?</span>
+                  <span>¿Cómo encontrar coach profesional en Madrid más rápido?</span>
                   <svg className="chev" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                   </svg>
                 </div>
               </summary>
-              <div className="a">Define objetivo en una frase, filtra por especialidad y revisa certificaciÃ³n y reseÃ±as.</div>
+              <div className="a">Define objetivo en una frase, filtra por especialidad y revisa certificación y reseñas.</div>
             </details>
 
             <details>
               <summary>
                 <div className="q">
-                  <span>Â¿CuÃ¡nto suele durar un proceso de coaching?</span>
+                  <span>¿Cuánto suele durar un proceso de coaching?</span>
                   <svg className="chev" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                   </svg>
                 </div>
               </summary>
-              <div className="a">Objetivos puntuales: 3 a 6 sesiones. Cambios de carrera o hÃ¡bitos: 8 a 12 sesiones.</div>
+              <div className="a">Objetivos puntuales: 3 a 6 sesiones. Cambios de carrera o hábitos: 8 a 12 sesiones.</div>
             </details>
           </div>
         </section>
@@ -797,7 +797,7 @@ export function HomeV4({ coaches }: HomeV4Props) {
               <div className="grid" style={{ gap: 12 }}>
                 <div style={{ fontSize: "1.2rem", fontWeight: 980, letterSpacing: "-0.2px" }}>Resuelve dudas antes de elegir</div>
                 <div style={{ color: "rgba(11,18,32,.78)", fontWeight: 800 }}>
-                  Explica tu situaciÃ³n en 3 o 5 lÃ­neas y pregunta lo que necesites. Puedes publicar de forma anÃ³nima.
+                  Explica tu situación en 3 o 5 líneas y pregunta lo que necesites. Puedes publicar de forma anónima.
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 6 }}>
                   <Link className="btn coach-solid" href="/pregunta-a-un-coach">
@@ -847,7 +847,7 @@ export function HomeV4({ coaches }: HomeV4Props) {
               </Link>
             </div>
 
-            <div className="trust-slider" aria-label="Slider de reseÃ±as">
+            <div className="trust-slider" aria-label="Slider de reseñas">
               <div className="track" style={{ transform: `translate3d(-${activeReviewSlide * 100}%,0,0)` }}>
                 {REVIEWS.map((slide, slideIndex) => (
                   <div className="slide" key={`slide-${slideIndex}`}>
@@ -885,7 +885,7 @@ export function HomeV4({ coaches }: HomeV4Props) {
                       key={`dot-${index}`}
                       className={`dot ${index === activeReviewSlide ? "is-active" : ""}`}
                       type="button"
-                      aria-label={`Ir a reseÃ±a ${index + 1}`}
+                      aria-label={`Ir a reseña ${index + 1}`}
                       onClick={() => setActiveReviewSlide(index)}
                     />
                   ))}
@@ -910,7 +910,7 @@ export function HomeV4({ coaches }: HomeV4Props) {
                 <h2>Empieza hoy y da tu primer paso</h2>
                 <p>
                   Entra al directorio, filtra por especialidad, modalidad y presupuesto, y elige por encaje. Si quieres
-                  mÃ¡xima confianza, activa certificados.
+                  máxima confianza, activa certificados.
                 </p>
 
                 <div className="row">
@@ -923,11 +923,11 @@ export function HomeV4({ coaches }: HomeV4Props) {
                 </div>
 
                 <div className="coachbox" aria-label="CTA para coaches">
-                  <b>Â¿Eres coach?</b> Ãšnete a la plataforma y activa tu perfil para conseguir clientes.
+                  <b>¿Eres coach?</b> Únete a la plataforma y activa tu perfil para conseguir clientes.
                   <div className="row">
-                    <Link className="btn coach-outline" href="/membresia" aria-label="Ver membresÃ­a para coaches">
+                    <Link className="btn coach-outline" href="/membresia" aria-label="Ver membresía para coaches">
                       <i className="fa-solid fa-circle-question" aria-hidden="true" />
-                      Ver membresÃ­a
+                      Ver membresía
                     </Link>
                     <Link className="btn coach-solid" href="/membresia" aria-label="Unirme como coach">
                       <i className="fa-solid fa-id-badge" aria-hidden="true" />
