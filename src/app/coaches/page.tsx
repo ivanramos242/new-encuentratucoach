@@ -6,6 +6,7 @@ import { TrustStrip } from "@/components/directory/trust-strip";
 import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
 import { JsonLd } from "@/components/seo/json-ld";
+import { getOptionalSessionUser } from "@/lib/auth-server";
 import {
   PAGE_SIZE,
   filterAndSortCoachesFrom,
@@ -157,6 +158,8 @@ export default async function CoachesDirectoryPage({
   searchParams: SearchParamsInput;
 }) {
   const raw = await searchParams;
+  const sessionUser = await getOptionalSessionUser();
+  const isAdmin = sessionUser?.role === "admin";
   const filters = parseDirectoryFilters(raw);
   const sourceCoaches = await listPublicCoachesMerged();
   const availableCategorySlugs = [...new Set(sourceCoaches.flatMap((coach) => coach.categories))].sort((a, b) =>
@@ -190,7 +193,7 @@ export default async function CoachesDirectoryPage({
       />
 
       <PageShell className="pt-8" containerClassName="max-w-[1760px] lg:px-10">
-        <TrustStrip stats={trustStats} />
+        {isAdmin ? <TrustStrip stats={trustStats} /> : null}
         <div className="mt-6 grid gap-8 max-[390px]:gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
           <aside className="h-fit rounded-3xl border border-black/10 bg-white p-4 shadow-sm sm:p-6 xl:sticky xl:top-24">
             <div className="xl:hidden">
