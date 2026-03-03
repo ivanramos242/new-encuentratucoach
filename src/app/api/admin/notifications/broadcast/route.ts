@@ -6,10 +6,27 @@ import { applyEndpointRateLimit } from "@/lib/rate-limit";
 import { createUserNotification, notifyAdminsOfPlatformEvent } from "@/lib/notification-service";
 
 const schema = z.object({
-  audience: z.enum(["coaches", "clients", "both"]),
+  mode: z.enum(["segment", "selected"]).default("segment"),
+  audience: z.enum(["coaches", "clients", "both"]).optional(),
+  selectedUserIds: z.array(z.string().min(1)).max(500).optional().default([]),
   subject: z.string().trim().min(3).max(180),
   message: z.string().trim().min(10).max(8000),
   includeInApp: z.boolean().optional().default(true),
+}).superRefine((data, ctx) => {
+  if (data.mode === "segment" && !data.audience) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["audience"],
+      message: "Debes indicar la audiencia para el envio segmentado.",
+    });
+  }
+  if (data.mode === "selected" && (!data.selectedUserIds || data.selectedUserIds.length === 0)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["selectedUserIds"],
+      message: "Debes seleccionar al menos un usuario.",
+    });
+  }
 });
 
 function isCoachLike(user: { role: "admin" | "coach" | "client"; coachProfiles: Array<{ id: string }> }) {
@@ -51,12 +68,19 @@ export async function POST(request: Request) {
       orderBy: [{ createdAt: "asc" }],
     });
 
+    const selectedIds = new Set(parsed.data.selectedUserIds);
     const recipients = users.filter((user) => {
+      if (parsed.data.mode === "selected") {
+        return selectedIds.has(user.id);
+      }
       const coachLike = isCoachLike(user);
       if (parsed.data.audience === "coaches") return coachLike;
       if (parsed.data.audience === "clients") return !coachLike;
       return true;
     });
+    if (!recipients.length) {
+      return jsonError("No hay destinatarios para los filtros seleccionados.", 400);
+    }
 
     const channels = parsed.data.includeInApp ? (["email", "in_app"] as const) : (["email"] as const);
 
@@ -72,7 +96,9 @@ export async function POST(request: Request) {
         channels: [...channels],
         data: {
           sentByAdminUserId: auth.user.id,
-          audience: parsed.data.audience,
+          mode: parsed.data.mode,
+          audience: parsed.data.audience || "selected",
+          recipientUserId: recipient.id,
           linkPath: "/mi-cuenta",
           linkLabel: "Abrir mi cuenta",
         },
@@ -89,9 +115,14 @@ export async function POST(request: Request) {
     await notifyAdminsOfPlatformEvent({
       event: "admin.broadcast.sent",
       title: "Envio masivo ejecutado",
-      body: `Broadcast a ${parsed.data.audience}: ${processed} destinatarios procesados.`,
+      body:
+        parsed.data.mode === "selected"
+          ? `Envio personalizado: ${processed} destinatarios procesados.`
+          : `Broadcast a ${parsed.data.audience}: ${processed} destinatarios procesados.`,
       data: {
+        mode: parsed.data.mode,
         audience: parsed.data.audience,
+        selectedCount: parsed.data.selectedUserIds.length,
         processed,
         emailQueued,
         inAppCreated,
@@ -102,7 +133,9 @@ export async function POST(request: Request) {
 
     return jsonOk({
       message: "Envio masivo encolado correctamente.",
+      mode: parsed.data.mode,
       audience: parsed.data.audience,
+      selectedCount: parsed.data.selectedUserIds.length,
       processed,
       emailQueued,
       inAppCreated,
@@ -113,4 +146,3 @@ export async function POST(request: Request) {
     return jsonServerError("No se pudo completar el envio masivo", error);
   }
 }
-

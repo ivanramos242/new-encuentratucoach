@@ -18,7 +18,7 @@ export default async function AdminNotificationsPage() {
       <PageHero
         badge="Admin"
         title="Notificaciones y entregas"
-        description="Monitoreo de alertas internas, envios email y comunicados masivos."
+        description="Monitoreo de alertas internas, envios email y comunicados segmentados o personalizados."
       />
       <PageShell className="pt-8">
         <div className="grid gap-6 xl:grid-cols-[1.15fr_.85fr]">
@@ -63,7 +63,7 @@ export default async function AdminNotificationsPage() {
                     <div key={job.id} className="rounded-xl border border-black/10 bg-zinc-50 p-3 text-sm">
                       <p className="font-semibold text-zinc-900">{job.type}</p>
                       <p className="mt-1 text-xs text-zinc-600">
-                        {job.status} · prioridad {job.priority} · intentos {job.attempts}/{job.maxAttempts}
+                        {job.status} | prioridad {job.priority} | intentos {job.attempts}/{job.maxAttempts}
                       </p>
                     </div>
                   ))
@@ -81,7 +81,7 @@ export default async function AdminNotificationsPage() {
                     <div key={log.id} className="rounded-xl border border-black/10 bg-zinc-50 p-3 text-sm">
                       <p className="font-semibold text-zinc-900">{log.jobId}</p>
                       <p className="mt-1 text-xs text-zinc-600">
-                        {log.status} · {new Date(log.createdAt).toLocaleString("es-ES")}
+                        {log.status} | {new Date(log.createdAt).toLocaleString("es-ES")}
                       </p>
                       {log.errorMessage ? <p className="mt-1 text-xs text-red-700">{log.errorMessage}</p> : null}
                     </div>
