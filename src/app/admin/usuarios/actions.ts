@@ -6,6 +6,7 @@ import { slugify } from "@/lib/utils";
 import { requireRole } from "@/lib/auth-server";
 import { setImpersonationCookieForServerAction } from "@/lib/auth-session";
 import { prisma } from "@/lib/prisma";
+import { getStripeServer } from "@/lib/stripe-server";
 
 function getString(formData: FormData, key: string) {
   const raw = formData.get(key);
@@ -24,6 +25,16 @@ async function uniqueCoachSlug(base: string, findBySlug: (slug: string) => Promi
 
 function buildCoachName(input: { displayName?: string | null; email: string }) {
   return (input.displayName || input.email.split("@")[0] || "Coach").trim();
+}
+
+function isStripeCustomerId(value: string) {
+  return /^cus_[A-Za-z0-9]+$/.test(value);
+}
+
+function stripeErrorCode(error: unknown) {
+  if (!error || typeof error !== "object") return "";
+  const maybe = error as { code?: string; raw?: { code?: string } };
+  return maybe.code || maybe.raw?.code || "";
 }
 
 function userHomePathByRole(role: "admin" | "coach" | "client") {
@@ -51,6 +62,58 @@ export async function impersonateUserAction(formData: FormData) {
 
   await setImpersonationCookieForServerAction(targetUser.id);
   redirect(userHomePathByRole(targetUser.role));
+}
+
+export async function setUserStripeCustomerIdAction(formData: FormData) {
+  await requireRole("admin", { returnTo: "/admin/usuarios" });
+
+  const userId = getString(formData, "userId");
+  const stripeCustomerId = getString(formData, "stripeCustomerId");
+  if (!userId || !stripeCustomerId) redirect("/admin/usuarios?error=stripe-invalid-payload");
+  if (!isStripeCustomerId(stripeCustomerId)) {
+    redirect("/admin/usuarios?error=stripe-invalid-format");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, email: true, role: true },
+  });
+  if (!user) redirect("/admin/usuarios?error=stripe-not-found");
+  if (user.role === "admin") redirect("/admin/usuarios?error=stripe-admin-not-editable");
+
+  const linkedToOtherUser = await prisma.stripeCustomer.findUnique({
+    where: { stripeCustomerId },
+    select: { userId: true },
+  });
+  if (linkedToOtherUser && linkedToOtherUser.userId !== user.id) {
+    redirect("/admin/usuarios?error=stripe-customer-already-linked");
+  }
+
+  try {
+    const stripe = getStripeServer();
+    const customer = await stripe.customers.retrieve(stripeCustomerId);
+    if ("deleted" in customer && customer.deleted) {
+      redirect("/admin/usuarios?error=stripe-customer-deleted");
+    }
+  } catch (error) {
+    const code = stripeErrorCode(error);
+    if (code === "resource_missing") redirect("/admin/usuarios?error=stripe-customer-not-found");
+    redirect("/admin/usuarios?error=stripe-validate-failed");
+  }
+
+  await prisma.stripeCustomer.upsert({
+    where: { userId: user.id },
+    create: { userId: user.id, stripeCustomerId },
+    update: { stripeCustomerId },
+  });
+
+  revalidatePath("/admin/usuarios");
+  const successParams = new URLSearchParams({
+    stripeLinked: "1",
+    stripeEmail: user.email,
+    stripeCustomerId,
+  });
+  redirect(`/admin/usuarios?${successParams.toString()}`);
 }
 
 export async function changeUserRoleAction(formData: FormData) {

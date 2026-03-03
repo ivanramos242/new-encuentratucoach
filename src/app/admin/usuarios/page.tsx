@@ -1,7 +1,7 @@
 import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
 import { prisma } from "@/lib/prisma";
-import { changeUserRoleAction, impersonateUserAction } from "@/app/admin/usuarios/actions";
+import { changeUserRoleAction, impersonateUserAction, setUserStripeCustomerIdAction } from "@/app/admin/usuarios/actions";
 
 function pickOne(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
@@ -31,6 +31,9 @@ export default async function AdminUsuariosPage({
   const targetEmail = pickOne(params.email);
   const createdCoach = parseCount(pickOne(params.createdCoach));
   const drafted = parseCount(pickOne(params.drafted));
+  const stripeLinked = pickOne(params.stripeLinked) === "1";
+  const stripeEmail = pickOne(params.stripeEmail);
+  const linkedStripeCustomerId = pickOne(params.stripeCustomerId);
   const errorCode = pickOne(params.error);
 
   const users = await prisma.user.findMany({
@@ -42,6 +45,9 @@ export default async function AdminUsuariosPage({
       isActive: true,
       mustResetPassword: true,
       createdAt: true,
+      stripeCustomer: {
+        select: { stripeCustomerId: true },
+      },
       coachProfiles: {
         select: {
           id: true,
@@ -62,6 +68,7 @@ export default async function AdminUsuariosPage({
           user.email,
           user.displayName || "",
           user.role,
+          user.stripeCustomer?.stripeCustomerId || "",
           user.coachProfiles.map((profile) => profile.slug).join(" "),
         ]
           .join(" ")
@@ -88,6 +95,11 @@ export default async function AdminUsuariosPage({
             {createdCoach}. Perfiles pasados a draft/inactive: {drafted}.
           </p>
         ) : null}
+        {stripeLinked && stripeEmail && linkedStripeCustomerId ? (
+          <p className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+            Stripe customer enlazado para <strong>{stripeEmail}</strong>: {linkedStripeCustomerId}
+          </p>
+        ) : null}
         {errorCode ? (
           <p className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
             {errorCode === "invalid-payload"
@@ -104,6 +116,22 @@ export default async function AdminUsuariosPage({
                         ? "No se puede impersonar a una cuenta admin."
                         : errorCode === "impersonate-inactive"
                           ? "No se puede impersonar a un usuario inactivo."
+                          : errorCode === "stripe-invalid-payload"
+                            ? "Datos invalidos para guardar el Stripe customer."
+                            : errorCode === "stripe-invalid-format"
+                              ? "Formato invalido. Usa un id de Stripe tipo cus_xxx."
+                              : errorCode === "stripe-not-found"
+                                ? "No se encontro el usuario para enlazar Stripe."
+                                : errorCode === "stripe-admin-not-editable"
+                                  ? "No se permite enlazar Stripe a cuentas admin."
+                                  : errorCode === "stripe-customer-not-found"
+                                    ? "Ese Stripe customer no existe en la cuenta Stripe conectada."
+                                    : errorCode === "stripe-customer-deleted"
+                                      ? "Ese Stripe customer esta eliminado en Stripe."
+                                      : errorCode === "stripe-customer-already-linked"
+                                        ? "Ese Stripe customer ya esta enlazado a otro usuario."
+                                        : errorCode === "stripe-validate-failed"
+                                          ? "No se pudo validar el Stripe customer en Stripe."
                   : "No se pudo actualizar el rol."}
           </p>
         ) : null}
@@ -155,6 +183,9 @@ export default async function AdminUsuariosPage({
                     <td className="px-3 py-3">
                       <p className="font-semibold text-zinc-900">{user.displayName || "Sin nombre"}</p>
                       <p className="mt-0.5 text-xs text-zinc-500">{user.email}</p>
+                      <p className="mt-0.5 text-xs text-zinc-500">
+                        Stripe: {user.stripeCustomer?.stripeCustomerId || "sin vincular"}
+                      </p>
                     </td>
                     <td className="px-3 py-3">
                       <span
@@ -196,26 +227,43 @@ export default async function AdminUsuariosPage({
                       {user.role === "admin" ? (
                         <span className="text-xs font-semibold text-zinc-500">No editable</span>
                       ) : (
-                        <div className="flex flex-wrap items-center gap-2">
-                          <form action={impersonateUserAction}>
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <form action={impersonateUserAction}>
+                              <input type="hidden" name="userId" value={user.id} />
+                              <button
+                                type="submit"
+                                className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100"
+                              >
+                                Entrar como usuario
+                              </button>
+                            </form>
+                            <form action={changeUserRoleAction} className="flex items-center gap-2">
+                              <input type="hidden" name="userId" value={user.id} />
+                              <input type="hidden" name="targetRole" value={user.role === "coach" ? "client" : "coach"} />
+                              <button
+                                type="submit"
+                                className={`rounded-lg px-3 py-1.5 text-xs font-semibold text-white ${
+                                  user.role === "coach" ? "bg-zinc-800 hover:bg-black" : "bg-cyan-700 hover:bg-cyan-800"
+                                }`}
+                              >
+                                {user.role === "coach" ? "Pasar a cliente" : "Pasar a coach"}
+                              </button>
+                            </form>
+                          </div>
+                          <form action={setUserStripeCustomerIdAction} className="flex flex-wrap items-center gap-2">
                             <input type="hidden" name="userId" value={user.id} />
+                            <input
+                              name="stripeCustomerId"
+                              defaultValue={user.stripeCustomer?.stripeCustomerId || ""}
+                              placeholder="cus_xxx"
+                              className="w-44 rounded-lg border border-black/10 px-2.5 py-1.5 text-xs outline-none focus:border-cyan-400"
+                            />
                             <button
                               type="submit"
-                              className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100"
+                              className="rounded-lg border border-cyan-300 bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-cyan-900 hover:bg-cyan-100"
                             >
-                              Entrar como usuario
-                            </button>
-                          </form>
-                          <form action={changeUserRoleAction} className="flex items-center gap-2">
-                            <input type="hidden" name="userId" value={user.id} />
-                            <input type="hidden" name="targetRole" value={user.role === "coach" ? "client" : "coach"} />
-                            <button
-                              type="submit"
-                              className={`rounded-lg px-3 py-1.5 text-xs font-semibold text-white ${
-                                user.role === "coach" ? "bg-zinc-800 hover:bg-black" : "bg-cyan-700 hover:bg-cyan-800"
-                              }`}
-                            >
-                              {user.role === "coach" ? "Pasar a cliente" : "Pasar a coach"}
+                              Guardar Stripe ID
                             </button>
                           </form>
                         </div>
