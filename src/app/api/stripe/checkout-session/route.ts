@@ -292,22 +292,22 @@ export async function POST(request: Request) {
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] =
       !hasActiveDiscount && priceConfig.mode === "price_id"
         ? [{ price: priceConfig.stripePriceId, quantity: 1 }]
-        : [
-            {
-              quantity: 1,
-              price_data: {
-                currency: "eur",
-                unit_amount: unitAmountForCheckout,
-                recurring: { interval: parsed.data.planCode === "monthly" ? "month" : "year" },
-                product_data: {
-                  name: parsed.data.planCode === "monthly" ? "Membresia coach mensual" : "Membresia coach anual",
-                  description: hasActiveDiscount
-                    ? "Perfil activo en el directorio de coaches de EncuentraTuCoach Â· Descuento aplicado"
-                    : "Perfil activo en el directorio de coaches de EncuentraTuCoach",
-                },
+      : [
+          {
+            quantity: 1,
+            price_data: {
+              currency: "eur",
+              unit_amount: unitAmountForCheckout,
+              recurring: { interval: parsed.data.planCode === "monthly" ? "month" : "year" },
+              product_data: {
+                name: parsed.data.planCode === "monthly" ? "Membresia coach mensual" : "Membresia coach anual",
+                description: hasActiveDiscount
+                  ? "Perfil activo en el directorio de coaches de EncuentraTuCoach · Descuento aplicado"
+                  : "Perfil activo en el directorio de coaches de EncuentraTuCoach",
               },
             },
-          ];
+          },
+        ];
 
     const idempotencyKey = getStripeIdempotencyKey(request, {
       scope: "checkout-session",

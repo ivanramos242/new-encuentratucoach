@@ -1,12 +1,13 @@
 import { SubscriptionPlanDiscounts } from "@/components/admin/subscription-plan-discounts";
 import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
-import { listMembershipPlansForAdmin } from "@/lib/membership-plan-service";
+import { listMembershipPlansForAdmin, listMembershipPlansForPublic } from "@/lib/membership-plan-service";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminMembershipPage() {
-  const plans = await listMembershipPlansForAdmin();
+  const [plans, publicPlans] = await Promise.all([listMembershipPlansForAdmin(), listMembershipPlansForPublic()]);
+  const publicByCode = new Map(publicPlans.map((plan) => [plan.code, plan]));
 
   return (
     <>
@@ -20,10 +21,11 @@ export default async function AdminMembershipPage() {
           plans={plans.map((p) => ({
             ...p,
             discountEndsAt: p.discountEndsAt?.toISOString() || null,
+            effectivePriceCents: publicByCode.get(p.code)?.effectivePriceCents ?? p.priceCents,
+            checkoutDisplayPriceCents: publicByCode.get(p.code)?.checkoutDisplayPriceCents ?? p.priceCents,
           }))}
         />
       </PageShell>
     </>
   );
 }
-
