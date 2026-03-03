@@ -33,6 +33,14 @@ Rebuild desde cero de `EncuentraTuCoach` con enfoque SEO para España, directori
 - `npm run db:push`
 - `npm run db:studio`
 
+## Cron interno (emails y recordatorios)
+- Endpoint: `POST /api/internal/jobs/run-due`
+- Auth: `Authorization: Bearer <INTERNAL_CRON_SECRET>` o header `x-internal-secret`
+- Frecuencia recomendada: cada 5 minutos
+- Esta tarea ejecuta:
+  - Cola de emails (`JobQueue`)
+  - Recordatorios de mensajes pendientes sin respuesta
+
 ## Próximos pasos (sprints)
 - Auth real (email/password + sesiones + reset)
 - CRUD de perfil coach con Prisma

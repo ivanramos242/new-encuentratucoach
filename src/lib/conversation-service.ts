@@ -2,6 +2,7 @@
 import { prisma } from "@/lib/prisma";
 import type { SessionUser } from "@/lib/auth-session";
 import { buildPublicObjectUrl } from "@/lib/s3-storage";
+import { sendConversationMessageNotification } from "@/lib/notification-workflows";
 import type {
   MessageAttachmentDto,
   MessageItemDto,
@@ -73,10 +74,6 @@ function inferMessagingRoleForThread(user: SessionUser, thread: { clientUserId: 
 function hasThreadAccess(user: SessionUser, thread: { clientUserId: string; coachUserId: string }) {
   if (user.role === "admin") return true;
   return inferMessagingRoleForThread(user, thread) !== null;
-}
-
-function getOtherRole(role: MessagingRole) {
-  return role === "coach" ? "client" : "coach";
 }
 
 function getPublicMessageBucket() {
@@ -555,6 +552,34 @@ export async function sendMessage(input: {
 
   const latest = await getThreadForUser(input.threadId, input.user);
   if (!("thread" in latest)) return latest;
+
+  if (senderType === "coach" || senderType === "client") {
+    const recipientUserId = senderType === "coach" ? thread.clientUserId : thread.coachUserId;
+    const senderLabel =
+      senderType === "coach"
+        ? thread.coachProfile.name || actorDisplayName(input.user)
+        : thread.clientUser.displayName || thread.clientUser.email;
+    const threadOwnerLabel =
+      senderType === "coach"
+        ? thread.clientUser.displayName || thread.clientUser.email
+        : thread.coachProfile.name || thread.coachUser.displayName || thread.coachUser.email;
+
+    void sendConversationMessageNotification({
+      threadId: thread.id,
+      senderRole: senderType,
+      recipientUserId,
+      senderLabel,
+      threadOwnerLabel,
+    }).catch((error) => {
+      console.error("[conversation-service] notification error", {
+        threadId: thread.id,
+        senderType,
+        recipientUserId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    });
+  }
+
   return {
     thread: latest.thread,
     message: messageDto(createdMessage, {

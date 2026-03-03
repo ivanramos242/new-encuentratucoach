@@ -11,6 +11,7 @@ import {
   type GoogleAuthIntent,
 } from "@/lib/auth-google";
 import { loginOrRegisterUserWithGoogle } from "@/lib/auth-service";
+import { sendRegistrationNotifications } from "@/lib/notification-workflows";
 
 function getAppOrigin(requestUrl: URL) {
   const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
@@ -123,6 +124,17 @@ export async function GET(request: Request) {
       return buildLoginErrorRedirect({
         requestUrl,
         message: String(auth.error),
+      });
+    }
+
+    if (auth.isNewUser) {
+      void sendRegistrationNotifications({
+        userId: auth.user.id,
+        userEmail: auth.user.email,
+        userDisplayName: auth.user.displayName,
+        requestedRole: stateCookie.intent === "coach" ? "coach" : "client",
+      }).catch((error) => {
+        console.error("[auth/google/callback] registration notification error", error);
       });
     }
 

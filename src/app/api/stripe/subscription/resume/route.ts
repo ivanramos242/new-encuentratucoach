@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { applyEndpointRateLimit } from "@/lib/rate-limit";
 import { getStripeIdempotencyKey } from "@/lib/stripe-idempotency";
 import { getStripeServer } from "@/lib/stripe-server";
+import { sendSubscriptionNotification } from "@/lib/notification-workflows";
 
 export async function POST(request: Request) {
   try {
@@ -53,6 +54,20 @@ export async function POST(request: Request) {
       data: {
         cancelAtPeriodEnd: false,
       },
+    });
+
+    void sendSubscriptionNotification({
+      userId: auth.user.id,
+      type: "subscription_resumed",
+      title: "Renovacion reactivada",
+      body: "La renovacion automatica de tu membresia vuelve a estar activa.",
+      data: {
+        subscriptionId: sub.id,
+        stripeSubscriptionId: sub.stripeSubscriptionId,
+      },
+      alertAdmin: true,
+    }).catch((error) => {
+      console.error("[stripe/subscription/resume] notification error", error);
     });
 
     return jsonOk({

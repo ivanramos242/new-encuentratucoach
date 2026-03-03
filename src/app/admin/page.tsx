@@ -36,7 +36,7 @@ const cards = [
   {
     href: "/admin/notificaciones",
     title: "Notificaciones",
-    desc: "Cola y monitorizacion de entregas in-app y email.",
+    desc: "Monitor de entregas in-app/email y envio masivo a coaches/clientes.",
   },
   {
     href: "/admin/analytics",

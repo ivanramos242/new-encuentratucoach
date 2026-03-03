@@ -8,6 +8,7 @@ import { applyEndpointRateLimit } from "@/lib/rate-limit";
 import { getStripeServer, resolveStripePlanPriceConfig } from "@/lib/stripe-server";
 import { getStripeIdempotencyKey } from "@/lib/stripe-idempotency";
 import { absoluteUrl, isAllowedInternalReturnPath, slugify } from "@/lib/utils";
+import { sendSubscriptionNotification } from "@/lib/notification-workflows";
 
 const schema = z.object({
   planCode: z.enum(["monthly", "annual"]),
@@ -352,6 +353,21 @@ export async function POST(request: Request) {
         },
       })
       .catch(() => undefined);
+
+    void sendSubscriptionNotification({
+      userId: user.id,
+      type: "subscription_checkout_started",
+      title: "Checkout de membresia iniciado",
+      body: `Has iniciado el checkout del plan ${parsed.data.planCode}. Te avisaremos en cuanto se confirme el pago.`,
+      data: {
+        planCode: parsed.data.planCode,
+        coachProfileId: coachProfile.id,
+        checkoutSessionId: session.id,
+      },
+      alertAdmin: true,
+    }).catch((error) => {
+      console.error("[stripe/checkout-session] notification error", error);
+    });
 
     return jsonOk({
       sessionId: session.id,

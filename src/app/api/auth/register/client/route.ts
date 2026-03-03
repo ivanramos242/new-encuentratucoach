@@ -4,6 +4,7 @@ import { jsonError } from "@/lib/api-handlers";
 import { registerUser, loginUser } from "@/lib/auth-service";
 import { applySessionCookie } from "@/lib/auth-session";
 import { applyEndpointRateLimit } from "@/lib/rate-limit";
+import { sendRegistrationNotifications } from "@/lib/notification-workflows";
 
 const schema = z.object({
   email: z.string().email(),
@@ -28,6 +29,15 @@ export async function POST(request: Request) {
     const created = await registerUser({ ...parsed.data, role: "client" });
     if ("error" in created) return jsonError(String(created.error), 409);
 
+    void sendRegistrationNotifications({
+      userId: created.user.id,
+      userEmail: created.user.email,
+      userDisplayName: created.user.displayName,
+      requestedRole: "client",
+    }).catch((error) => {
+      console.error("[auth/register/client] notification error", error);
+    });
+
     const login = await loginUser({
       email: parsed.data.email,
       password: parsed.data.password,
@@ -48,5 +58,4 @@ export async function POST(request: Request) {
     return jsonError("No se pudo crear la cuenta. Revisa los logs del servidor.", 400);
   }
 }
-
 

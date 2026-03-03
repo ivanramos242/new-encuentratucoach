@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { applyEndpointRateLimit } from "@/lib/rate-limit";
 import { getStripeIdempotencyKey } from "@/lib/stripe-idempotency";
 import { getStripeServer } from "@/lib/stripe-server";
+import { sendSubscriptionNotification } from "@/lib/notification-workflows";
 
 function isActiveish(status?: string | null) {
   return status === "active" || status === "trialing" || status === "past_due";
@@ -51,6 +52,21 @@ export async function POST(request: Request) {
       data: {
         cancelAtPeriodEnd: true,
       },
+    });
+
+    void sendSubscriptionNotification({
+      userId: auth.user.id,
+      type: "subscription_canceled",
+      title: "Cancelacion programada",
+      body: "Tu membresia se cancelara al final del periodo actual.",
+      data: {
+        subscriptionId: sub.id,
+        stripeSubscriptionId: sub.stripeSubscriptionId,
+        cancelAtPeriodEnd: true,
+      },
+      alertAdmin: true,
+    }).catch((error) => {
+      console.error("[stripe/subscription/cancel] notification error", error);
     });
 
     return jsonOk({

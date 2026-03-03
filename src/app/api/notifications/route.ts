@@ -1,17 +1,15 @@
 import { jsonOk } from "@/lib/api-handlers";
-import { resolveApiActorFromRequest } from "@/lib/mock-auth-context";
-import { listNotifications } from "@/lib/v2-service";
+import { requireApiRole } from "@/lib/api-auth";
+import { listNotificationsForUser } from "@/lib/notification-service";
 
 export async function GET(request: Request) {
-  const actorResolved = await resolveApiActorFromRequest(request, "client");
-  if (!actorResolved.ok) return actorResolved.response;
-  const actor = actorResolved.actor;
-  const items = listNotifications(actor);
+  const auth = await requireApiRole(request, ["client", "coach", "admin"]);
+  if (!auth.ok) return auth.response;
+  const items = await listNotificationsForUser(auth.user.id);
   return jsonOk({
-    actor,
+    actor: { role: auth.user.role, userId: auth.user.id, displayName: auth.user.displayName ?? auth.user.email },
     notifications: items,
     unreadCount: items.filter((item) => !item.isRead).length,
   });
 }
-
 

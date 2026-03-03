@@ -70,6 +70,7 @@ export default async function MyAccountLayout({ children }: { children: React.Re
       "/mi-cuenta/coach/certificacion": certificationStatus,
       "/mi-cuenta/coach/mensajes":
         unreadMessagesCount > 0 ? { label: "Pendientes", tone: "warning" } : { label: "Al dia", tone: "success" },
+      "/mi-cuenta/coach/notificaciones": { label: "Activo", tone: "neutral" },
     };
   }
 

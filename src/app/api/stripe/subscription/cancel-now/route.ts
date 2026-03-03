@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { applyEndpointRateLimit } from "@/lib/rate-limit";
 import { getStripeIdempotencyKey } from "@/lib/stripe-idempotency";
 import { getStripeServer } from "@/lib/stripe-server";
+import { sendSubscriptionNotification } from "@/lib/notification-workflows";
 
 export async function POST(request: Request) {
   try {
@@ -60,6 +61,21 @@ export async function POST(request: Request) {
         },
       }),
     ]);
+
+    void sendSubscriptionNotification({
+      userId: auth.user.id,
+      type: "subscription_canceled",
+      title: "Membresia cancelada",
+      body: "Tu membresia se ha cancelado de forma inmediata.",
+      data: {
+        subscriptionId: sub.id,
+        stripeSubscriptionId: sub.stripeSubscriptionId,
+        immediate: true,
+      },
+      alertAdmin: true,
+    }).catch((error) => {
+      console.error("[stripe/subscription/cancel-now] notification error", error);
+    });
 
     return jsonOk({ message: "Suscripcion cancelada inmediatamente" });
   } catch (error) {
