@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { slugify } from "@/lib/utils";
 import { requireRole } from "@/lib/auth-server";
+import { setImpersonationCookieForServerAction } from "@/lib/auth-session";
 import { prisma } from "@/lib/prisma";
 
 function getString(formData: FormData, key: string) {
@@ -23,6 +24,33 @@ async function uniqueCoachSlug(base: string, findBySlug: (slug: string) => Promi
 
 function buildCoachName(input: { displayName?: string | null; email: string }) {
   return (input.displayName || input.email.split("@")[0] || "Coach").trim();
+}
+
+function userHomePathByRole(role: "admin" | "coach" | "client") {
+  if (role === "coach") return "/mi-cuenta/coach";
+  if (role === "client") return "/mi-cuenta/cliente";
+  return "/admin";
+}
+
+export async function impersonateUserAction(formData: FormData) {
+  const adminUser = await requireRole("admin", { returnTo: "/admin/usuarios" });
+
+  const userId = getString(formData, "userId");
+  if (!userId) redirect("/admin/usuarios?error=impersonate-invalid-payload");
+
+  const targetUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, role: true, isActive: true },
+  });
+
+  if (!targetUser) redirect("/admin/usuarios?error=impersonate-not-found");
+  if (targetUser.id === adminUser.id || targetUser.role === "admin") {
+    redirect("/admin/usuarios?error=impersonate-admin-not-allowed");
+  }
+  if (!targetUser.isActive) redirect("/admin/usuarios?error=impersonate-inactive");
+
+  await setImpersonationCookieForServerAction(targetUser.id);
+  redirect(userHomePathByRole(targetUser.role));
 }
 
 export async function changeUserRoleAction(formData: FormData) {

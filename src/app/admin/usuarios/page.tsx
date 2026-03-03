@@ -1,7 +1,7 @@
 import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
 import { prisma } from "@/lib/prisma";
-import { changeUserRoleAction } from "@/app/admin/usuarios/actions";
+import { changeUserRoleAction, impersonateUserAction } from "@/app/admin/usuarios/actions";
 
 function pickOne(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
@@ -96,6 +96,14 @@ export default async function AdminUsuariosPage({
                 ? "No se encontro el usuario."
                 : errorCode === "admin-not-editable"
                   ? "No se puede cambiar el rol de un administrador."
+                  : errorCode === "impersonate-invalid-payload"
+                    ? "Datos invalidos para iniciar la sesion temporal."
+                    : errorCode === "impersonate-not-found"
+                      ? "No se encontro el usuario objetivo para impersonar."
+                      : errorCode === "impersonate-admin-not-allowed"
+                        ? "No se puede impersonar a una cuenta admin."
+                        : errorCode === "impersonate-inactive"
+                          ? "No se puede impersonar a un usuario inactivo."
                   : "No se pudo actualizar el rol."}
           </p>
         ) : null}
@@ -188,18 +196,29 @@ export default async function AdminUsuariosPage({
                       {user.role === "admin" ? (
                         <span className="text-xs font-semibold text-zinc-500">No editable</span>
                       ) : (
-                        <form action={changeUserRoleAction} className="flex items-center gap-2">
-                          <input type="hidden" name="userId" value={user.id} />
-                          <input type="hidden" name="targetRole" value={user.role === "coach" ? "client" : "coach"} />
-                          <button
-                            type="submit"
-                            className={`rounded-lg px-3 py-1.5 text-xs font-semibold text-white ${
-                              user.role === "coach" ? "bg-zinc-800 hover:bg-black" : "bg-cyan-700 hover:bg-cyan-800"
-                            }`}
-                          >
-                            {user.role === "coach" ? "Pasar a cliente" : "Pasar a coach"}
-                          </button>
-                        </form>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <form action={impersonateUserAction}>
+                            <input type="hidden" name="userId" value={user.id} />
+                            <button
+                              type="submit"
+                              className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100"
+                            >
+                              Entrar como usuario
+                            </button>
+                          </form>
+                          <form action={changeUserRoleAction} className="flex items-center gap-2">
+                            <input type="hidden" name="userId" value={user.id} />
+                            <input type="hidden" name="targetRole" value={user.role === "coach" ? "client" : "coach"} />
+                            <button
+                              type="submit"
+                              className={`rounded-lg px-3 py-1.5 text-xs font-semibold text-white ${
+                                user.role === "coach" ? "bg-zinc-800 hover:bg-black" : "bg-cyan-700 hover:bg-cyan-800"
+                              }`}
+                            >
+                              {user.role === "coach" ? "Pasar a cliente" : "Pasar a coach"}
+                            </button>
+                          </form>
+                        </div>
                       )}
                     </td>
                   </tr>
