@@ -1,20 +1,11 @@
-"use client";
-
 import Link from "next/link";
-import Image from "next/image";
-import { useEffect } from "react";
+import { CoachCard } from "@/components/directory/coach-card";
+import { MembershipCoachLandingEnhancer } from "@/components/marketing/membership-coach-landing-enhancer";
+import type { CoachProfile } from "@/types/domain";
 
 type MembershipCoachLandingProps = {
   annualPrice: string;
-  exampleCoach: {
-    certified: boolean;
-    cityLabel: string;
-    headline: string;
-    heroImageUrl: string;
-    name: string;
-    price: string;
-    slug: string;
-  } | null;
+  exampleCoach: CoachProfile | null;
   joinHref: string;
   joinLabel: string;
   plans: Array<{
@@ -38,81 +29,6 @@ export function MembershipCoachLanding({
   monthlyPrice,
   plans,
 }: MembershipCoachLandingProps) {
-  useEffect(() => {
-    const root = document.getElementById("etcLanding");
-    if (!root) return;
-
-    const sticky = document.getElementById("etcSticky");
-    const hero = root.querySelector(".hero");
-
-    const showSticky = () => {
-      if (!sticky || !hero) return;
-      const rect = hero.getBoundingClientRect();
-      sticky.style.display = rect.bottom < -30 ? "block" : "none";
-    };
-
-    const tocLinks = Array.from(root.querySelectorAll<HTMLAnchorElement>('.toc a[href^="#"]'));
-    const sections = tocLinks
-      .map((a) => root.querySelector(a.getAttribute("href") ?? ""))
-      .filter((item): item is Element => !!item);
-
-    const setActiveToc = () => {
-      let currentId: string | null = null;
-      for (const section of sections) {
-        const r = section.getBoundingClientRect();
-        if (r.top <= 120 && r.bottom >= 120) {
-          currentId = section.id;
-          break;
-        }
-      }
-      tocLinks.forEach((a) => {
-        const id = (a.getAttribute("href") ?? "").replace("#", "");
-        a.setAttribute("aria-current", id === currentId ? "true" : "false");
-      });
-    };
-
-    const revealEls = Array.from(
-      root.querySelectorAll(
-        ".hero-grid > *, .toc, section > .section-head, .section-card, .card, .compare-card, .adv-card, .step, .pricebox, details, .contact-card",
-      ),
-    );
-    revealEls.forEach((el, index) => {
-      el.classList.add("reveal");
-      (el as HTMLElement).style.setProperty("--d", `${Math.min((index % 6) * 70, 280)}ms`);
-    });
-
-    const prefersReducedMotion =
-      typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-
-    let io: IntersectionObserver | null = null;
-    if (prefersReducedMotion || typeof window === "undefined" || !("IntersectionObserver" in window)) {
-      revealEls.forEach((el) => el.classList.add("is-in"));
-    } else {
-      io = new IntersectionObserver(
-        (entries) => {
-          for (const entry of entries) {
-            if (!entry.isIntersecting) continue;
-            entry.target.classList.add("is-in");
-            io?.unobserve(entry.target);
-          }
-        },
-        { threshold: 0.15, rootMargin: "0px 0px -10% 0px" },
-      );
-      revealEls.forEach((el) => io?.observe(el));
-    }
-
-    window.addEventListener("scroll", showSticky, { passive: true });
-    window.addEventListener("scroll", setActiveToc, { passive: true });
-    showSticky();
-    setActiveToc();
-
-    return () => {
-      window.removeEventListener("scroll", showSticky);
-      window.removeEventListener("scroll", setActiveToc);
-      io?.disconnect();
-    };
-  }, []);
-
   const planFeatures = {
     annual: [
       "Todo lo del plan mensual",
@@ -130,6 +46,7 @@ export function MembershipCoachLanding({
 
   return (
     <div className="etc-coach-landing" id="etcLanding">
+      <MembershipCoachLandingEnhancer />
       <div className="wrap">
         <section className="hero" aria-label="Introducción">
           <div className="hero-grid">
@@ -244,41 +161,17 @@ export function MembershipCoachLanding({
                     </div>
 
                     {exampleCoach ? (
-                      <div className="mock-img">
-                        <Image
-                          src={exampleCoach.heroImageUrl}
-                          alt={`Perfil real de ${exampleCoach.name}`}
-                          loading="lazy"
-                          width={900}
-                          height={900}
-                          sizes="(max-width: 980px) 100vw, 520px"
-                        />
-                        <div style={{ padding: "12px 14px" }}>
-                          <p style={{ fontWeight: 900 }}>{exampleCoach.name}</p>
-                          <p style={{ color: "rgba(11,18,32,.72)", fontWeight: 700, marginTop: 2 }}>{exampleCoach.headline}</p>
-                          <p style={{ color: "rgba(11,18,32,.70)", fontSize: ".92rem", fontWeight: 700, marginTop: 6 }}>
-                            {exampleCoach.cityLabel} - Desde {exampleCoach.price}/sesión
-                            {exampleCoach.certified ? " - Coach certificado" : ""}
-                          </p>
-                          <Link
-                            className="btn"
-                            href={`/coaches/${exampleCoach.slug}`}
-                            style={{ marginTop: 10, width: "100%" }}
-                          >
-                            Ver perfil real
-                          </Link>
-                        </div>
+                      <div className="mock-img membership-coach-card">
+                        <CoachCard coach={exampleCoach} density="airy" />
                       </div>
                     ) : (
-                      <div className="mock-img">
-                        <Image
-                          src="https://encuentratucoach.es/wp-content/uploads/2026/01/pexels-tima-miroshnichenko-5336951.jpg"
-                          alt="Ejemplo de perfil de coach en EncuentraTuCoach"
-                          loading="lazy"
-                          width={900}
-                          height={900}
-                          sizes="(max-width: 980px) 100vw, 520px"
-                        />
+                      <div className="mock-img" style={{ padding: "12px" }}>
+                        <p style={{ color: "rgba(11,18,32,.72)", fontWeight: 700 }}>
+                          No se pudo cargar la tarjeta de Carla Gómez en este momento.
+                        </p>
+                        <Link className="btn" href="/coaches" style={{ marginTop: 10, width: "100%" }}>
+                          Ver directorio de coaches
+                        </Link>
                       </div>
                     )}
                   </div>
@@ -760,4 +653,3 @@ export function MembershipCoachLanding({
     </div>
   );
 }
-
