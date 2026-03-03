@@ -1,7 +1,12 @@
 import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
 import { prisma } from "@/lib/prisma";
-import { changeUserRoleAction, impersonateUserAction, setUserStripeCustomerIdAction } from "@/app/admin/usuarios/actions";
+import {
+  changeUserRoleAction,
+  impersonateUserAction,
+  setUserStripeCustomerIdAction,
+  syncUserStripeSubscriptionAction,
+} from "@/app/admin/usuarios/actions";
 
 function pickOne(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
@@ -34,6 +39,10 @@ export default async function AdminUsuariosPage({
   const stripeLinked = pickOne(params.stripeLinked) === "1";
   const stripeEmail = pickOne(params.stripeEmail);
   const linkedStripeCustomerId = pickOne(params.stripeCustomerId);
+  const stripeSynced = pickOne(params.stripeSynced) === "1";
+  const syncedStripeSubscriptionId = pickOne(params.stripeSubscriptionId);
+  const syncedStripeStatus = pickOne(params.stripeStatus);
+  const syncedStripePlanCode = pickOne(params.stripePlanCode);
   const errorCode = pickOne(params.error);
 
   const users = await prisma.user.findMany({
@@ -100,6 +109,12 @@ export default async function AdminUsuariosPage({
             Stripe customer enlazado para <strong>{stripeEmail}</strong>: {linkedStripeCustomerId}
           </p>
         ) : null}
+        {stripeSynced && stripeEmail && syncedStripeSubscriptionId ? (
+          <p className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+            Suscripcion Stripe sincronizada para <strong>{stripeEmail}</strong>: {syncedStripeSubscriptionId} ({syncedStripeStatus} /{" "}
+            {syncedStripePlanCode})
+          </p>
+        ) : null}
         {errorCode ? (
           <p className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
             {errorCode === "invalid-payload"
@@ -132,6 +147,26 @@ export default async function AdminUsuariosPage({
                                         ? "Ese Stripe customer ya esta enlazado a otro usuario."
                                         : errorCode === "stripe-validate-failed"
                                           ? "No se pudo validar el Stripe customer en Stripe."
+                                          : errorCode === "stripe-sync-invalid-payload"
+                                            ? "Datos invalidos para sincronizar la suscripcion."
+                                            : errorCode === "stripe-sync-invalid-subscription-format"
+                                              ? "Formato invalido de suscripcion. Usa sub_xxx."
+                                              : errorCode === "stripe-sync-not-found"
+                                                ? "No se encontro el usuario para sincronizar."
+                                                : errorCode === "stripe-sync-admin-not-editable"
+                                                  ? "No se permite sincronizar suscripciones para admins."
+                                                  : errorCode === "stripe-sync-missing-customer"
+                                                    ? "Primero debes guardar el Stripe customer (cus_xxx)."
+                                                    : errorCode === "stripe-sync-no-subscriptions"
+                                                      ? "Ese customer no tiene suscripciones en Stripe."
+                                                      : errorCode === "stripe-sync-subscription-not-found"
+                                                        ? "No se encontro la suscripcion indicada en Stripe."
+                                                        : errorCode === "stripe-sync-subscription-without-customer"
+                                                          ? "La suscripcion no tiene customer asociado."
+                                                          : errorCode === "stripe-sync-customer-linked-to-other-user"
+                                                            ? "La suscripcion pertenece a un customer ya enlazado a otro usuario."
+                                                            : errorCode === "stripe-sync-fetch-failed"
+                                                              ? "No se pudo leer la suscripcion en Stripe."
                   : "No se pudo actualizar el rol."}
           </p>
         ) : null}
@@ -264,6 +299,20 @@ export default async function AdminUsuariosPage({
                               className="rounded-lg border border-cyan-300 bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-cyan-900 hover:bg-cyan-100"
                             >
                               Guardar Stripe ID
+                            </button>
+                          </form>
+                          <form action={syncUserStripeSubscriptionAction} className="flex flex-wrap items-center gap-2">
+                            <input type="hidden" name="userId" value={user.id} />
+                            <input
+                              name="stripeSubscriptionId"
+                              placeholder="sub_xxx (opcional)"
+                              className="w-44 rounded-lg border border-black/10 px-2.5 py-1.5 text-xs outline-none focus:border-cyan-400"
+                            />
+                            <button
+                              type="submit"
+                              className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-900 hover:bg-emerald-100"
+                            >
+                              Sincronizar suscripcion
                             </button>
                           </form>
                         </div>
