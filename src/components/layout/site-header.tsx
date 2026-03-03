@@ -28,7 +28,13 @@ function isActive(pathname: string, href: string) {
 type HeaderSessionUser = {
   id: string;
   role: "admin" | "coach" | "client";
+  email: string;
   displayName?: string | null;
+  impersonation?: {
+    active?: boolean;
+    adminEmail?: string;
+    adminDisplayName?: string | null;
+  };
 };
 
 type HeaderSessionState = {
@@ -54,6 +60,7 @@ export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [topStripCollapsed, setTopStripCollapsed] = useState(false);
   const [pendingLogout, startLogout] = useTransition();
+  const [pendingStopImpersonation, startStopImpersonation] = useTransition();
   const [session, setSession] = useState<HeaderSessionState>({
     loading: true,
     authenticated: false,
@@ -155,6 +162,7 @@ export function SiteHeader() {
       : session.user?.role === "coach"
         ? "/mi-cuenta/coach"
         : "/mi-cuenta/cliente";
+  const isImpersonating = Boolean(session.user?.impersonation?.active);
 
   function handleLogout() {
     startLogout(async () => {
@@ -172,8 +180,42 @@ export function SiteHeader() {
     });
   }
 
+  function handleStopImpersonation() {
+    startStopImpersonation(async () => {
+      try {
+        await fetch("/api/admin/impersonation/stop", {
+          method: "POST",
+          credentials: "same-origin",
+          cache: "no-store",
+        });
+      } catch {}
+      setMenuOpen(false);
+      router.push("/admin/usuarios");
+      router.refresh();
+    });
+  }
+
   return (
     <header ref={headerRef} className="sticky top-0 z-40 border-b border-black/10 bg-white/85 backdrop-blur-xl">
+      {isImpersonating ? (
+        <div className="border-b border-amber-200 bg-amber-50/95">
+          <Container className="max-w-[1700px] px-3 sm:px-4 lg:px-6 xl:px-8 flex flex-wrap items-center justify-between gap-2 py-2">
+            <p className="text-xs font-semibold text-amber-900 sm:text-sm">
+              Sesion temporal activa: estas navegando como{" "}
+              <span className="font-black">{session.user?.displayName || session.user?.email}</span>.
+              {" "}Admin origen: {session.user?.impersonation?.adminDisplayName || session.user?.impersonation?.adminEmail}.
+            </p>
+            <button
+              type="button"
+              onClick={handleStopImpersonation}
+              disabled={pendingStopImpersonation}
+              className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100 disabled:opacity-60"
+            >
+              {pendingStopImpersonation ? "Volviendo..." : "Salir y volver a admin"}
+            </button>
+          </Container>
+        </div>
+      ) : null}
       <div
         className="overflow-hidden transition-[height,opacity] duration-200 ease-out"
         style={{ height: topStripCollapsed ? 0 : 44, opacity: topStripCollapsed ? 0 : 1 }}

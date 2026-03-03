@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { applySessionCookie } from "@/lib/auth-session";
+import { applySessionCookie, clearImpersonationCookie } from "@/lib/auth-session";
 import {
   exchangeGoogleCodeForTokens,
   fetchGoogleOpenIdProfile,
@@ -134,6 +134,7 @@ export async function GET(request: Request) {
 
     const response = NextResponse.redirect(new URL(postAuthPath, getAppOrigin(requestUrl)));
     applySessionCookie(response, auth.session.rawToken, auth.session.expiresAt);
+    clearImpersonationCookie(response);
     clearGoogleOauthCookie(response);
     return response;
   } catch (error) {

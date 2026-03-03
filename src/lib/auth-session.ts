@@ -4,12 +4,20 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export type SessionImpersonation = {
+  active: true;
+  adminUserId: string;
+  adminEmail: string;
+  adminDisplayName: string | null;
+};
+
 export type SessionUser = {
   id: string;
   email: string;
   role: UserRole;
   displayName: string | null;
   coachProfileId?: string;
+  impersonation?: SessionImpersonation;
 };
 
 function sha256Hex(input: string) {
@@ -23,6 +31,10 @@ export function getAuthCookieName() {
 export function getSessionTtlDays() {
   const parsed = Number(process.env.AUTH_SESSION_TTL_DAYS ?? 30);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 30;
+}
+
+export function getImpersonationCookieName() {
+  return process.env.AUTH_IMPERSONATION_COOKIE_NAME || "etc_impersonation";
 }
 
 function sessionExpiresAt() {
@@ -53,22 +65,55 @@ export async function createSessionForUser(userId: string, options?: { ipAddress
   return { rawToken, expiresAt };
 }
 
-export function applySessionCookie(response: NextResponse, rawToken: string, expiresAt: Date) {
-  response.cookies.set(getAuthCookieName(), rawToken, {
+function baseCookieOptions() {
+  return {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: "lax" as const,
     path: "/",
+  };
+}
+
+export function applySessionCookie(response: NextResponse, rawToken: string, expiresAt: Date) {
+  response.cookies.set(getAuthCookieName(), rawToken, {
+    ...baseCookieOptions(),
     expires: expiresAt,
   });
 }
 
 export function clearSessionCookie(response: NextResponse) {
   response.cookies.set(getAuthCookieName(), "", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
+    ...baseCookieOptions(),
+    expires: new Date(0),
+  });
+}
+
+export function applyImpersonationCookie(response: NextResponse, targetUserId: string, expiresAt: Date = sessionExpiresAt()) {
+  response.cookies.set(getImpersonationCookieName(), targetUserId, {
+    ...baseCookieOptions(),
+    expires: expiresAt,
+  });
+}
+
+export function clearImpersonationCookie(response: NextResponse) {
+  response.cookies.set(getImpersonationCookieName(), "", {
+    ...baseCookieOptions(),
+    expires: new Date(0),
+  });
+}
+
+export async function setImpersonationCookieForServerAction(targetUserId: string, expiresAt: Date = sessionExpiresAt()) {
+  const cookieStore = await cookies();
+  cookieStore.set(getImpersonationCookieName(), targetUserId, {
+    ...baseCookieOptions(),
+    expires: expiresAt,
+  });
+}
+
+export async function clearImpersonationCookieForServerAction() {
+  const cookieStore = await cookies();
+  cookieStore.set(getImpersonationCookieName(), "", {
+    ...baseCookieOptions(),
     expires: new Date(0),
   });
 }
@@ -82,6 +127,25 @@ function parseCookieHeader(header: string | null) {
     map.set(k, decodeURIComponent(rest.join("=") || ""));
   }
   return map;
+}
+
+type SessionUserRecord = {
+  id: string;
+  email: string;
+  role: UserRole;
+  displayName: string | null;
+  isActive: boolean;
+  coachProfiles: Array<{ id: string }>;
+};
+
+function toSessionUser(input: SessionUserRecord): SessionUser {
+  return {
+    id: input.id,
+    email: input.email,
+    role: input.role,
+    displayName: input.displayName,
+    coachProfileId: input.coachProfiles[0]?.id,
+  };
 }
 
 async function getSessionUserByRawToken(rawToken: string | null | undefined): Promise<SessionUser | null> {
@@ -111,28 +175,82 @@ async function getSessionUserByRawToken(rawToken: string | null | undefined): Pr
     }
     if (!session.user.isActive) return null;
 
-    return {
-      id: session.user.id,
-      email: session.user.email,
-      role: session.user.role,
-      displayName: session.user.displayName,
-      coachProfileId: session.user.coachProfiles[0]?.id,
-    };
+    return toSessionUser(session.user);
   } catch (error) {
     console.error("[auth-session] Failed to resolve session user", error);
     return null;
   }
 }
 
+async function maybeResolveImpersonatedUser(
+  baseUser: SessionUser | null,
+  impersonatedUserId: string | null | undefined,
+): Promise<SessionUser | null> {
+  if (!baseUser) return null;
+  if (baseUser.role !== "admin") return baseUser;
+
+  const targetUserId = impersonatedUserId?.trim();
+  if (!targetUserId || targetUserId === baseUser.id) return baseUser;
+
+  try {
+    const target = await prisma.user.findUnique({
+      where: { id: targetUserId },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        displayName: true,
+        isActive: true,
+        coachProfiles: {
+          orderBy: { createdAt: "asc" },
+          take: 1,
+          select: { id: true },
+        },
+      },
+    });
+    if (!target || !target.isActive || target.role === "admin") return baseUser;
+
+    return {
+      ...toSessionUser(target),
+      impersonation: {
+        active: true,
+        adminUserId: baseUser.id,
+        adminEmail: baseUser.email,
+        adminDisplayName: baseUser.displayName,
+      },
+    };
+  } catch (error) {
+    console.error("[auth-session] Failed to resolve impersonated user", error);
+    return baseUser;
+  }
+}
+
+export async function getBaseSessionUserFromRequest(request: Request) {
+  const parsedCookies = parseCookieHeader(request.headers.get("cookie"));
+  const rawToken = parsedCookies.get(getAuthCookieName());
+  return getSessionUserByRawToken(rawToken);
+}
+
 export async function getSessionUserFromRequest(request: Request) {
-  const rawToken = parseCookieHeader(request.headers.get("cookie")).get(getAuthCookieName());
+  const parsedCookies = parseCookieHeader(request.headers.get("cookie"));
+  const rawToken = parsedCookies.get(getAuthCookieName());
+  const impersonatedUserId = parsedCookies.get(getImpersonationCookieName());
+  const baseUser = await getSessionUserByRawToken(rawToken);
+  return maybeResolveImpersonatedUser(baseUser, impersonatedUserId);
+}
+
+export async function getBaseSessionUserFromServerCookies() {
+  const cookieStore = await cookies();
+  const rawToken = cookieStore.get(getAuthCookieName())?.value;
   return getSessionUserByRawToken(rawToken);
 }
 
 export async function getSessionUserFromServerCookies() {
   const cookieStore = await cookies();
   const rawToken = cookieStore.get(getAuthCookieName())?.value;
-  return getSessionUserByRawToken(rawToken);
+  const impersonatedUserId = cookieStore.get(getImpersonationCookieName())?.value;
+  const baseUser = await getSessionUserByRawToken(rawToken);
+  return maybeResolveImpersonatedUser(baseUser, impersonatedUserId);
 }
 
 export async function deleteSessionByRequest(request: Request) {
