@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getLastDirectoryPath, trackDirectoryFunnelEvent } from "@/lib/directory-funnel-client";
 
 export function ContactCoachForm({ coachId, coachName }: { coachId: string; coachName: string }) {
   const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
@@ -28,6 +29,11 @@ export function ContactCoachForm({ coachId, coachName }: { coachId: string; coac
 
       const payload = (await response.json()) as { ok?: boolean; message?: string };
       if (!response.ok || !payload.ok) throw new Error(payload.message || "Error al enviar");
+
+      trackDirectoryFunnelEvent("submit_form", {
+        coachProfileId: coachId,
+        sourcePath: getLastDirectoryPath() || window.location.pathname,
+      });
 
       setStatus("success");
       setMessage("Mensaje enviado correctamente (relay V1 simulado).");

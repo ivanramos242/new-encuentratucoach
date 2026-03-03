@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import { CoachCard } from "@/components/directory/coach-card";
 import { DirectoryFiltersForm } from "@/components/directory/directory-filters-form";
+import { TrustStrip } from "@/components/directory/trust-strip";
 import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -14,6 +15,7 @@ import {
 } from "@/lib/directory";
 import { cities } from "@/lib/mock-data";
 import { listPublicCoachesMerged } from "@/lib/public-coaches";
+import { getTrustMetricsForCoachSet } from "@/lib/directory-trust-metrics";
 import { buildMetadata, hasMeaningfulQueryParams } from "@/lib/seo";
 import { getSiteBaseUrl } from "@/lib/site-config";
 import { formatEuro } from "@/lib/utils";
@@ -166,6 +168,10 @@ export default async function CoachesDirectoryPage({
   }));
   const allResults = filterAndSortCoachesFrom(sourceCoaches, filters);
   const paginated = paginateCoaches(allResults, filters.page ?? 1, PAGE_SIZE);
+  const trustStats = await getTrustMetricsForCoachSet({
+    coachIds: allResults.map((coach) => coach.id),
+    fallbackCoaches: allResults,
+  });
   const hasFilters = hasMeaningfulQueryParams(raw);
   const schema = {
     "@context": "https://schema.org",
@@ -184,7 +190,8 @@ export default async function CoachesDirectoryPage({
       />
 
       <PageShell className="pt-8" containerClassName="max-w-[1760px] lg:px-10">
-        <div className="grid gap-8 max-[390px]:gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
+        <TrustStrip stats={trustStats} />
+        <div className="mt-6 grid gap-8 max-[390px]:gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
           <aside className="h-fit rounded-3xl border border-black/10 bg-white p-4 shadow-sm sm:p-6 xl:sticky xl:top-24">
             <div className="xl:hidden">
               <details className="group rounded-2xl border border-black/10 bg-zinc-50/40 p-3">

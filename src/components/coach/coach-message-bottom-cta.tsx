@@ -2,11 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { getLastDirectoryPath, trackDirectoryFunnelEvent } from "@/lib/directory-funnel-client";
 import { cn } from "@/lib/utils";
 
 type ViewerRole = "admin" | "coach" | "client" | null;
 
 type Props = {
+  coachId: string;
   coachName: string;
   coachSlug: string;
   sourcePath: string;
@@ -25,7 +27,7 @@ function MessageIcon() {
   );
 }
 
-export function CoachMessageBottomCta({ coachName, coachSlug, sourcePath, isAuthenticated, viewerRole }: Props) {
+export function CoachMessageBottomCta({ coachId, coachName, coachSlug, sourcePath, isAuthenticated, viewerRole }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [unauthState, setUnauthState] = useState<UnauthState>("idle");
@@ -76,6 +78,10 @@ export function CoachMessageBottomCta({ coachName, coachSlug, sourcePath, isAuth
     if (isPending) return;
 
     if (isAuthenticated) {
+      trackDirectoryFunnelEvent("booking_start", {
+        coachProfileId: coachId,
+        sourcePath: getLastDirectoryPath() || sourcePath || window.location.pathname,
+      });
       goTo(chatHref);
       return;
     }

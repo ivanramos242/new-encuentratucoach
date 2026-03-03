@@ -1,6 +1,7 @@
 "use client";
 
 import type { ClickTarget } from "@prisma/client";
+import { getLastDirectoryPath, trackDirectoryFunnelEvent } from "@/lib/directory-funnel-client";
 
 type TrackableTarget = Extract<
   ClickTarget,
@@ -14,6 +15,7 @@ export function ProfileClickLink({
   children,
   className,
   external = false,
+  sourcePath,
 }: {
   coachId: string;
   target: TrackableTarget;
@@ -21,8 +23,16 @@ export function ProfileClickLink({
   children: React.ReactNode;
   className?: string;
   external?: boolean;
+  sourcePath?: string;
 }) {
   const onClick = () => {
+    const funnelEvent = target === "whatsapp" ? "click_whatsapp" : "click_contact";
+    trackDirectoryFunnelEvent(funnelEvent, {
+      coachProfileId: coachId,
+      sourcePath: sourcePath || getLastDirectoryPath() || window.location.pathname,
+      metadata: { target },
+    });
+
     const payload = JSON.stringify({ coachId, target });
     try {
       if (navigator.sendBeacon) {
@@ -53,4 +63,3 @@ export function ProfileClickLink({
     </a>
   );
 }
-

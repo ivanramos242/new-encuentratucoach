@@ -9,6 +9,7 @@ import type { LandingContextLink } from "@/lib/landing-content";
 import { getCertifiedSeoContent } from "@/lib/landing-content";
 import { buildExploreCardsForCertified, topCategoryItems, topCityItems } from "@/lib/landing-view-models";
 import { listPublicCoachesMerged } from "@/lib/public-coaches";
+import { getTrustMetricsForCoachSet } from "@/lib/directory-trust-metrics";
 import { buildBreadcrumbJsonLd, buildMetadata, shouldNoIndexLanding } from "@/lib/seo";
 import { getSiteBaseUrl } from "@/lib/site-config";
 
@@ -20,6 +21,10 @@ async function getCertifiedLandingData() {
   const topCities = topCityItems(items, 6);
   const topCategories = topCategoryItems(items, 3);
   const exploreCards = buildExploreCardsForCertified(topCities);
+  const trustStats = await getTrustMetricsForCoachSet({
+    coachIds: items.map((coach) => coach.id),
+    fallbackCoaches: items,
+  });
 
   const contextLinks: LandingContextLink[] = [
     { label: "Todos los coaches", href: "/coaches" },
@@ -27,7 +32,7 @@ async function getCertifiedLandingData() {
     ...topCategories.map((category) => ({ label: category.label, href: `/coaches/categoria/${category.slug}` })),
   ].slice(0, 6);
 
-  return { items, noindex, seo, contextLinks, exploreCards };
+  return { items, noindex, seo, contextLinks, exploreCards, trustStats };
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -84,6 +89,7 @@ export default async function CertifiedCoachesPage() {
         contextTitle="Atajos de navegacion"
         contextDescription="Combina confianza y especialidad para decidir con mas seguridad."
         contextLinks={data.contextLinks}
+        trustStats={data.trustStats}
       >
         <LandingSection
           title={`${data.items.length} ${data.items.length === 1 ? "coach certificado" : "coaches certificados"} activos`}

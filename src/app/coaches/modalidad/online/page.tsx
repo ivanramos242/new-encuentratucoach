@@ -9,6 +9,7 @@ import type { LandingContextLink } from "@/lib/landing-content";
 import { getOnlineSeoContent } from "@/lib/landing-content";
 import { buildExploreCardsForOnline, topCategoryItems, topCityItems } from "@/lib/landing-view-models";
 import { listPublicCoachesMerged } from "@/lib/public-coaches";
+import { getTrustMetricsForCoachSet } from "@/lib/directory-trust-metrics";
 import { buildBreadcrumbJsonLd, buildMetadata, shouldNoIndexLanding } from "@/lib/seo";
 import { getSiteBaseUrl } from "@/lib/site-config";
 
@@ -20,6 +21,10 @@ async function getOnlineLandingData() {
   const topCategories = topCategoryItems(items, 6);
   const topCities = topCityItems(items, 3);
   const exploreCards = buildExploreCardsForOnline(topCategories);
+  const trustStats = await getTrustMetricsForCoachSet({
+    coachIds: items.map((coach) => coach.id),
+    fallbackCoaches: items,
+  });
 
   const contextLinks: LandingContextLink[] = [
     { label: "Todos los coaches", href: "/coaches" },
@@ -27,7 +32,7 @@ async function getOnlineLandingData() {
     ...topCities.map((city) => ({ label: city.label, href: `/coaches/ciudad/${city.slug}` })),
   ].slice(0, 6);
 
-  return { items, noindex, seo, contextLinks, exploreCards };
+  return { items, noindex, seo, contextLinks, exploreCards, trustStats };
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -84,6 +89,7 @@ export default async function OnlineCoachingPage() {
         contextTitle="Atajos utiles"
         contextDescription="Accede rapido a rutas relacionadas para ampliar o acotar tu busqueda."
         contextLinks={data.contextLinks}
+        trustStats={data.trustStats}
       >
         <LandingSection
           title={`${data.items.length} ${data.items.length === 1 ? "coach online" : "coaches online"} disponibles`}

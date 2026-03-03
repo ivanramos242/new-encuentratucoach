@@ -14,6 +14,7 @@ import {
   topCategoryItems,
 } from "@/lib/landing-view-models";
 import { listPublicCoachesMerged } from "@/lib/public-coaches";
+import { getTrustMetricsForCoachSet } from "@/lib/directory-trust-metrics";
 import { buildBreadcrumbJsonLd, buildMetadata, shouldNoIndexLanding } from "@/lib/seo";
 import { getSiteBaseUrl } from "@/lib/site-config";
 
@@ -30,6 +31,10 @@ async function getCityLandingData(ciudadSlug: string) {
   const topCategories = topCategoryItems(items, 6);
   const contextLinks = buildCityContextLinks(city.slug, topCategories);
   const exploreCards = buildExploreCardsForCity(city.slug, topCategories);
+  const trustStats = await getTrustMetricsForCoachSet({
+    coachIds: items.map((coach) => coach.id),
+    fallbackCoaches: items,
+  });
 
   return {
     city,
@@ -38,6 +43,7 @@ async function getCityLandingData(ciudadSlug: string) {
     noindex,
     contextLinks,
     exploreCards,
+    trustStats,
   };
 }
 
@@ -60,7 +66,7 @@ export default async function CityLandingPage({ params }: { params: ParamsInput 
   const data = await getCityLandingData(ciudadSlug);
   if (!data) notFound();
 
-  const { city, seo, items, contextLinks, exploreCards } = data;
+  const { city, seo, items, contextLinks, exploreCards, trustStats } = data;
   const isPrimaryCity = city.slug === "madrid" || city.slug === "barcelona";
   const baseUrl = getSiteBaseUrl();
 
@@ -108,6 +114,7 @@ export default async function CityLandingPage({ params }: { params: ParamsInput 
             : "Empieza por rutas utiles y reduce el tiempo de comparacion."
         }
         contextLinks={contextLinks}
+        trustStats={trustStats}
       >
         <LandingSection
           title={
