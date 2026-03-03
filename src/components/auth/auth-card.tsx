@@ -104,14 +104,14 @@ function AuthSplitShell({
 
   return (
     <div className="rounded-3xl border border-black/5 bg-[radial-gradient(circle_at_10%_10%,rgba(16,166,187,.14),transparent_45%),radial-gradient(circle_at_90%_90%,rgba(41,170,128,.14),transparent_45%),#f6f8fb] p-4 sm:p-6 lg:p-8">
-      <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[minmax(320px,1fr)_minmax(0,650px)] lg:items-start">
+      <div className="mx-auto grid max-w-6xl gap-6 max-[390px]:gap-4 lg:grid-cols-[minmax(320px,1fr)_minmax(0,650px)] lg:items-start">
         <section>
           <div className="inline-flex w-fit items-center gap-2 rounded-full border border-black/10 bg-white/80 px-3 py-2 text-sm text-zinc-600">
             <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-r from-cyan-500 to-emerald-500 shadow-[0_0_0_4px_rgba(16,166,187,.14)]" />
             {authTitle}
           </div>
-          <h1 className="mt-4 text-4xl font-black tracking-tight text-zinc-950 sm:text-5xl">{title}</h1>
-          <p className="mt-3 max-w-2xl text-base leading-8 text-zinc-600 sm:text-lg">{subtitle}</p>
+          <h1 className="mt-4 text-4xl font-black tracking-tight text-zinc-950 max-[390px]:text-3xl sm:text-5xl">{title}</h1>
+          <p className="mt-3 max-w-2xl text-base leading-8 text-zinc-600 max-[390px]:text-sm max-[390px]:leading-6 sm:text-lg">{subtitle}</p>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             <div className="rounded-3xl border border-black/10 bg-white/90 p-4 shadow-sm">
@@ -155,7 +155,7 @@ function AuthSplitShell({
           </div>
         </section>
 
-        <div className="w-full max-w-[650px] justify-self-end rounded-3xl border border-black/10 bg-white shadow-[0_10px_30px_rgba(16,24,40,.10)]">
+        <div className="w-full max-w-[650px] justify-self-end rounded-3xl border border-black/10 bg-white shadow-[0_10px_30px_rgba(16,24,40,.10)] max-[390px]:rounded-2xl">
           {rightCard}
         </div>
       </div>

@@ -5,11 +5,19 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { FavoriteCoachButton } from "@/components/favorites/favorite-coach-button";
 import { getCoachCategoryLabel } from "@/lib/coach-category-catalog";
 import { getCoachAverageRating } from "@/lib/directory";
+import { cn } from "@/lib/utils";
 import { formatEuro } from "@/lib/utils";
 import type { CoachProfile } from "@/types/domain";
 
-export function CoachCard({ coach }: { coach: CoachProfile }) {
+export function CoachCard({
+  coach,
+  density = "default",
+}: {
+  coach: CoachProfile;
+  density?: "default" | "airy";
+}) {
   const rating = getCoachAverageRating(coach);
+  const airy = density === "airy";
   const categoryLabels = coach.categories
     .map((slug) => getCoachCategoryLabel(slug) ?? slug)
     .slice(0, 2);
@@ -46,7 +54,7 @@ export function CoachCard({ coach }: { coach: CoachProfile }) {
         </div>
       </div>
 
-      <div className="p-5">
+      <div className={cn("p-5", airy && "p-6")}>
         <div className="flex flex-wrap gap-2">
           {categoryLabels.map((label) => (
             <span key={label} className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-700">
@@ -61,10 +69,10 @@ export function CoachCard({ coach }: { coach: CoachProfile }) {
           </Link>
         </h3>
 
-        <p className="mt-1 text-sm text-zinc-600">{coach.cityLabel}</p>
-        <p className="mt-3 line-clamp-2 text-sm leading-6 text-zinc-700">{coach.bio}</p>
+        <p className={cn("mt-1 text-sm text-zinc-600", airy && "mt-1.5")}>{coach.cityLabel}</p>
+        <p className={cn("mt-3 line-clamp-2 text-sm leading-6 text-zinc-700", airy && "line-clamp-3 mt-4")}>{coach.bio}</p>
 
-        <div className="mt-4 flex items-center justify-between gap-3">
+        <div className={cn("mt-4 flex items-center justify-between gap-3", airy && "mt-5")}>
           <div>
             <div className="text-sm font-semibold text-zinc-500">Desde</div>
             <div className="text-lg font-black tracking-tight text-zinc-950">
@@ -81,7 +89,7 @@ export function CoachCard({ coach }: { coach: CoachProfile }) {
           </div>
         </div>
 
-        <div className="mt-4 flex items-center gap-2">
+        <div className={cn("mt-4 flex items-center gap-2", airy && "mt-5")}>
           <FavoriteCoachButton coachProfileId={coach.id} />
           <Link
             href={`/coaches/${coach.slug}`}

@@ -227,11 +227,11 @@ export function MembershipCheckoutCard({
   }
 
   return (
-    <div className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-      <h2 className="text-xl font-black tracking-tight text-zinc-950">Membresia de coach</h2>
-      <p className="mt-2 text-sm text-zinc-700">Empieza por el estado actual y ejecuta solo la accion necesaria.</p>
+    <div className="rounded-3xl border border-black/10 bg-white p-4 shadow-sm max-[390px]:p-3.5 sm:p-6">
+      <h2 className="text-xl font-extrabold tracking-tight text-zinc-950 max-[390px]:text-lg">Membresia de coach</h2>
+      <p className="mt-2 text-sm font-medium text-zinc-700 max-[390px]:text-xs">Empieza por el estado y ejecuta solo la accion que toca.</p>
 
-      <div className="mt-4 grid gap-3 rounded-2xl border border-black/10 bg-zinc-50 p-4 text-sm text-zinc-800 sm:grid-cols-3">
+      <div className="mt-4 grid gap-3 rounded-2xl border border-black/10 bg-zinc-50 p-4 text-sm text-zinc-800 max-[390px]:gap-2 max-[390px]:p-3 sm:grid-cols-3">
         <InfoPill label="Estado" value={currentStatus?.status || "sin suscripcion"} />
         <InfoPill label="Plan" value={getPlanLabel(currentStatus?.planCode)} />
         <InfoPill
@@ -241,12 +241,12 @@ export function MembershipCheckoutCard({
       </div>
 
       {currentStatus?.currentPeriodEnd ? (
-        <p className="mt-2 text-xs text-zinc-600">
+        <p className="mt-2 text-xs text-zinc-600 max-[390px]:text-[11px]">
           Periodo actual hasta: {new Date(currentStatus.currentPeriodEnd).toLocaleString("es-ES")}
         </p>
       ) : null}
 
-      {!hasActiveSubscription && inactiveStatusHint ? <p className="mt-2 text-xs text-zinc-700">{inactiveStatusHint}</p> : null}
+      {!hasActiveSubscription && inactiveStatusHint ? <p className="mt-2 text-xs text-zinc-700 max-[390px]:text-[11px]">{inactiveStatusHint}</p> : null}
 
       {checkoutStatus === "cancel" ? (
         <div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-800">
@@ -269,7 +269,7 @@ export function MembershipCheckoutCard({
               {formatCountdown(remainingMs)}
             </div>
           </div>
-          <div className="mt-3 grid gap-2 sm:grid-cols-3">
+          <div className="mt-3 grid gap-2 max-[390px]:grid-cols-1 sm:grid-cols-3">
             <button
               type="button"
               disabled={pending}
@@ -298,7 +298,7 @@ export function MembershipCheckoutCard({
       {!hasActiveSubscription ? (
         <section className="mt-5">
           <h3 className="text-sm font-bold uppercase tracking-wide text-zinc-800">Activa tu plan</h3>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <div className="mt-3 grid gap-3 max-[390px]:gap-2 sm:grid-cols-2">
             <PlanCard
               title="Plan mensual"
               helper="Flexibilidad mes a mes"
@@ -317,7 +317,7 @@ export function MembershipCheckoutCard({
           </div>
         </section>
       ) : (
-        <section className="mt-5 grid gap-3 sm:grid-cols-2">
+        <section className="mt-5 grid gap-3 max-[390px]:gap-2 sm:grid-cols-2">
           <Link
             href={showOnboardingCta ? `${profileHref}${profileHref.includes("?") ? "&" : "?"}wizard=1` : profileHref}
             className="inline-flex items-center justify-center rounded-xl bg-zinc-950 px-4 py-3 text-sm font-semibold text-white"
@@ -329,7 +329,7 @@ export function MembershipCheckoutCard({
             type="button"
             disabled={pending}
             onClick={openBillingPortal}
-            className="rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-zinc-900 disabled:opacity-60"
+            className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-zinc-900 disabled:opacity-60 sm:w-auto"
           >
             Gestionar facturacion (Stripe)
           </button>
@@ -337,7 +337,7 @@ export function MembershipCheckoutCard({
       )}
 
       {hasActiveSubscription && showOnboardingCta ? (
-        <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+        <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900 max-[390px]:p-3 max-[390px]:text-xs">
           <p className="font-semibold">Pago confirmado. Siguiente paso: completar tu perfil coach.</p>
           {onboardingStepSummary ? <p className="mt-1">{onboardingStepSummary}</p> : null}
         </div>
@@ -345,13 +345,13 @@ export function MembershipCheckoutCard({
 
       {hasActiveSubscription ? (
         <section className="mt-5 space-y-3">
-          <details className="group rounded-2xl border border-black/10 bg-white p-4">
+          <details className="group rounded-2xl border border-black/10 bg-white p-4 max-[390px]:p-3">
             <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-semibold text-zinc-900">
               Gestion avanzada de renovacion y cancelacion
               <FontAwesomeIcon icon={faChevronDown} className="h-3.5 w-3.5 text-zinc-500 transition group-open:rotate-180" />
             </summary>
             <p className="mt-2 text-xs text-zinc-600">Estas acciones afectan la continuidad y visibilidad de tu perfil.</p>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <div className="mt-3 grid gap-2 max-[390px]:grid-cols-1 sm:grid-cols-2">
               {cancelAtPeriodEnd ? (
                 <button
                   type="button"
@@ -385,13 +385,13 @@ export function MembershipCheckoutCard({
           </details>
 
           {activePlanCode ? (
-            <details className="group rounded-2xl border border-black/10 bg-white p-4">
+            <details className="group rounded-2xl border border-black/10 bg-white p-4 max-[390px]:p-3">
               <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-semibold text-zinc-900">
                 Cambiar plan
                 <FontAwesomeIcon icon={faChevronDown} className="h-3.5 w-3.5 text-zinc-500 transition group-open:rotate-180" />
               </summary>
               <p className="mt-2 text-xs text-zinc-600">Solo puede existir un plan activo. El cambio se aplica al plan actual.</p>
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <div className="mt-3 grid gap-2 max-[390px]:grid-cols-1 sm:grid-cols-2">
                 <button
                   type="button"
                   disabled={pending || pendingActivationActive || activePlanCode === "monthly"}

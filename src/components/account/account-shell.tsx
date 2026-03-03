@@ -119,9 +119,10 @@ export function AccountShell({
 }) {
   const pathname = usePathname();
   const nav = getRoleNavigation(role, unreadMessagesCount);
+  const mobileNavItems = [...nav.main, ...nav.support];
 
   return (
-    <div className="mx-auto grid w-full max-w-[1700px] gap-5 px-3 pb-8 pt-4 sm:px-4 lg:grid-cols-[270px_minmax(0,1fr)] lg:gap-6 lg:px-6 lg:pt-6 xl:px-8">
+    <div className="mx-auto grid w-full max-w-[1700px] gap-5 px-3 pb-8 pt-4 max-[390px]:gap-4 max-[390px]:px-2 max-[390px]:pt-3 sm:px-4 lg:grid-cols-[270px_minmax(0,1fr)] lg:gap-6 lg:px-6 lg:pt-6 xl:px-8">
       <aside className="hidden self-start lg:sticky lg:top-[calc(var(--site-header-offset,72px)+16px)] lg:block">
         <div className="rounded-3xl border border-black/10 bg-white p-4 shadow-sm">
           <Link href={nav.homeHref} className="block rounded-2xl border border-black/10 bg-zinc-50 px-3 py-2">
@@ -162,17 +163,17 @@ export function AccountShell({
       </aside>
 
       <div>
-        <div className="rounded-2xl border border-black/10 bg-white p-2 shadow-sm lg:hidden">
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {nav.main.map((item) => {
+        <div className="sticky top-[calc(var(--site-header-offset,72px)+6px)] z-20 rounded-2xl border border-black/10 bg-white p-2 shadow-sm max-[390px]:p-1.5 lg:hidden">
+          <div className="flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {mobileNavItems.map((item) => {
               const active = isActivePath(pathname, item.href);
               return (
-                <AccountNavChip key={item.href} item={item} active={active} />
+                <AccountNavChip key={item.href} item={item} active={active} state={sectionStates?.[item.href]} />
               );
             })}
           </div>
         </div>
-        <div className="mt-4 lg:mt-0">{children}</div>
+        <div className="mt-3 lg:mt-0">{children}</div>
       </div>
     </div>
   );
@@ -206,21 +207,27 @@ function AccountNavLink({ item, active, state }: { item: NavItem; active: boolea
   );
 }
 
-function AccountNavChip({ item, active }: { item: NavItem; active: boolean }) {
+function AccountNavChip({ item, active, state }: { item: NavItem; active: boolean; state?: SectionState }) {
   return (
     <Link
       href={item.href}
       className={cn(
-        "inline-flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold",
+        "inline-flex shrink-0 snap-start items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold whitespace-nowrap max-[430px]:gap-1.5 max-[430px]:px-2.5 max-[390px]:text-xs max-[390px]:px-2 max-[390px]:py-1.5",
         active ? "bg-cyan-50 text-cyan-800 ring-1 ring-cyan-100" : "border border-black/10 bg-white text-zinc-800",
       )}
     >
-      <FontAwesomeIcon icon={item.icon} className="h-3.5 w-3.5 text-zinc-500" />
+      <FontAwesomeIcon icon={item.icon} className="h-3.5 w-3.5 text-zinc-500 max-[390px]:h-3 max-[390px]:w-3" />
       {item.label}
       {item.badge ? (
         <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 py-0.5 text-[11px] font-bold leading-none text-white">
           {item.badge}
         </span>
+      ) : state ? (
+        <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold", sectionStateToneClass(state.tone))}>
+          {state.label}
+        </span>
+      ) : item.external ? (
+        <FontAwesomeIcon icon={faArrowUpRightFromSquare} className="h-3 w-3 text-zinc-500" />
       ) : null}
     </Link>
   );

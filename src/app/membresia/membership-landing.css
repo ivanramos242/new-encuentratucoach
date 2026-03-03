@@ -1003,3 +1003,64 @@
     padding: 16px;
   }
 }
+
+@media (max-width: 430px) {
+  .etc-coach-landing {
+    --gutter: 14px;
+    --section-pad: 24px;
+  }
+
+  .etc-coach-landing .hero {
+    border-radius: 20px;
+    padding: 18px 0 10px;
+  }
+
+  .etc-coach-landing .hero-grid {
+    gap: 14px;
+    padding: 14px;
+  }
+
+  .etc-coach-landing .kicker {
+    font-size: 0.78rem;
+    gap: 7px;
+    padding: 7px 10px;
+  }
+
+  .etc-coach-landing .hero-lead {
+    font-size: 0.95rem;
+  }
+
+  .etc-coach-landing .sticky-cta .bar {
+    border-radius: 14px;
+    padding: 10px;
+  }
+}
+
+@media (max-width: 390px) {
+  .etc-coach-landing .btn {
+    border-radius: 12px;
+    font-size: 0.9rem;
+    gap: 8px;
+    padding: 11px 12px;
+  }
+
+  .etc-coach-landing .card,
+  .etc-coach-landing .adv-card,
+  .etc-coach-landing .step,
+  .etc-coach-landing .pricebox,
+  .etc-coach-landing .contact-card {
+    padding: 16px;
+  }
+
+  .etc-coach-landing .sticky-cta .txt {
+    padding: 4px 4px 6px;
+  }
+
+  .etc-coach-landing .sticky-cta .txt b {
+    font-size: 0.9rem;
+  }
+
+  .etc-coach-landing .sticky-cta .txt span {
+    font-size: 0.8rem;
+  }
+}

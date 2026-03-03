@@ -190,9 +190,9 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
       <ProfileAnalyticsTracker coachId={coach.id} />
       <JsonLd data={jsonLd} />
 
-      <PageShell className="pb-28 pt-6 sm:pb-32">
+      <PageShell className="pb-28 pt-5 sm:pb-32 sm:pt-6">
         <section id="inicio" className="overflow-hidden rounded-[2rem] border border-black/10 bg-white shadow-sm">
-          <div className="grid gap-6 bg-[radial-gradient(circle_at_8%_0%,rgba(6,182,212,.10),transparent_38%),radial-gradient(circle_at_98%_10%,rgba(16,185,129,.10),transparent_36%)] p-5 sm:p-6 xl:grid-cols-[1.15fr_.85fr] xl:p-8">
+          <div className="grid gap-6 bg-[radial-gradient(circle_at_8%_0%,rgba(6,182,212,.10),transparent_38%),radial-gradient(circle_at_98%_10%,rgba(16,185,129,.10),transparent_36%)] p-4 max-[390px]:p-3.5 sm:p-6 xl:grid-cols-[1.15fr_.85fr] xl:p-8">
             <div>
               <div className="flex items-center justify-between gap-3">
                 <Link
@@ -224,8 +224,8 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
               </div>
 
               <p className="mt-4 text-sm font-semibold text-zinc-600">Encuentra • coach en España • online o presencial</p>
-              <div className="mt-2 flex items-start justify-between gap-3">
-                <h1 className="text-3xl font-black tracking-tight text-zinc-950 sm:text-4xl lg:text-5xl">{coach.name}</h1>
+              <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
+                <h1 className="text-3xl font-black tracking-tight text-zinc-950 max-[390px]:text-2xl sm:text-4xl lg:text-5xl">{coach.name}</h1>
                 <div className="flex items-center gap-2">
                   <FavoriteCoachButton coachProfileId={coach.id} />
                   {coach.certifiedStatus === "approved" ? (
@@ -239,7 +239,7 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
                   ) : null}
                 </div>
               </div>
-              <p className="mt-4 max-w-3xl text-base leading-7 text-zinc-700">{leadBits.join(" · ") || coach.headline}</p>
+              <p className="mt-4 max-w-3xl text-base leading-7 text-zinc-700 max-[390px]:text-sm max-[390px]:leading-6">{leadBits.join(" · ") || coach.headline}</p>
 
               <div className="mt-4 flex flex-wrap gap-2">
                 {coach.categories.map((categorySlug, index) => (
@@ -285,9 +285,10 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
 
               <CoachProfileActionPopups coach={{ id: coach.id, name: coach.name, heroImageUrl: coach.heroImageUrl, headline: coach.headline, links: coach.links }} />
 
-              <p className="mt-3 text-sm text-zinc-600">
+              <p className="mt-3 text-sm text-zinc-600 max-[390px]:leading-6">
                 <Link href="/pregunta-a-un-coach" className="font-semibold text-cyan-700 hover:text-cyan-800">¿Tienes dudas? Pregunta a un coach</Link>
-                <span> · </span>
+                <span className="hidden sm:inline"> · </span>
+                <span className="sm:hidden"><br /></span>
                 <Link href="/coaches" className="font-semibold text-cyan-700 hover:text-cyan-800">Ver más coaches</Link>
               </p>
             </div>
@@ -860,7 +861,7 @@ function ContactLink({
       target={target}
       href={finalHref}
       external={external}
-      className="inline-flex items-center rounded-xl border border-black/10 bg-zinc-50 px-4 py-2.5 text-sm font-semibold text-zinc-900 hover:bg-white"
+      className="inline-flex w-full items-center justify-center rounded-xl border border-black/10 bg-zinc-50 px-4 py-2.5 text-sm font-semibold text-zinc-900 hover:bg-white sm:w-auto"
     >
       <SocialContactIcon target={target} />
       {label}

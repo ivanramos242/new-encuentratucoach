@@ -67,18 +67,19 @@ export default async function ClientDashboardPage() {
       <PageHero
         badge="Mi cuenta · Cliente"
         title="Panel de cliente"
-        description="Sigue tus conversaciones y decisiones clave desde un panel claro y ordenado."
+        description="Todo lo esencial en un solo lugar para decidir mejor."
+        compact
       />
       <PageShell className="pt-8">
-        <div className="grid gap-6">
+        <div className="grid gap-6 max-[430px]:gap-5 max-[390px]:gap-4">
           <section className="overflow-hidden rounded-3xl border border-black/10 bg-white shadow-sm">
-            <div className="grid gap-5 bg-[radial-gradient(circle_at_0%_0%,rgba(244,63,94,.14),transparent_42%),radial-gradient(circle_at_100%_10%,rgba(6,182,212,.12),transparent_40%)] p-6 lg:grid-cols-[1.15fr_.85fr]">
+            <div className="grid gap-5 bg-[radial-gradient(circle_at_0%_0%,rgba(244,63,94,.14),transparent_42%),radial-gradient(circle_at_100%_10%,rgba(6,182,212,.12),transparent_40%)] p-4 max-[390px]:p-3.5 sm:p-6 lg:grid-cols-[1.15fr_.85fr]">
               <div>
                 <div className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-rose-900">
                   <span className="h-2 w-2 rounded-full bg-rose-500" />
                   Area privada de cliente
                 </div>
-                <h2 className="mt-3 text-2xl font-black tracking-tight text-zinc-950 sm:text-3xl">
+                <h2 className="mt-3 text-2xl font-black tracking-tight text-zinc-950 max-[390px]:text-xl sm:text-3xl">
                   {user.displayName || "Tu cuenta"}
                 </h2>
                 <p className="mt-2 text-sm text-zinc-700">
@@ -88,10 +89,10 @@ export default async function ClientDashboardPage() {
                   Prioriza mensajes y favoritos para comparar coaches con mas criterio.
                 </p>
 
-                <div className="mt-4 flex flex-wrap gap-2">
+                <div className="mt-4 flex flex-wrap gap-2 max-[390px]:mt-3">
                   <Link
                     href="/mi-cuenta/cliente/mensajes"
-                    className="inline-flex items-center rounded-xl bg-zinc-950 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800"
+                    className="inline-flex w-full items-center justify-center rounded-xl bg-zinc-950 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 sm:w-auto"
                   >
                     <FontAwesomeIcon icon={faEnvelope} className="mr-2 h-4 w-4" />
                     Mensajes
@@ -103,7 +104,7 @@ export default async function ClientDashboardPage() {
                   </Link>
                   <Link
                     href="#favoritos"
-                    className="inline-flex items-center rounded-xl border border-black/10 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
+                    className="inline-flex w-full items-center justify-center rounded-xl border border-black/10 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-50 sm:w-auto"
                   >
                     <FontAwesomeIcon icon={faHeart} className="mr-2 h-4 w-4 text-zinc-500" />
                     Favoritos
@@ -120,7 +121,7 @@ export default async function ClientDashboardPage() {
 
           <section>
             <div className="mb-3">
-              <h3 className="text-lg font-black tracking-tight text-zinc-950">Prioridades de hoy</h3>
+              <h3 className="text-lg font-extrabold tracking-tight text-zinc-950">Prioridades de hoy</h3>
               <p className="text-sm text-zinc-600">Acciones clave para que avances sin perder tiempo.</p>
             </div>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -132,7 +133,7 @@ export default async function ClientDashboardPage() {
 
           <section>
             <div className="mb-3">
-              <h3 className="text-lg font-black tracking-tight text-zinc-950">Exploracion</h3>
+              <h3 className="text-lg font-extrabold tracking-tight text-zinc-950">Exploracion</h3>
               <p className="text-sm text-zinc-600">Abre nuevas opciones cuando ya tengas controlado lo importante.</p>
             </div>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -142,10 +143,10 @@ export default async function ClientDashboardPage() {
             </div>
           </section>
 
-          <section id="favoritos" className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
+          <section id="favoritos" className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm max-[390px]:p-4 sm:p-6">
             <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-black tracking-tight text-zinc-950">Mis favoritos</h2>
+                <h2 className="text-2xl font-extrabold tracking-tight text-zinc-950">Mis favoritos</h2>
                 <p className="mt-1 text-sm text-zinc-700">Coaches guardados para comparar y contactar mas tarde.</p>
               </div>
               <Link
@@ -217,7 +218,7 @@ function DashboardCard({
           </span>
         ) : null}
       </div>
-      <h3 className="mt-4 text-lg font-black tracking-tight text-zinc-950">{title}</h3>
+      <h3 className="mt-4 text-lg font-extrabold tracking-tight text-zinc-950">{title}</h3>
       <p className="mt-2 text-sm leading-6 text-zinc-700">{desc}</p>
       <div className="mt-4 inline-flex items-center text-sm font-semibold text-cyan-700 group-hover:text-cyan-800">
         {cta}
