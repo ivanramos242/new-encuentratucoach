@@ -34,6 +34,11 @@ const cards = [
     desc: "Cola y monitorizacion de entregas in-app y email.",
   },
   {
+    href: "/admin/analytics",
+    title: "Analytics landings",
+    desc: "Embudo semanal por landing y ciudad para optimizacion SEO y conversion.",
+  },
+  {
     href: "/admin/jobs",
     title: "Jobs",
     desc: "Ejecucion y diagnostico de jobs internos por cron.",

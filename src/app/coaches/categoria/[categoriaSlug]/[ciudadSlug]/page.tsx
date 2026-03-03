@@ -14,6 +14,7 @@ import {
   topCityItems,
 } from "@/lib/landing-view-models";
 import { listPublicCoachesMerged } from "@/lib/public-coaches";
+import { getTrustMetricsForCoachSet } from "@/lib/directory-trust-metrics";
 import { buildBreadcrumbJsonLd, buildMetadata, shouldNoIndexLanding } from "@/lib/seo";
 import { getSiteBaseUrl } from "@/lib/site-config";
 
@@ -37,6 +38,10 @@ async function getCategoryCityLandingData(categoriaSlug: string, ciudadSlug: str
 
   const contextLinks = buildCategoryCityContextLinks(category.slug, city.slug, city.name);
   const exploreCards = buildExploreCardsForCategory(category.slug, otherCities);
+  const trustStats = await getTrustMetricsForCoachSet({
+    coachIds: items.map((coach) => coach.id),
+    fallbackCoaches: items,
+  });
 
   return {
     category,
@@ -46,6 +51,7 @@ async function getCategoryCityLandingData(categoriaSlug: string, ciudadSlug: str
     noindex,
     contextLinks,
     exploreCards,
+    trustStats,
   };
 }
 
@@ -68,7 +74,7 @@ export default async function CategoryCityLandingPage({ params }: { params: Para
   const data = await getCategoryCityLandingData(categoriaSlug, ciudadSlug);
   if (!data) notFound();
 
-  const { category, city, seo, items, contextLinks, exploreCards } = data;
+  const { category, city, seo, items, contextLinks, exploreCards, trustStats } = data;
   const baseUrl = getSiteBaseUrl();
 
   const breadcrumb = buildBreadcrumbJsonLd([
@@ -111,6 +117,7 @@ export default async function CategoryCityLandingPage({ params }: { params: Para
         contextTitle="Navegacion rapida"
         contextDescription="Pasa de esta combinacion concreta a otras rutas relacionadas en un clic."
         contextLinks={contextLinks}
+        trustStats={trustStats}
       >
         <LandingSection
           title={`${items.length} ${items.length === 1 ? "coach" : "coaches"} de ${category.name.toLowerCase()} en ${city.name}`}
@@ -130,7 +137,7 @@ export default async function CategoryCityLandingPage({ params }: { params: Para
                   href={`/coaches/categoria/${category.slug}`}
                   className="inline-flex rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800"
                 >
-                  Ver esta categoria en Espana
+                  Ver esta categoria en España
                 </Link>
                 <Link
                   href={`/coaches/ciudad/${city.slug}`}

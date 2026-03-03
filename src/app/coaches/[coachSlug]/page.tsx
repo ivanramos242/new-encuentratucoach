@@ -548,6 +548,7 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
 
       {!isOwnCoachProfile ? (
         <CoachMessageBottomCta
+          coachId={coach.id}
           coachName={coach.name}
           coachSlug={coach.slug}
           sourcePath={`/coaches/${coach.slug}`}

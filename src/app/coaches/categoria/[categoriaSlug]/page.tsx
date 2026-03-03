@@ -14,6 +14,7 @@ import {
   topCityItems,
 } from "@/lib/landing-view-models";
 import { listPublicCoachesMerged } from "@/lib/public-coaches";
+import { getTrustMetricsForCoachSet } from "@/lib/directory-trust-metrics";
 import { buildBreadcrumbJsonLd, buildMetadata, shouldNoIndexLanding } from "@/lib/seo";
 import { getSiteBaseUrl } from "@/lib/site-config";
 
@@ -30,6 +31,10 @@ async function getCategoryLandingData(categoriaSlug: string) {
   const topCities = topCityItems(items, 6);
   const contextLinks = buildCategoryContextLinks(category.slug, topCities);
   const exploreCards = buildExploreCardsForCategory(category.slug, topCities);
+  const trustStats = await getTrustMetricsForCoachSet({
+    coachIds: items.map((coach) => coach.id),
+    fallbackCoaches: items,
+  });
 
   return {
     category,
@@ -38,6 +43,7 @@ async function getCategoryLandingData(categoriaSlug: string) {
     noindex,
     contextLinks,
     exploreCards,
+    trustStats,
   };
 }
 
@@ -60,7 +66,7 @@ export default async function CategoryLandingPage({ params }: { params: ParamsIn
   const data = await getCategoryLandingData(categoriaSlug);
   if (!data) notFound();
 
-  const { category, seo, items, contextLinks, exploreCards } = data;
+  const { category, seo, items, contextLinks, exploreCards, trustStats } = data;
   const baseUrl = getSiteBaseUrl();
 
   const breadcrumb = buildBreadcrumbJsonLd([
@@ -102,6 +108,7 @@ export default async function CategoryLandingPage({ params }: { params: ParamsIn
         contextTitle={`Atajos para ${category.name.toLowerCase()}`}
         contextDescription="Navega por ciudades donde esta especialidad tiene mas oferta."
         contextLinks={contextLinks}
+        trustStats={trustStats}
       >
         <LandingSection
           title={`${items.length} ${items.length === 1 ? "coach" : "coaches"} de ${category.name.toLowerCase()}`}

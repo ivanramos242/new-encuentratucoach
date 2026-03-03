@@ -215,6 +215,28 @@ enum FunnelEventType {
   review_approved
 }
 
+enum DirectoryLandingType {
+  directory
+  city
+  category
+  category_city
+  online
+  certified
+}
+
+enum DirectoryFunnelEventType {
+  view_profile
+  click_whatsapp
+  click_contact
+  submit_form
+  booking_start
+}
+
+enum DirectoryAssistLeadTrigger {
+  exit_intent
+  mobile_banner
+}
+
 model User {
   id                  String                   @id @default(cuid())
   email               String                   @unique
@@ -397,6 +419,7 @@ model CoachProfile {
   qaAnswers            QaAnswer[]
   funnelEvents         FunnelEvent[]
   funnelAggregates     CoachFunnelDailyAggregate[]
+  directoryFunnelEvents DirectoryFunnelEvent[]
   favoritedByUsers     CoachFavorite[]
 }
 
@@ -771,6 +794,21 @@ model CoachContactLead {
   coachProfile  CoachProfile     @relation(fields: [coachProfileId], references: [id], onDelete: Cascade)
 }
 
+model DirectoryAssistLead {
+  id         String                    @id @default(cuid())
+  email      String
+  sourcePath String?
+  landingPath String?
+  citySlug   String?
+  trigger    DirectoryAssistLeadTrigger
+  createdAt  DateTime                  @default(now())
+  ipHash     String?
+  userAgent  String?
+
+  @@index([createdAt])
+  @@index([citySlug, createdAt])
+}
+
 model ConversationThread {
   id               String                   @id @default(cuid())
   clientUserId     String
@@ -1131,6 +1169,28 @@ model FunnelEvent {
 
   @@index([eventType, createdAt])
   @@index([coachProfileId, eventType, createdAt])
+}
+
+model DirectoryFunnelEvent {
+  id            String                   @id @default(cuid())
+  eventType     DirectoryFunnelEventType
+  coachProfileId String?
+  sourcePath    String?
+  landingPath   String?
+  landingType   DirectoryLandingType?
+  citySlug      String?
+  categorySlug  String?
+  metadata      Json?
+  ipHash        String?
+  userAgent     String?
+  createdAt     DateTime                 @default(now())
+  coachProfile  CoachProfile?            @relation(fields: [coachProfileId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([eventType, createdAt])
+  @@index([landingPath, createdAt])
+  @@index([citySlug, createdAt])
+  @@index([coachProfileId, createdAt])
 }
 
 model CoachFunnelDailyAggregate {

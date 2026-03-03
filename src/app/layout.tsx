@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import { CookieConsentManager } from "@/components/cookies/cookie-consent-manager";
+import { DirectoryExitCapture } from "@/components/directory/directory-exit-capture";
 import { FavoriteCoachesProvider } from "@/components/favorites/favorite-coaches-provider";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -64,6 +65,7 @@ export default function RootLayout({
             {children}
             <SiteFooter />
             <CookieConsentManager />
+            <DirectoryExitCapture />
           </div>
         </FavoriteCoachesProvider>
       </body>
