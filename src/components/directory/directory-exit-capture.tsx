@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { isDirectoryLandingPathname } from "@/lib/directory-attribution";
 import { setLastDirectoryPath, trackDirectoryFunnelEvent } from "@/lib/directory-funnel-client";
 
@@ -40,7 +40,6 @@ function shouldRespectCooldown(now: number) {
 
 export function DirectoryExitCapture() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [activeTrigger, setActiveTrigger] = useState<TriggerType | null>(null);
   const [email, setEmail] = useState("");
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
@@ -48,10 +47,7 @@ export function DirectoryExitCapture() {
   const [feedback, setFeedback] = useState<string | null>(null);
 
   const isDirectoryLanding = useMemo(() => isDirectoryLandingPathname(pathname), [pathname]);
-  const sourcePath = useMemo(() => {
-    const query = searchParams.toString();
-    return `${pathname}${query ? `?${query}` : ""}`;
-  }, [pathname, searchParams]);
+  const sourcePath = pathname || "/";
 
   useEffect(() => {
     if (!isDirectoryLanding) return;
