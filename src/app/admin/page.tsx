@@ -24,6 +24,11 @@ const cards = [
     desc: "Revision y gestion de perfiles de coaches.",
   },
   {
+    href: "/admin/certificaciones",
+    title: "Certificaciones",
+    desc: "Revision documental y decision masiva de solicitudes pendientes.",
+  },
+  {
     href: "/admin/preguntas",
     title: "Q&A",
     desc: "Moderacion y supervision de preguntas y respuestas.",
