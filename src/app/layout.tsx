@@ -5,6 +5,7 @@ import { DirectoryExitCapture } from "@/components/directory/directory-exit-capt
 import { FavoriteCoachesProvider } from "@/components/favorites/favorite-coaches-provider";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { SiteJsonLd } from "@/components/seo/site-json-ld";
 import { isSeoIndexingAllowed } from "@/lib/seo";
 import { siteConfig } from "@/lib/site-config";
 import "@fortawesome/fontawesome-free/css/all.min.css";
@@ -62,6 +63,7 @@ export default function RootLayout({
         <FavoriteCoachesProvider>
           <div className="min-h-screen bg-zinc-50">
             <SiteHeader />
+            <SiteJsonLd />
             {children}
             <SiteFooter />
             <CookieConsentManager />

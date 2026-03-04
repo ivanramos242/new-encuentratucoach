@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "seo:preflight": "node scripts/seo-preflight.mjs",
     "text:check": "node scripts/check-text-integrity.mjs",
     "typecheck": "tsc --noEmit",
     "prisma:generate": "prisma generate",

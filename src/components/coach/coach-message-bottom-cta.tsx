@@ -81,6 +81,7 @@ export function CoachMessageBottomCta({ coachId, coachName, coachSlug, sourcePat
       trackDirectoryFunnelEvent("booking_start", {
         coachProfileId: coachId,
         sourcePath: getLastDirectoryPath() || sourcePath || window.location.pathname,
+        sourceModule: "coach_profile",
       });
       goTo(chatHref);
       return;

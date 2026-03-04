@@ -1,2 +1,13 @@
 legacy_url,new_url,status_code,notes
-/ejemplo-url-wordpress,/coaches,301,Reemplazar con mapeo real
+/portal-de-coaches,/coaches,301,Consolidación directorio canónico
+/coaching-en-espana,/coaches,301,Consolidación directorio canónico
+/blog-de-coaching,/blog,301,Consolidación hub blog
+/category/blog,/blog,301,Ruta WordPress legacy
+/category/blog/page/{n},/blog,301,Evitar paginaciones legacy indexables
+/membresia-para-coaches,/membresia,301,Consolidación B2B
+/buscar-coach-madrid,/coaches/ciudad/madrid,301,Consolidación landing local
+/buscar-coach-en-barcelona,/coaches/ciudad/barcelona,301,Consolidación landing local
+/buscar-coach-en-valencia,/coaches/ciudad/valencia,301,Consolidación landing local
+/buscar-coach-en-bilbao,/coaches/ciudad/bilbao,301,Consolidación landing local
+/iniciar_sesion,/iniciar-sesion,301,Normalización slug login
+/coaching-que-es,/que-es-el-coaching-y-para-que-sirve,301,URL madre informacional

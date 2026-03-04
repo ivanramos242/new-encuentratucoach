@@ -10,6 +10,20 @@ export type DirectoryFunnelEventType =
   | "submit_form"
   | "booking_start";
 
+export type DirectoryFunnelSourceModule =
+  | "home"
+  | "directory"
+  | "landing_city"
+  | "landing_category"
+  | "landing_category_city"
+  | "landing_online"
+  | "landing_certified"
+  | "coach_profile"
+  | "qa"
+  | "blog"
+  | "membership"
+  | "other";
+
 const LAST_DIRECTORY_PATH_KEY = "etc_last_directory_path";
 
 function readCookie(name: string) {
@@ -63,17 +77,26 @@ export function trackDirectoryFunnelEvent(
   input?: {
     coachProfileId?: string;
     sourcePath?: string | null;
+    sourceModule?: DirectoryFunnelSourceModule;
     metadata?: Record<string, unknown>;
   },
 ) {
   if (typeof window === "undefined") return;
   if (!hasAnalyticsConsentInBrowser()) return;
 
+  const normalizedSourcePath = normalizeSourcePath(input?.sourcePath) || undefined;
+  const sourceModule = input?.sourceModule || inferSourceModuleFromPath(normalizedSourcePath);
+  const metadata = {
+    ...(input?.metadata || {}),
+    sourcePath: normalizedSourcePath,
+    sourceModule,
+  };
+
   const payload = JSON.stringify({
     eventType,
     coachProfileId: input?.coachProfileId,
-    sourcePath: normalizeSourcePath(input?.sourcePath) || undefined,
-    metadata: input?.metadata,
+    sourcePath: normalizedSourcePath,
+    metadata,
   });
 
   try {
@@ -92,4 +115,22 @@ export function trackDirectoryFunnelEvent(
     body: payload,
     keepalive: true,
   }).catch(() => undefined);
+}
+
+function inferSourceModuleFromPath(path?: string) {
+  if (!path) return "other";
+  if (path === "/") return "home";
+  if (path.startsWith("/coaches/categoria/")) {
+    const segments = path.split("/").filter(Boolean);
+    return segments.length >= 4 ? "landing_category_city" : "landing_category";
+  }
+  if (path.startsWith("/coaches/ciudad/")) return "landing_city";
+  if (path === "/coaches/modalidad/online") return "landing_online";
+  if (path === "/coaches/certificados") return "landing_certified";
+  if (path === "/coaches") return "directory";
+  if (path.startsWith("/coaches/")) return "coach_profile";
+  if (path.startsWith("/pregunta-a-un-coach")) return "qa";
+  if (path.startsWith("/blog")) return "blog";
+  if (path.startsWith("/membresia") || path === "/plataformas-para-trabajar-como-coach") return "membership";
+  return "other";
 }

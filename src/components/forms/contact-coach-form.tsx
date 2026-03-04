@@ -33,6 +33,7 @@ export function ContactCoachForm({ coachId, coachName }: { coachId: string; coac
       trackDirectoryFunnelEvent("submit_form", {
         coachProfileId: coachId,
         sourcePath: getLastDirectoryPath() || window.location.pathname,
+        sourceModule: "coach_profile",
       });
 
       setStatus("success");

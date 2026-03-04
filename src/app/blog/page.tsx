@@ -35,6 +35,24 @@ export default async function BlogIndexPage() {
               Buscar coaches
             </Link>
             <Link
+              href="/que-es-el-coaching-y-para-que-sirve"
+              className="rounded-xl border border-black/10 bg-zinc-50 px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-white"
+            >
+              Qué es el coaching
+            </Link>
+            <Link
+              href="/precios-coaching-espana"
+              className="rounded-xl border border-black/10 bg-zinc-50 px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-white"
+            >
+              Precios de coaching
+            </Link>
+            <Link
+              href="/como-elegir-coach-2026"
+              className="rounded-xl border border-black/10 bg-zinc-50 px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-white"
+            >
+              Cómo elegir coach
+            </Link>
+            <Link
               href="/coaches/modalidad/online"
               className="rounded-xl border border-black/10 bg-zinc-50 px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-white"
             >

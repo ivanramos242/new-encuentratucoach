@@ -1,9 +1,10 @@
-# SEO Launch Checklist (Dominio Final)
+﻿# SEO Launch Checklist (Dominio Final)
 
 ## Pre-cutover (staging)
 - `SEO_ALLOW_INDEXING=false` en staging.
 - `robots.txt` en staging bloqueando rastreo completo.
-- Validar canónicos y noindex en:
+- Ejecutar `npm run seo:preflight` con `SEO_PREFLIGHT_SKIP_HTTP=true` para validar guardrails de indexacion.
+- Validar canonicos y noindex en:
   - `/coaches?*`
   - `/iniciar-sesion`
   - `/registro`
@@ -23,15 +24,17 @@
 - Aplicar redirecciones 301 (1:1) de URLs legacy al destino final.
 - Confirmar que no existen redirecciones al home por defecto.
 - Cambiar a `SEO_ALLOW_INDEXING=true` en dominio final.
-- Publicar robots y sitemaps en producción.
+- Publicar robots y sitemaps en produccion.
+- Ejecutar `npm run seo:preflight` (sin `SEO_PREFLIGHT_SKIP_HTTP`) y confirmar 200 en robots + sitemaps.
 - Enviar `/sitemap.xml` en Google Search Console.
 
-## Post-cutover (14 días)
-- Revisar cobertura e indexación diariamente.
+## Post-cutover (14 dias)
+- Revisar cobertura e indexacion diariamente.
 - Revisar errores de rastreo y soft-404.
-- Corregir cadenas de redirección (dejar 1 salto máximo).
+- Corregir cadenas de redireccion (dejar 1 salto maximo).
 - Monitorizar impresiones/clics en queries objetivo por:
   - Ciudad
-  - Categoría
-  - Categoría + ciudad
-  - B2B (`/membresia`, guías de coaches)
+  - Categoria
+  - Categoria + ciudad
+  - B2B (`/membresia`, guias de coaches)
+
