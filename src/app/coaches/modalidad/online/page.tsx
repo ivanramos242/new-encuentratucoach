@@ -2,11 +2,13 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { CoachCard } from "@/components/directory/coach-card";
 import { FaqCompact } from "@/components/directory/faq-compact";
+import { LandingRealisticContent } from "@/components/directory/landing-realistic-content";
 import { LandingSection } from "@/components/directory/landing-section";
 import { LandingShell } from "@/components/directory/landing-shell";
 import { JsonLd } from "@/components/seo/json-ld";
 import type { LandingContextLink } from "@/lib/landing-content";
 import { getOnlineSeoContent } from "@/lib/landing-content";
+import { isPriorityLanding } from "@/lib/landing-realism";
 import { buildExploreCardsForOnline, topCategoryItems, topCityItems } from "@/lib/landing-view-models";
 import { listPublicCoachesMerged } from "@/lib/public-coaches";
 import { getTrustMetricsForCoachSet } from "@/lib/directory-trust-metrics";
@@ -17,6 +19,7 @@ async function getOnlineLandingData() {
   const coaches = await listPublicCoachesMerged();
   const items = coaches.filter((coach) => coach.sessionModes.includes("online"));
   const noindex = shouldNoIndexLanding({ coachCount: items.length, hasEditorialContent: true });
+  const priority = isPriorityLanding({ kind: "online", allCoaches: coaches });
   const seo = getOnlineSeoContent();
   const topCategories = topCategoryItems(items, 6);
   const topCities = topCityItems(items, 3);
@@ -32,7 +35,7 @@ async function getOnlineLandingData() {
     ...topCities.map((city) => ({ label: city.label, href: `/coaches/ciudad/${city.slug}` })),
   ].slice(0, 6);
 
-  return { items, noindex, seo, contextLinks, exploreCards, trustStats };
+  return { items, noindex, priority, seo, contextLinks, exploreCards, trustStats };
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -115,6 +118,8 @@ export default async function OnlineCoachingPage() {
             </div>
           )}
         </LandingSection>
+
+        <LandingRealisticContent kind="online" items={data.items} priority={data.priority} />
 
         {data.exploreCards.length ? (
           <LandingSection

@@ -2,11 +2,13 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { CoachCard } from "@/components/directory/coach-card";
 import { FaqCompact } from "@/components/directory/faq-compact";
+import { LandingRealisticContent } from "@/components/directory/landing-realistic-content";
 import { LandingSection } from "@/components/directory/landing-section";
 import { LandingShell } from "@/components/directory/landing-shell";
 import { JsonLd } from "@/components/seo/json-ld";
 import type { LandingContextLink } from "@/lib/landing-content";
 import { getCertifiedSeoContent } from "@/lib/landing-content";
+import { isPriorityLanding } from "@/lib/landing-realism";
 import { buildExploreCardsForCertified, topCategoryItems, topCityItems } from "@/lib/landing-view-models";
 import { listPublicCoachesMerged } from "@/lib/public-coaches";
 import { getTrustMetricsForCoachSet } from "@/lib/directory-trust-metrics";
@@ -17,6 +19,7 @@ async function getCertifiedLandingData() {
   const coaches = await listPublicCoachesMerged();
   const items = coaches.filter((coach) => coach.certifiedStatus === "approved");
   const noindex = shouldNoIndexLanding({ coachCount: items.length, hasEditorialContent: true });
+  const priority = isPriorityLanding({ kind: "certified", allCoaches: coaches });
   const seo = getCertifiedSeoContent();
   const topCities = topCityItems(items, 6);
   const topCategories = topCategoryItems(items, 3);
@@ -32,7 +35,7 @@ async function getCertifiedLandingData() {
     ...topCategories.map((category) => ({ label: category.label, href: `/coaches/categoria/${category.slug}` })),
   ].slice(0, 6);
 
-  return { items, noindex, seo, contextLinks, exploreCards, trustStats };
+  return { items, noindex, priority, seo, contextLinks, exploreCards, trustStats };
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -115,6 +118,8 @@ export default async function CertifiedCoachesPage() {
             </div>
           )}
         </LandingSection>
+
+        <LandingRealisticContent kind="certified" items={data.items} priority={data.priority} />
 
         {data.exploreCards.length ? (
           <LandingSection

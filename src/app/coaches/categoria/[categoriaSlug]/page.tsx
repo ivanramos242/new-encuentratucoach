@@ -3,11 +3,13 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CoachCard } from "@/components/directory/coach-card";
 import { FaqCompact } from "@/components/directory/faq-compact";
+import { LandingRealisticContent } from "@/components/directory/landing-realistic-content";
 import { LandingSection } from "@/components/directory/landing-section";
 import { LandingShell } from "@/components/directory/landing-shell";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getCategoryBySlug } from "@/lib/directory";
 import { getCategorySeoContent } from "@/lib/landing-content";
+import { isPriorityLanding } from "@/lib/landing-realism";
 import {
   buildCategoryContextLinks,
   buildExploreCardsForCategory,
@@ -27,6 +29,11 @@ async function getCategoryLandingData(categoriaSlug: string) {
   const coaches = await listPublicCoachesMerged();
   const items = coaches.filter((coach) => coach.categories.includes(category.slug));
   const noindex = shouldNoIndexLanding({ coachCount: items.length, hasEditorialContent: true });
+  const priority = isPriorityLanding({
+    kind: "category",
+    categorySlug: category.slug,
+    allCoaches: coaches,
+  });
   const seo = getCategorySeoContent(category);
   const topCities = topCityItems(items, 6);
   const contextLinks = buildCategoryContextLinks(category.slug, topCities);
@@ -41,6 +48,7 @@ async function getCategoryLandingData(categoriaSlug: string) {
     seo,
     items,
     noindex,
+    priority,
     contextLinks,
     exploreCards,
     trustStats,
@@ -66,7 +74,7 @@ export default async function CategoryLandingPage({ params }: { params: ParamsIn
   const data = await getCategoryLandingData(categoriaSlug);
   if (!data) notFound();
 
-  const { category, seo, items, contextLinks, exploreCards, trustStats } = data;
+  const { category, seo, items, priority, contextLinks, exploreCards, trustStats } = data;
   const baseUrl = getSiteBaseUrl();
 
   const breadcrumb = buildBreadcrumbJsonLd([
@@ -134,6 +142,8 @@ export default async function CategoryLandingPage({ params }: { params: ParamsIn
             </div>
           )}
         </LandingSection>
+
+        <LandingRealisticContent kind="category" items={items} category={category} priority={priority} />
 
         {exploreCards.length ? (
           <LandingSection
