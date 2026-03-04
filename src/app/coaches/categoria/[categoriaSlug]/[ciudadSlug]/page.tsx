@@ -3,11 +3,13 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CoachCard } from "@/components/directory/coach-card";
 import { FaqCompact } from "@/components/directory/faq-compact";
+import { LandingRealisticContent } from "@/components/directory/landing-realistic-content";
 import { LandingSection } from "@/components/directory/landing-section";
 import { LandingShell } from "@/components/directory/landing-shell";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getCategoryBySlug, getCityBySlug } from "@/lib/directory";
 import { getCategoryCitySeoContent } from "@/lib/landing-content";
+import { isPriorityLanding } from "@/lib/landing-realism";
 import {
   buildCategoryCityContextLinks,
   buildExploreCardsForCategory,
@@ -28,6 +30,12 @@ async function getCategoryCityLandingData(categoriaSlug: string, ciudadSlug: str
   const coaches = await listPublicCoachesMerged();
   const items = coaches.filter((coach) => coach.categories.includes(category.slug) && coach.citySlug === city.slug);
   const noindex = shouldNoIndexLanding({ coachCount: items.length, hasEditorialContent: true });
+  const priority = isPriorityLanding({
+    kind: "category_city",
+    categorySlug: category.slug,
+    citySlug: city.slug,
+    allCoaches: coaches,
+  });
   const seo = getCategoryCitySeoContent(category.slug, city.slug, category.name, city.name);
 
   const sameCategoryAllCities = coaches.filter((coach) => coach.categories.includes(category.slug));
@@ -49,6 +57,7 @@ async function getCategoryCityLandingData(categoriaSlug: string, ciudadSlug: str
     seo,
     items,
     noindex,
+    priority,
     contextLinks,
     exploreCards,
     trustStats,
@@ -74,7 +83,7 @@ export default async function CategoryCityLandingPage({ params }: { params: Para
   const data = await getCategoryCityLandingData(categoriaSlug, ciudadSlug);
   if (!data) notFound();
 
-  const { category, city, seo, items, contextLinks, exploreCards, trustStats } = data;
+  const { category, city, seo, items, priority, contextLinks, exploreCards, trustStats } = data;
   const baseUrl = getSiteBaseUrl();
 
   const breadcrumb = buildBreadcrumbJsonLd([
@@ -149,6 +158,14 @@ export default async function CategoryCityLandingPage({ params }: { params: Para
             </div>
           )}
         </LandingSection>
+
+        <LandingRealisticContent
+          kind="category_city"
+          items={items}
+          city={city}
+          category={category}
+          priority={priority}
+        />
 
         {exploreCards.length ? (
           <LandingSection

@@ -3,11 +3,13 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CoachCard } from "@/components/directory/coach-card";
 import { FaqCompact } from "@/components/directory/faq-compact";
+import { LandingRealisticContent } from "@/components/directory/landing-realistic-content";
 import { LandingSection } from "@/components/directory/landing-section";
 import { LandingShell } from "@/components/directory/landing-shell";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getCityBySlug } from "@/lib/directory";
 import { getCitySeoContent } from "@/lib/landing-content";
+import { isPriorityLanding } from "@/lib/landing-realism";
 import {
   buildCityContextLinks,
   buildExploreCardsForCity,
@@ -27,6 +29,7 @@ async function getCityLandingData(ciudadSlug: string) {
   const coaches = await listPublicCoachesMerged();
   const items = coaches.filter((coach) => coach.citySlug === city.slug);
   const noindex = shouldNoIndexLanding({ coachCount: items.length, hasEditorialContent: true });
+  const priority = isPriorityLanding({ kind: "city", citySlug: city.slug, allCoaches: coaches });
   const seo = getCitySeoContent(city.slug, city.name);
   const topCategories = topCategoryItems(items, 6);
   const contextLinks = buildCityContextLinks(city.slug, topCategories);
@@ -41,6 +44,7 @@ async function getCityLandingData(ciudadSlug: string) {
     seo,
     items,
     noindex,
+    priority,
     contextLinks,
     exploreCards,
     trustStats,
@@ -66,7 +70,7 @@ export default async function CityLandingPage({ params }: { params: ParamsInput 
   const data = await getCityLandingData(ciudadSlug);
   if (!data) notFound();
 
-  const { city, seo, items, contextLinks, exploreCards, trustStats } = data;
+  const { city, seo, items, priority, contextLinks, exploreCards, trustStats } = data;
   const isPrimaryCity = city.slug === "madrid" || city.slug === "barcelona";
   const baseUrl = getSiteBaseUrl();
 
@@ -154,6 +158,8 @@ export default async function CityLandingPage({ params }: { params: ParamsInput 
             </div>
           )}
         </LandingSection>
+
+        <LandingRealisticContent kind="city" items={items} city={city} priority={priority} />
 
         {exploreCards.length ? (
           <LandingSection
