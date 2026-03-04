@@ -32,6 +32,9 @@ export function SiteFooter() {
               ["/membresia", "Membresia"],
               ["/plataformas-para-trabajar-como-coach", "Plataformas para coaches"],
               ["/blog", "Blog"],
+              ["/que-es-el-coaching-y-para-que-sirve", "Qué es el coaching"],
+              ["/precios-coaching-espana", "Precios de coaching"],
+              ["/como-elegir-coach-2026", "Cómo elegir coach"],
               ["/faqs", "FAQs"],
               ["/contacto", "Contacto"],
             ].map(([href, label]) => (

@@ -1,31 +1,26 @@
-import { HomePage } from "@/components/home/home-page";
+﻿import { HomePage } from "@/components/home/home-page";
 import { buildMetadata } from "@/lib/seo";
 import "./home-v4.css";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = buildMetadata({
-  title: "Buscar un coach en Madrid y online",
+  title: "Buscar coach en España",
   description:
-    "Directorio para buscar coach en Madrid, Barcelona y toda España. Compara coach profesional, coach online y servicios de coaching por ciudad y especialidad.",
+    "Directorio para encontrar coach en España, online o presencial. Compara perfiles por ciudad, especialidad, modalidad y presupuesto.",
   path: "/",
   keywords: [
-    "coach madrid",
     "buscar un coach",
-    "coach profesional madrid",
+    "buscar coach en españa",
+    "directorio de coaches",
     "coach online",
-    "busco coach",
-    "coach en madrid",
-    "mejor coach madrid",
-    "alvaro maximo psicologo",
-    "busco coach barcelona",
+    "coach presencial",
+    "coach por ciudad",
+    "coach por especialidad",
+    "coaches certificados",
     "encontrar coach",
-    "coach madrid precio",
-    "servicios de coaching madrid",
+    "coaching en españa",
     "buscar coach",
-    "coaching madrid",
-    "coach directivo madrid",
-    "coach profesional en madrid",
   ],
 });
 

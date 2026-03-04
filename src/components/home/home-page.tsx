@@ -46,12 +46,12 @@ export async function HomePage() {
   const webPageSchema = {
     "@context": "https://schema.org",
     "@type": "WebPage",
-    name: "Buscar coach en Madrid y online",
+    name: "Buscar coach en España",
     url: "https://encuentratucoach.es/",
     description:
-      "Directorio para buscar un coach en Madrid, Barcelona y toda Espana. Compara coach profesional, coach online y servicios de coaching por especialidad.",
+      "Directorio para encontrar coach en Espana, online o presencial. Compara perfiles por ciudad, especialidad, modalidad y presupuesto.",
     keywords:
-      "coach madrid, buscar un coach, coach profesional madrid, coach online, busco coach, coach en madrid, mejor coach madrid, alvaro maximo psicologo, busco coach barcelona, encontrar coach, coach madrid precio, servicios de coaching madrid, buscar coach, coaching madrid, coach directivo madrid, coach profesional en madrid",
+      "buscar coach en espana, directorio de coaches, coach online, coach presencial, coach por ciudad, coach por especialidad, encontrar coach, coaches certificados",
   };
 
   return (

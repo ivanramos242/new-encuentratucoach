@@ -27,6 +27,7 @@ Rebuild desde cero de `EncuentraTuCoach` con enfoque SEO para España, directori
 - `npm run dev`
 - `npm run build`
 - `npm run lint`
+- `npm run seo:preflight`
 - `npm run typecheck`
 - `npm run prisma:generate`
 - `npm run prisma:migrate:dev`

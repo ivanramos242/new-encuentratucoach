@@ -64,6 +64,19 @@ function buildCoachWhatsappHref(rawPhone: string, coachName: string) {
   return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
 }
 
+function appearsMixedSpanishEnglish(text: string) {
+  const normalized = text.toLowerCase();
+  const spanishHits =
+    normalized.match(
+      /\b(que|para|con|sesion|sesiones|objetivo|objetivos|experiencia|metodologia|ciudad|presencial|online)\b/g,
+    )?.length ?? 0;
+  const englishHits =
+    normalized.match(/\b(the|and|with|for|session|sessions|experience|methodology|city|online|leadership)\b/g)
+      ?.length ?? 0;
+
+  return spanishHits >= 3 && englishHits >= 3;
+}
+
 export async function generateMetadata({
   params,
   searchParams,
@@ -128,6 +141,20 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
     .slice(0, 3);
   const categoryLabels = coach.categories.map((slug) => getCoachCategoryLabel(slug) ?? slug);
   const categoryNames = categoryLabels.join(", ");
+  const languageAuditText = [coach.headline, coach.bio, coach.aboutHtml].filter(Boolean).join(" ");
+  const mixedLanguageWarning = appearsMixedSpanishEnglish(languageAuditText);
+  const exploratoryLinks = [
+    { href: "/coaches", label: "Volver al directorio" },
+    { href: `/coaches/ciudad/${coach.citySlug}`, label: `Ver coaches en ${coach.cityLabel.split(",")[0]}` },
+    ...coach.categories.slice(0, 3).map((categorySlug) => ({
+      href: `/coaches/categoria/${categorySlug}`,
+      label: `Ver ${getCoachCategoryLabel(categorySlug)?.toLowerCase() ?? categorySlug}`,
+    })),
+    ...coach.categories.slice(0, 2).map((categorySlug) => ({
+      href: `/coaches/categoria/${categorySlug}/${coach.citySlug}`,
+      label: `${getCoachCategoryLabel(categorySlug) ?? categorySlug} en ${coach.cityLabel.split(",")[0]}`,
+    })),
+  ].filter((item, index, arr) => arr.findIndex((x) => x.href === item.href) === index);
 
   const baseUrl = getSiteBaseUrl();
   const coachUrl = `${baseUrl}/coaches/${coach.slug}`;
@@ -291,6 +318,13 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
                 <span className="sm:hidden"><br /></span>
                 <Link href="/coaches" className="font-semibold text-cyan-700 hover:text-cyan-800">Ver más coaches</Link>
               </p>
+
+              {mixedLanguageWarning && (isOwnCoachProfile || sessionUser?.role === "admin") ? (
+                <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  Auditoria SEO: detectamos mezcla de idioma en el perfil (ES/EN). Conviene unificar el copy por URL
+                  para evitar ruido semantico.
+                </div>
+              ) : null}
             </div>
 
             <div className="space-y-4">
@@ -509,6 +543,28 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
               <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                 {related.map((item) => (
                   <CoachCard key={item.id} coach={item} />
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {exploratoryLinks.length ? (
+            <section className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
+              <div className="mb-4">
+                <h2 className="text-2xl font-black tracking-tight text-zinc-950">Seguir explorando</h2>
+                <p className="mt-1 text-sm text-zinc-700">
+                  Atajos de ciudad y especialidad para profundizar sin perder contexto.
+                </p>
+              </div>
+              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                {exploratoryLinks.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="rounded-xl border border-black/10 bg-zinc-50 px-3 py-2 text-sm font-semibold text-zinc-900 hover:bg-white"
+                  >
+                    {item.label}
+                  </Link>
                 ))}
               </div>
             </section>

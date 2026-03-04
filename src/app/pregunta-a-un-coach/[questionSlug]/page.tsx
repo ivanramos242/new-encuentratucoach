@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageShell } from "@/components/layout/page-shell";
 import { JsonLd } from "@/components/seo/json-ld";
+import { getCoachCategoryLabel } from "@/lib/coach-category-catalog";
+import { listPublicCoachesMerged } from "@/lib/public-coaches";
 import {
   buildBreadcrumbJsonLd,
   buildMetadata,
@@ -14,6 +16,32 @@ type ParamsInput = Promise<{ questionSlug: string }>;
 
 function shouldIndexQaQuestion(answerCount: number) {
   return answerCount >= getQaMinAnswersIndexable();
+}
+
+function buildLandingForQuestion(input: { categorySlug?: string | null; citySlug?: string | null }) {
+  if (input.categorySlug && input.citySlug) {
+    return {
+      href: `/coaches/categoria/${input.categorySlug}/${input.citySlug}`,
+      label: `Ver coaches de esta especialidad en esta ciudad`,
+    };
+  }
+  if (input.categorySlug) {
+    const label = getCoachCategoryLabel(input.categorySlug) ?? input.categorySlug;
+    return {
+      href: `/coaches/categoria/${input.categorySlug}`,
+      label: `Ver coaches de ${label.toLowerCase()}`,
+    };
+  }
+  if (input.citySlug) {
+    return {
+      href: `/coaches/ciudad/${input.citySlug}`,
+      label: "Ver coaches en esta ciudad",
+    };
+  }
+  return {
+    href: "/coaches",
+    label: "Ver directorio completo",
+  };
 }
 
 export async function generateMetadata({ params }: { params: ParamsInput }): Promise<Metadata> {
@@ -42,6 +70,10 @@ export default async function QaQuestionDetailPage({ params }: { params: ParamsI
   const authorLabel = question.isAnonymous ? "Anonimo" : question.authorDisplayName;
   const shouldIndex = shouldIndexQaQuestion(answers.length);
   const qaMinAnswers = getQaMinAnswersIndexable();
+  const landingForQuestion = buildLandingForQuestion({
+    categorySlug: question.categorySlug,
+    citySlug: question.citySlug,
+  });
 
   const breadcrumb = buildBreadcrumbJsonLd([
     { name: "Inicio", path: "/" },
@@ -92,10 +124,22 @@ export default async function QaQuestionDetailPage({ params }: { params: ParamsI
       }
     : null;
 
-  const coachLinks = answers
+  const coachLinksFromAnswers = answers
     .slice(0, 3)
     .map((answer) => ({ slug: answer.coachSlug, name: answer.coachName }))
     .filter((item, index, arr) => arr.findIndex((x) => x.slug === item.slug) === index);
+  const allCoaches = await listPublicCoachesMerged();
+  const fallbackCoachLinks = allCoaches
+    .filter((coach) => {
+      const matchesCategory = question.categorySlug ? coach.categories.includes(question.categorySlug) : true;
+      const matchesCity = question.citySlug ? coach.citySlug === question.citySlug : true;
+      return matchesCategory && matchesCity;
+    })
+    .slice(0, 6)
+    .map((coach) => ({ slug: coach.slug, name: coach.name }));
+  const coachLinks = [...coachLinksFromAnswers, ...fallbackCoachLinks]
+    .filter((item, index, arr) => arr.findIndex((x) => x.slug === item.slug) === index)
+    .slice(0, 3);
 
   return (
     <>
@@ -214,6 +258,9 @@ export default async function QaQuestionDetailPage({ params }: { params: ParamsI
                     Ver coaches por ciudad
                   </Link>
                 ) : null}
+                <Link href={landingForQuestion.href} className="rounded-xl border border-black/10 bg-zinc-50 px-3 py-2 text-sm font-semibold text-zinc-900">
+                  {landingForQuestion.label}
+                </Link>
               </div>
             </div>
 

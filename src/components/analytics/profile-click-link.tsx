@@ -30,6 +30,7 @@ export function ProfileClickLink({
     trackDirectoryFunnelEvent(funnelEvent, {
       coachProfileId: coachId,
       sourcePath: sourcePath || getLastDirectoryPath() || window.location.pathname,
+      sourceModule: "coach_profile",
       metadata: { target },
     });
 
