@@ -256,11 +256,11 @@ export function MembershipCoachLanding({
           <div className="section-card" style={{ marginTop: 18 }}>
             <article>
               <h3>Búsquedas que generan intención</h3>
-              <div className="features">
+              <ul className="features">
                 {proof.searchExamples.map((item) => (
                   <li key={item}>{item}</li>
                 ))}
-              </div>
+              </ul>
             </article>
           </div>
         </section>
@@ -272,18 +272,18 @@ export function MembershipCoachLanding({
               <div className="sub">Sin comisión por cliente y con opción mensual o anual.</div>
             </div>
           </div>
-          <div className="grid grid2">
+          <div className="grid pricing">
             {plans.map((plan) => (
               <div className="pricebox" key={plan.code}>
                 <div className="headline"><span className="badge"><i className="fa-solid fa-layer-group" aria-hidden="true" /> {plan.name}</span></div>
                 <div className="price">{plan.price} <span style={{ fontSize: "1.05rem", fontWeight: 950 }}>/ {plan.intervalLabel}</span>{plan.originalPrice ? <small>Antes {plan.originalPrice}</small> : null}</div>
                 {plan.discountLabel ? <div className="callout" style={{ marginTop: 6 }}><b>Descuento activo:</b> {plan.discountLabel}</div> : null}
-                <div className="features">
+                <ul className="features">
                   <li>Visibilidad en el directorio</li>
                   <li>Reseñas y confianza</li>
                   <li>Métricas privadas</li>
                   <li>Contacto directo</li>
-                </div>
+                </ul>
                 <div className="price-actions">
                   <CoachJoinLink href={plan.ctaHref} label={plan.ctaLabel} source={`membership_plan_${plan.code}`} />
                   <Link className="btn" href="/coaches">Ver directorio</Link>

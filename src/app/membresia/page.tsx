@@ -1,3 +1,4 @@
+import "./membership-landing.css";
 import { MembershipCoachLanding } from "@/components/marketing/membership-coach-landing";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getOptionalSessionUser } from "@/lib/auth-server";
