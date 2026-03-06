@@ -36,12 +36,12 @@ export function getCitySeoContent(citySlug: string, cityName: string): LandingSe
 
   if (citySlug === "madrid") {
     return {
-      title: "Contratar coach en Madrid",
+      title: "Buscar coach en Madrid",
       metaDescription:
-        "Compara y contrata coaches en Madrid por especialidad, modalidad, confianza y precio por sesión.",
+        "Busca coach en Madrid por especialidad, modalidad, precio y señales de confianza. Compara perfiles y contacta directamente.",
       keywords: [
+        "buscar coach madrid",
         "coach madrid",
-        "contratar coach madrid",
         "coach en madrid",
         "coaching madrid",
         "coach profesional madrid",
@@ -49,18 +49,18 @@ export function getCitySeoContent(citySlug: string, cityName: string): LandingSe
       ],
       hero: {
         badge: "Ciudad",
-        title: "Contrata tu coach en Madrid con mejor encaje",
+        title: "Encuentra coach en Madrid con mejor encaje",
         description:
-          "Compara perfiles reales por especialidad, modalidad y precio para contactar solo con coaches que encajan contigo.",
+          "Compara perfiles reales en Madrid por especialidad, modalidad y precio para contactar solo con coaches que encajan contigo.",
       },
       faq: [
         {
           q: "¿Cómo elegir coach en Madrid sin perder tiempo?",
-          a: "Define objetivo, presupuesto y modalidad. Compara 2 o 3 perfiles y contacta con un mensaje concreto.",
+          a: "Define tu objetivo, presupuesto y modalidad. Compara dos o tres perfiles y escribe primero a los que mejor encajen.",
         },
         {
           q: "¿Qué rango de precio es habitual en Madrid?",
-          a: "Depende de especialidad y experiencia. Aquí puedes comparar perfiles por precio base por sesión.",
+          a: "Depende de la especialidad y experiencia. Aquí puedes comparar perfiles con precio base visible por sesión.",
         },
       ],
     };
@@ -68,12 +68,12 @@ export function getCitySeoContent(citySlug: string, cityName: string): LandingSe
 
   if (citySlug === "barcelona") {
     return {
-      title: "Contratar coach en Barcelona",
+      title: "Buscar coach en Barcelona",
       metaDescription:
-        "Compara y contrata coaches en Barcelona por especialidad, formato de sesión y rango de precio.",
+        "Busca coach en Barcelona por especialidad, formato de sesión y rango de precio. Compara perfiles antes de contactar.",
       keywords: [
+        "buscar coach barcelona",
         "coach barcelona",
-        "contratar coach barcelona",
         "coach en barcelona",
         "coaching barcelona",
         "coach personal barcelona",
@@ -82,7 +82,7 @@ export function getCitySeoContent(citySlug: string, cityName: string): LandingSe
         badge: "Ciudad",
         title: "Coaches en Barcelona listos para empezar proceso",
         description:
-          "Filtra por enfoque, formato y presupuesto para contactar perfiles con mayor probabilidad de resultado.",
+          "Filtra por enfoque, formato y presupuesto para contactar perfiles con mayor probabilidad de encaje.",
       },
       faq: [
         {
@@ -98,12 +98,12 @@ export function getCitySeoContent(citySlug: string, cityName: string): LandingSe
   }
 
   return {
-    title: `Contratar coach en ${cityName}`,
-    metaDescription: `Encuentra y contrata coach en ${cityName} por especialidad, modalidad y presupuesto.`,
-    keywords: [`coach en ${cityLower}`, `contratar coach ${cityLower}`, `buscar coach ${cityLower}`],
+    title: `Buscar coach en ${cityName}`,
+    metaDescription: `Busca coach en ${cityName} por especialidad, modalidad y presupuesto. Compara perfiles antes de contactar.`,
+    keywords: [`buscar coach ${cityLower}`, `coach en ${cityLower}`, `coaching ${cityLower}`],
     hero: {
       badge: "Ciudad",
-      title: `Coaches en ${cityName} para contratar con criterio`,
+      title: `Coaches en ${cityName} para decidir con criterio`,
       description:
         "Explora perfiles por especialidad y formato. Compara precio, experiencia y confianza antes de contactar.",
     },
@@ -125,10 +125,10 @@ export function getCategorySeoContent(category: CategoryLike): LandingSeoContent
 
   if (category.slug === "personal") {
     return {
-      title: "Contratar coaching personal en España",
+      title: "Buscar coaching personal en España",
       metaDescription:
-        "Compara y contrata coaches de desarrollo personal en España por ciudad, modalidad y precio.",
-      keywords: ["coaching personal", "contratar coach personal", "coach personal madrid", "coaching personal online"],
+        "Busca coaches de desarrollo personal en España por ciudad, modalidad y precio. Compara perfiles y elige mejor.",
+      keywords: ["coaching personal", "buscar coach personal", "coach personal madrid", "coaching personal online"],
       hero: {
         badge: "Especialidad",
         title: "Coaching personal para objetivos concretos y accionables",
@@ -137,7 +137,7 @@ export function getCategorySeoContent(category: CategoryLike): LandingSeoContent
       },
       faq: [
         {
-          q: "¿Cuándo tiene sentido contratar coaching personal?",
+          q: "¿Cuándo tiene sentido buscar coaching personal?",
           a: "Cuando buscas acompañamiento estructurado para cambiar hábitos, tomar decisiones o ganar foco.",
         },
         {
@@ -150,10 +150,10 @@ export function getCategorySeoContent(category: CategoryLike): LandingSeoContent
 
   if (category.slug === "carrera") {
     return {
-      title: "Contratar coaching de carrera en España",
+      title: "Buscar coaching de carrera en España",
       metaDescription:
-        "Encuentra y contrata coaches de carrera en España. Compara experiencia, modalidad y precio por sesión.",
-      keywords: ["coaching de carrera", "contratar coach de carrera", "coach profesional", "coaching carrera online"],
+        "Encuentra coaches de carrera en España. Compara experiencia, modalidad y precio por sesión antes de contactar.",
+      keywords: ["coaching de carrera", "buscar coach de carrera", "coach profesional", "coaching carrera online"],
       hero: {
         badge: "Especialidad",
         title: "Coaching de carrera para transición laboral y crecimiento",
@@ -174,18 +174,18 @@ export function getCategorySeoContent(category: CategoryLike): LandingSeoContent
   }
 
   return {
-    title: `Contratar ${category.name} en España`,
-    metaDescription: `Encuentra y contrata ${lower} en España por ciudad, modalidad y presupuesto.`,
-    keywords: [lower, `contratar coach ${lower}`, `${lower} españa`],
+    title: `Buscar ${category.name} en España`,
+    metaDescription: `Encuentra ${lower} en España por ciudad, modalidad y presupuesto. Compara perfiles antes de contactar.`,
+    keywords: [lower, `buscar coach ${lower}`, `${lower} españa`],
     hero: {
       badge: "Especialidad",
-      title: `${category.name} en España para contratar mejor`,
+      title: `${category.name} en España para elegir mejor`,
       description: `${category.shortDescription} Compara opciones por ciudad, formato y precio antes de contactar.`,
     },
     faq: [
       {
         q: `¿Cómo elegir ${lower}?`,
-        a: "Define objetivo, compara enfoque de trabajo y filtra por modalidad y rango de precio.",
+        a: "Define tu objetivo, compara enfoque de trabajo y filtra por modalidad y rango de precio.",
       },
       {
         q: "¿Cuántos perfiles conviene comparar?",
@@ -203,20 +203,24 @@ export function getCategoryCitySeoContent(
 ): LandingSeoContent {
   if (categorySlug === "liderazgo" && citySlug === "madrid") {
     return {
-      title: "Contratar coaching de liderazgo en Madrid",
+      title: "Buscar coaching de liderazgo en Madrid",
       metaDescription:
-        "Compara y contrata coaches de liderazgo en Madrid por experiencia, modalidad y precio.",
-      keywords: ["coach liderazgo madrid", "contratar coach liderazgo madrid", "coach directivo madrid"],
+        "Busca coaches de liderazgo en Madrid por experiencia, modalidad y precio. Compara perfiles antes de contactar.",
+      keywords: [
+        "coach liderazgo madrid",
+        "buscar coach liderazgo madrid",
+        "coach directivo madrid",
+      ],
       hero: {
         badge: "Especialidad + ciudad",
-        title: "Coaching de liderazgo en Madrid para contratar con confianza",
+        title: "Coaching de liderazgo en Madrid para decidir con confianza",
         description:
           "Encuentra coaches para comunicación, gestión de equipos y toma de decisiones en contexto profesional.",
       },
       faq: [
         {
           q: "¿En qué casos ayuda el coaching de liderazgo?",
-          a: "Suele enfocarse en comunicación, delegación, conflictos y decisiones de equipo.",
+          a: "Suele enfocarse en comunicación, delegación, conflictos y toma de decisiones con equipos.",
         },
         {
           q: "¿Qué revisar antes de elegir coach?",
@@ -230,12 +234,12 @@ export function getCategoryCitySeoContent(
   const cityLower = cityName.toLowerCase();
 
   return {
-    title: `Contratar ${categoryName} en ${cityName}`,
-    metaDescription: `Encuentra y contrata ${categoryLower} en ${cityName}. Compara perfiles por modalidad y precio.`,
-    keywords: [`${categoryLower} ${cityLower}`, `contratar ${categoryLower} ${cityLower}`, `${categoryLower} en ${cityLower}`],
+    title: `Buscar ${categoryName} en ${cityName}`,
+    metaDescription: `Encuentra ${categoryLower} en ${cityName}. Compara perfiles por modalidad, experiencia y precio.`,
+    keywords: [`${categoryLower} ${cityLower}`, `buscar ${categoryLower} ${cityLower}`, `${categoryLower} en ${cityLower}`],
     hero: {
       badge: "Especialidad + ciudad",
-      title: `${categoryName} en ${cityName} para contratar con menos riesgo`,
+      title: `${categoryName} en ${cityName} para elegir con menos riesgo`,
       description:
         "Compara perfiles de esta especialidad en tu ciudad y contacta con una shortlist clara.",
     },
@@ -254,15 +258,15 @@ export function getCategoryCitySeoContent(
 
 export function getOnlineSeoContent(): LandingSeoContent {
   return {
-    title: "Contratar coaching online en España",
+    title: "Buscar coaching online en España",
     metaDescription:
-      "Encuentra y contrata coaches online en España por especialidad, experiencia, confianza y precio.",
-    keywords: ["coaching online", "contratar coach online", "coaching online españa"],
+      "Encuentra coaches online en España por especialidad, experiencia, confianza y precio. Compara perfiles antes de elegir.",
+    keywords: ["coaching online", "buscar coach online", "coaching online españa"],
     hero: {
       badge: "Modalidad",
-      title: "Coaching online para contratar rápido y sin desplazamientos",
+      title: "Coaching online para empezar antes y sin desplazamientos",
       description:
-        "Compara coaches online por especialidad, enfoque y precio para empezar antes.",
+        "Compara coaches online por especialidad, enfoque y precio para elegir con más claridad.",
     },
     faq: [
       {
@@ -279,13 +283,13 @@ export function getOnlineSeoContent(): LandingSeoContent {
 
 export function getCertifiedSeoContent(): LandingSeoContent {
   return {
-    title: "Contratar coaches certificados en España",
+    title: "Buscar coaches certificados en España",
     metaDescription:
-      "Encuentra y contrata coaches certificados en España. Compara especialidad, ciudad y precio.",
-    keywords: ["coach certificado", "contratar coach certificado", "coaching certificado españa"],
+      "Encuentra coaches certificados en España. Compara especialidad, ciudad y precio con más señales de confianza.",
+    keywords: ["coach certificado", "buscar coach certificado", "coaching certificado españa"],
     hero: {
       badge: "Confianza",
-      title: "Coaches certificados para contratar con mayor seguridad",
+      title: "Coaches certificados para elegir con mayor seguridad",
       description:
         "Perfiles con certificación verificada para comparar opciones y contactar con más confianza.",
     },

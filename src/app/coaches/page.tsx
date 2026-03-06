@@ -119,12 +119,12 @@ export async function generateMetadata({
   const city = locationSlug ? cities.find((item) => item.slug === locationSlug) : null;
   const title =
     category && city
-      ? `${category.name} en ${city.name}`
+      ? `Buscar ${category.name.toLowerCase()} en ${city.name}`
       : category
-        ? category.name
+        ? `Buscar ${category.name.toLowerCase()}`
         : city
-          ? `Coaches en ${city.name}`
-          : "Directorio de coaches en España";
+          ? `Buscar coach en ${city.name}`
+          : "Buscar coach en España";
 
   const noindex = hasMeaningfulQueryParams(raw);
   const canonicalPath = resolveCanonicalForDirectory({
@@ -136,13 +136,14 @@ export async function generateMetadata({
   return buildMetadata({
     title,
     description:
-      "Directorio de coaches en España para buscar por ciudad, especialidad, modalidad y presupuesto.",
+      "Busca coach en España por ciudad, especialidad, modalidad y presupuesto. Compara perfiles reales y contacta directamente.",
     path: "/coaches",
     canonicalUrl: `${getSiteBaseUrl()}${canonicalPath}`,
     noindex,
     keywords: [
       "directorio de coaches",
       "buscar coach",
+      "buscar un coach",
       "coach madrid",
       "coach barcelona",
       "coach online",
@@ -189,13 +190,30 @@ export default async function CoachesDirectoryPage({
       <JsonLd data={schema} />
       <PageHero
         badge="Directorio de coaches"
-        title="Encuentra coaches en España"
-        description="Filtra por especialidad, ciudad, modalidad, presupuesto e idiomas. Contacta directamente y compara perfiles antes de elegir."
+        title="Buscar coach en España"
+        description="Filtra por especialidad, ciudad, modalidad, presupuesto e idiomas. Compara perfiles reales y contacta directamente antes de elegir."
       />
 
       <PageShell className="pt-8" containerClassName="max-w-[1760px] lg:px-10">
         <DirectoryShortlistCta />
         {isAdmin ? <TrustStrip stats={trustStats} /> : null}
+        <div className="rounded-3xl border border-black/10 bg-white p-4 shadow-sm sm:p-5">
+          <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-zinc-700">
+            <span className="text-zinc-500">Rutas rápidas:</span>
+            <Link href="/coaches/ciudad/madrid" className="rounded-full border border-black/10 bg-zinc-50 px-3 py-1.5 hover:bg-white">
+              Coach en Madrid
+            </Link>
+            <Link href="/coaches/ciudad/barcelona" className="rounded-full border border-black/10 bg-zinc-50 px-3 py-1.5 hover:bg-white">
+              Coach en Barcelona
+            </Link>
+            <Link href="/coaches/modalidad/online" className="rounded-full border border-black/10 bg-zinc-50 px-3 py-1.5 hover:bg-white">
+              Coach online
+            </Link>
+            <Link href="/como-elegir-coach-2026" className="rounded-full border border-black/10 bg-zinc-50 px-3 py-1.5 hover:bg-white">
+              Cómo elegir coach
+            </Link>
+          </div>
+        </div>
         <div className="mt-6 grid gap-8 max-[390px]:gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
           <aside className="h-fit rounded-3xl border border-black/10 bg-white p-4 shadow-sm sm:p-6 xl:sticky xl:top-24">
             <div className="xl:hidden">
