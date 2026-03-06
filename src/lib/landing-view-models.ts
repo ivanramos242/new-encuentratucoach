@@ -1,4 +1,4 @@
-import { getCategoryBySlug, getCityBySlug } from "@/lib/directory";
+import { getCategoryBySlug, getCityBySlug, isIndexableCategorySlug, resolveCitySlug } from "@/lib/directory";
 import type { LandingContextLink, LandingExploreCard } from "@/lib/landing-content";
 import type { CoachProfile } from "@/types/domain";
 
@@ -28,6 +28,7 @@ export function countCities(items: CoachProfile[]) {
 
 export function topCategoryItems(items: CoachProfile[], limit = 6): CountItem[] {
   return Array.from(countCategories(items).entries())
+    .filter(([slug]) => isIndexableCategorySlug(slug))
     .map(([slug, count]) => ({
       slug,
       count,
@@ -39,6 +40,8 @@ export function topCategoryItems(items: CoachProfile[], limit = 6): CountItem[] 
 
 export function topCityItems(items: CoachProfile[], limit = 6): CountItem[] {
   return Array.from(countCities(items).entries())
+    .map(([slug, count]) => [resolveCitySlug(slug), count] as const)
+    .filter((item): item is readonly [string, number] => Boolean(item[0]))
     .map(([slug, count]) => ({
       slug,
       count,

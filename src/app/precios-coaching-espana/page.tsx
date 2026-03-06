@@ -69,7 +69,10 @@ export default function CoachingPricingGuidePage() {
 
       <PageShell className="space-y-6 pt-8">
         <section className="rounded-3xl border border-cyan-200 bg-cyan-50 p-6 shadow-sm">
-          <p className="text-sm font-black uppercase tracking-wide text-cyan-900">Resumen rápido</p>
+          <p className="text-sm font-black uppercase tracking-wide text-cyan-900">
+            <i className="fa-solid fa-wallet mr-2" aria-hidden="true" />
+            Resumen rápido
+          </p>
           <p className="mt-3 text-base leading-7 text-zinc-800">
             La mayoría de precios se explican por tres variables: especialidad, experiencia y formato. El objetivo no
             es encontrar la sesión más barata, sino la mejor relación entre encaje, proceso y coste total.
@@ -77,17 +80,23 @@ export default function CoachingPricingGuidePage() {
         </section>
 
         <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-          <h2 className="text-2xl font-black tracking-tight text-zinc-950">Rangos orientativos por sesión</h2>
+          <h2 className="text-2xl font-black tracking-tight text-zinc-950">
+            <i className="fa-solid fa-tags mr-2 text-cyan-700" aria-hidden="true" />
+            Rangos orientativos por sesión
+          </h2>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             {[
-              ["Coaching personal", "60€ - 120€", "Suele variar por experiencia, modalidad y duración de la sesión."],
-              ["Coaching de carrera", "70€ - 140€", "Sube cuando el proceso incluye reposicionamiento, entrevistas o estrategia laboral."],
-              ["Coaching de liderazgo", "90€ - 220€", "Los precios suelen crecer con el nivel de responsabilidad y complejidad del contexto."],
-              ["Coaching ejecutivo", "120€ - 300€", "Es el rango con mayor dispersión por perfil de cliente y especialización."],
-            ].map(([title, price, text]) => (
+              ["fa-user", "Coaching personal", "60€ - 120€", "Suele variar por experiencia, modalidad y duración de la sesión."],
+              ["fa-briefcase", "Coaching de carrera", "70€ - 140€", "Sube cuando el proceso incluye reposicionamiento, entrevistas o estrategia laboral."],
+              ["fa-people-group", "Coaching de liderazgo", "90€ - 220€", "Los precios suelen crecer con el nivel de responsabilidad y complejidad del contexto."],
+              ["fa-building", "Coaching ejecutivo", "120€ - 300€", "Es el rango con mayor dispersión por perfil de cliente y especialización."],
+            ].map(([icon, title, price, text]) => (
               <article key={title} className="rounded-2xl border border-black/10 bg-zinc-50 p-4">
                 <div className="flex items-center justify-between gap-3">
-                  <h3 className="text-base font-black tracking-tight text-zinc-950">{title}</h3>
+                  <h3 className="text-base font-black tracking-tight text-zinc-950">
+                    <i className={`fa-solid ${icon} mr-2 text-cyan-700`} aria-hidden="true" />
+                    {title}
+                  </h3>
                   <span className="rounded-full border border-black/10 bg-white px-3 py-1 text-xs font-semibold text-zinc-900">{price}</span>
                 </div>
                 <p className="mt-2 text-sm leading-6 text-zinc-700">{text}</p>
@@ -101,7 +110,10 @@ export default function CoachingPricingGuidePage() {
 
         <section className="grid gap-6 lg:grid-cols-[1.05fr_.95fr]">
           <article className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-black tracking-tight text-zinc-950">Qué hace subir o bajar el precio</h2>
+            <h2 className="text-2xl font-black tracking-tight text-zinc-950">
+              <i className="fa-solid fa-sliders mr-2 text-cyan-700" aria-hidden="true" />
+              Qué hace subir o bajar el precio
+            </h2>
             <ul className="mt-4 grid gap-2 text-sm text-zinc-700">
               <li className="rounded-xl border border-black/10 bg-zinc-50 px-3 py-2">Especialidad y nivel de complejidad del proceso.</li>
               <li className="rounded-xl border border-black/10 bg-zinc-50 px-3 py-2">Trayectoria, certificación y reputación del coach.</li>
@@ -111,7 +123,10 @@ export default function CoachingPricingGuidePage() {
           </article>
 
           <article className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-black tracking-tight text-zinc-950">Cómo comparar precios con criterio</h2>
+            <h2 className="text-2xl font-black tracking-tight text-zinc-950">
+              <i className="fa-solid fa-scale-balanced mr-2 text-cyan-700" aria-hidden="true" />
+              Cómo comparar precios con criterio
+            </h2>
             <ol className="mt-4 grid gap-2 text-sm text-zinc-700">
               <li className="rounded-xl border border-black/10 bg-zinc-50 px-3 py-2">1. Define objetivo y horizonte temporal.</li>
               <li className="rounded-xl border border-black/10 bg-zinc-50 px-3 py-2">2. Compara especialidad real y tipo de cliente al que suele ayudar.</li>
@@ -122,25 +137,31 @@ export default function CoachingPricingGuidePage() {
         </section>
 
         <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-          <h2 className="text-2xl font-black tracking-tight text-zinc-950">Recursos útiles antes de decidir</h2>
+          <h2 className="text-2xl font-black tracking-tight text-zinc-950">
+            <i className="fa-solid fa-link mr-2 text-cyan-700" aria-hidden="true" />
+            Recursos útiles antes de decidir
+          </h2>
           <div className="mt-4 grid gap-3 md:grid-cols-3">
             <Link href="/como-elegir-coach-2026" className="rounded-2xl border border-black/10 bg-zinc-50 p-4 hover:bg-white">
-              <p className="text-sm font-black text-zinc-950">Cómo elegir coach</p>
+              <p className="text-sm font-black text-zinc-950"><i className="fa-solid fa-list-check mr-2 text-cyan-700" aria-hidden="true" />Cómo elegir coach</p>
               <p className="mt-2 text-sm text-zinc-700">Checklist para pasar del precio al encaje real.</p>
             </Link>
             <Link href="/coaches/modalidad/online" className="rounded-2xl border border-black/10 bg-zinc-50 p-4 hover:bg-white">
-              <p className="text-sm font-black text-zinc-950">Coaching online</p>
+              <p className="text-sm font-black text-zinc-950"><i className="fa-solid fa-laptop mr-2 text-cyan-700" aria-hidden="true" />Coaching online</p>
               <p className="mt-2 text-sm text-zinc-700">Filtra perfiles remotos y compara precios y modalidades.</p>
             </Link>
             <Link href="/coaches/certificados" className="rounded-2xl border border-black/10 bg-zinc-50 p-4 hover:bg-white">
-              <p className="text-sm font-black text-zinc-950">Coaches certificados</p>
+              <p className="text-sm font-black text-zinc-950"><i className="fa-solid fa-shield-halved mr-2 text-cyan-700" aria-hidden="true" />Coaches certificados</p>
               <p className="mt-2 text-sm text-zinc-700">Añade señales de confianza a la comparación final.</p>
             </Link>
           </div>
         </section>
 
         <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-          <h2 className="text-2xl font-black tracking-tight text-zinc-950">Preguntas frecuentes</h2>
+          <h2 className="text-2xl font-black tracking-tight text-zinc-950">
+            <i className="fa-solid fa-circle-question mr-2 text-cyan-700" aria-hidden="true" />
+            Preguntas frecuentes
+          </h2>
           <div className="mt-4 grid gap-3">
             {FAQ_ITEMS.map((item) => (
               <details key={item.q} className="rounded-2xl border border-black/10 bg-zinc-50 p-4">
@@ -152,7 +173,10 @@ export default function CoachingPricingGuidePage() {
         </section>
 
         <section className="rounded-3xl border border-cyan-200 bg-cyan-50 p-6 shadow-sm">
-          <h2 className="text-2xl font-black tracking-tight text-zinc-950">Siguiente paso recomendado</h2>
+          <h2 className="text-2xl font-black tracking-tight text-zinc-950">
+            <i className="fa-solid fa-arrow-right mr-2 text-cyan-700" aria-hidden="true" />
+            Siguiente paso recomendado
+          </h2>
           <p className="mt-2 text-sm leading-6 text-zinc-700">
             Si ya sabes qué rango te encaja, compara perfiles reales con precio visible y contexto suficiente para decidir.
           </p>

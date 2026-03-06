@@ -7,7 +7,7 @@ import { LandingRealisticContent } from "@/components/directory/landing-realisti
 import { LandingSection } from "@/components/directory/landing-section";
 import { LandingShell } from "@/components/directory/landing-shell";
 import { JsonLd } from "@/components/seo/json-ld";
-import { getCategoryBySlug, getCityBySlug } from "@/lib/directory";
+import { getCategoryBySlug, getCityBySlug, resolveCitySlug } from "@/lib/directory";
 import { getCategoryCitySeoContent } from "@/lib/landing-content";
 import { isPriorityLanding } from "@/lib/landing-realism";
 import {
@@ -28,7 +28,9 @@ async function getCategoryCityLandingData(categoriaSlug: string, ciudadSlug: str
   if (!category || !city) return null;
 
   const coaches = await listPublicCoachesMerged();
-  const items = coaches.filter((coach) => coach.categories.includes(category.slug) && coach.citySlug === city.slug);
+  const items = coaches.filter(
+    (coach) => coach.categories.includes(category.slug) && resolveCitySlug(coach.citySlug) === city.slug,
+  );
   const noindex = shouldNoIndexLanding({ coachCount: items.length, hasEditorialContent: true });
   const priority = isPriorityLanding({
     kind: "category_city",
@@ -40,7 +42,7 @@ async function getCategoryCityLandingData(categoriaSlug: string, ciudadSlug: str
 
   const sameCategoryAllCities = coaches.filter((coach) => coach.categories.includes(category.slug));
   const otherCities = topCityItems(
-    sameCategoryAllCities.filter((coach) => coach.citySlug !== city.slug),
+    sameCategoryAllCities.filter((coach) => resolveCitySlug(coach.citySlug) !== city.slug),
     6,
   );
 

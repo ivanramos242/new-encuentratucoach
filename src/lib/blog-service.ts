@@ -21,6 +21,13 @@ export type PublicBlogPostDetail = PublicBlogPostSummary & {
   noindex: boolean;
 };
 
+export type PublicBlogSitemapItem = {
+  slug: string;
+  publishedAt: string;
+  canonicalUrl: string | null;
+  noindex: boolean;
+};
+
 export type AdminBlogPostListItem = {
   id: string;
   slug: string;
@@ -137,6 +144,55 @@ export async function getPublishedBlogPostBySlug(slug: string): Promise<PublicBl
     return mapDbPostToPublic(post, override);
   } catch (error) {
     if (isMissingBlogTablesError(error)) return null;
+    throw error;
+  }
+}
+
+export async function listPublishedBlogPostsForSitemap(limit = 500): Promise<PublicBlogSitemapItem[]> {
+  try {
+    const rows = await prisma.blogPost.findMany({
+      where: {
+        isPublished: true,
+      },
+      select: {
+        slug: true,
+        publishedAt: true,
+        createdAt: true,
+      },
+      orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+      take: limit,
+    });
+
+    const routePaths = rows.map((post) => `/blog/${post.slug}`);
+    const overrides =
+      routePaths.length > 0
+        ? await prisma.seoMetaOverride.findMany({
+            where: {
+              routePath: {
+                in: routePaths,
+              },
+            },
+            select: {
+              routePath: true,
+              canonicalUrl: true,
+              noindex: true,
+            },
+          })
+        : [];
+
+    const overridesByPath = new Map(overrides.map((override) => [override.routePath, override]));
+
+    return rows.map((post) => {
+      const override = overridesByPath.get(`/blog/${post.slug}`);
+      return {
+        slug: post.slug,
+        publishedAt: (post.publishedAt || post.createdAt).toISOString(),
+        canonicalUrl: override?.canonicalUrl ?? null,
+        noindex: Boolean(override?.noindex),
+      };
+    });
+  } catch (error) {
+    if (isMissingBlogTablesError(error)) return [];
     throw error;
   }
 }

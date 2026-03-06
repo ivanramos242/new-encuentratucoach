@@ -13,6 +13,25 @@ type ParamsInput = Promise<{ postSlug: string }>;
 
 export const dynamic = "force-dynamic";
 
+function compactSeoTitle(title: string) {
+  const normalized = title.replace(/\s+/g, " ").trim();
+  if (normalized.length <= 58) return normalized;
+
+  const softBreaks = [" | ", " - ", ": ", " – "];
+  for (const token of softBreaks) {
+    const [head] = normalized.split(token);
+    if (head && head.length >= 28 && head.length <= 58) return head.trim();
+  }
+
+  return `${normalized.slice(0, 55).trimEnd()}...`;
+}
+
+function compactSeoDescription(description: string) {
+  const normalized = description.replace(/\s+/g, " ").trim();
+  if (normalized.length <= 155) return normalized;
+  return `${normalized.slice(0, 152).trimEnd()}...`;
+}
+
 export async function generateMetadata({ params }: { params: ParamsInput }): Promise<Metadata> {
   const { postSlug } = await params;
   const post = await getPublishedBlogPostBySlug(postSlug);
@@ -24,8 +43,8 @@ export async function generateMetadata({ params }: { params: ParamsInput }): Pro
     });
   }
   return buildMetadata({
-    title: post.seoTitle || post.title,
-    description: post.seoDescription || post.excerpt,
+    title: compactSeoTitle(post.seoTitle || post.title),
+    description: compactSeoDescription(post.seoDescription || post.excerpt),
     path: `/blog/${post.slug}`,
     canonicalUrl: post.canonicalUrl || undefined,
     noindex: post.noindex,

@@ -11,6 +11,7 @@ export const metadata = buildMetadata({
   description:
     "Datos del titular, información legal y datos de contacto de EncuentraTuCoach.es conforme a LSSI-CE y normativa aplicable.",
   path: "/aviso-legal",
+  noindex: true,
   keywords: ["aviso legal", "LSSI-CE", "titular web", "encuentratucoach"],
 });
 

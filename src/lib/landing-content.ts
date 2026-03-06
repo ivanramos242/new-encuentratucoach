@@ -176,7 +176,7 @@ export function getCategorySeoContent(category: CategoryLike): LandingSeoContent
   return {
     title: `Contratar ${category.name} en España`,
     metaDescription: `Encuentra y contrata ${lower} en España por ciudad, modalidad y presupuesto.`,
-    keywords: [lower, `contratar coach ${lower}`, `${lower} espana`],
+    keywords: [lower, `contratar coach ${lower}`, `${lower} españa`],
     hero: {
       badge: "Especialidad",
       title: `${category.name} en España para contratar mejor`,
@@ -257,7 +257,7 @@ export function getOnlineSeoContent(): LandingSeoContent {
     title: "Contratar coaching online en España",
     metaDescription:
       "Encuentra y contrata coaches online en España por especialidad, experiencia, confianza y precio.",
-    keywords: ["coaching online", "contratar coach online", "coaching online espana"],
+    keywords: ["coaching online", "contratar coach online", "coaching online españa"],
     hero: {
       badge: "Modalidad",
       title: "Coaching online para contratar rápido y sin desplazamientos",
@@ -282,7 +282,7 @@ export function getCertifiedSeoContent(): LandingSeoContent {
     title: "Contratar coaches certificados en España",
     metaDescription:
       "Encuentra y contrata coaches certificados en España. Compara especialidad, ciudad y precio.",
-    keywords: ["coach certificado", "contratar coach certificado", "coaching certificado espana"],
+    keywords: ["coach certificado", "contratar coach certificado", "coaching certificado españa"],
     hero: {
       badge: "Confianza",
       title: "Coaches certificados para contratar con mayor seguridad",

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { CoachCard } from "@/components/directory/coach-card";
 import { MembershipCoachLandingEnhancer } from "@/components/marketing/membership-coach-landing-enhancer";
 import { trackAcquisitionEvent } from "@/lib/acquisition-analytics";
@@ -59,6 +59,38 @@ export function MembershipCoachLanding({
   plans,
   proof,
 }: MembershipCoachLandingProps) {
+  const previewStats = useMemo(
+    () => [
+      {
+        title: proof.publishedCount > 0 ? `${proof.publishedCount}+ perfiles` : "Perfiles profesionales listos para publicarse",
+        text: "Fichas enfocadas en especialidad, precio, modalidad y contacto visible.",
+      },
+      {
+        title: proof.totalReviews > 0 ? `${proof.totalReviews}+ reseñas` : "Confianza visible desde el perfil",
+        text: proof.totalReviews > 0 ? "Contexto adicional para reforzar la decisión del cliente." : "Certificación, propuesta de valor y estructura para convertir mejor.",
+      },
+    ],
+    [proof.publishedCount, proof.totalReviews],
+  );
+
+  const platformSignals = useMemo(
+    () => [
+      proof.publishedCount > 0 ? `${proof.publishedCount}+ perfiles activos.` : "Perfiles optimizados para ciudad, especialidad y modalidad.",
+      proof.certifiedCount > 0 ? `${proof.certifiedCount}+ coaches con verificación visible.` : "Señales de confianza visibles para reforzar autoridad.",
+      proof.totalReviews > 0 ? `${proof.totalReviews}+ reseñas publicadas.` : "Estructura preparada para convertir visitas en conversaciones.",
+    ],
+    [proof.certifiedCount, proof.publishedCount, proof.totalReviews],
+  );
+
+  const exampleSignals = useMemo(
+    () => [
+      proof.exampleViews > 0 ? `${proof.exampleViews} visitas aproximadas en el perfil de referencia.` : "Ejemplo de ficha orientada a captar visitas cualificadas.",
+      proof.exampleClicks > 0 ? `${proof.exampleClicks} clics acumulados en canales de contacto.` : "Canales de contacto visibles y listos para convertir.",
+      "Con mejor ficha, sube la probabilidad de pasar de visita a conversación.",
+    ],
+    [proof.exampleClicks, proof.exampleViews],
+  );
+
   useEffect(() => {
     trackAcquisitionEvent("coach_membership_view", {
       event_category: "coach_growth",
@@ -129,8 +161,12 @@ export function MembershipCoachLanding({
                   </div>
                   <div className="body">
                     <div className="grid2">
-                      <div className="stat"><b>{proof.publishedCount}+ perfiles</b><span>activos en la plataforma</span></div>
-                      <div className="stat"><b>{proof.totalReviews}+ reseñas</b><span>que refuerzan confianza</span></div>
+                      {previewStats.map((item) => (
+                        <div key={item.title} className="stat">
+                          <b>{item.title}</b>
+                          <span>{item.text}</span>
+                        </div>
+                      ))}
                     </div>
                     {exampleCoach ? <div className="mock-img membership-coach-card"><CoachCard coach={exampleCoach} density="airy" /></div> : null}
                   </div>
@@ -227,18 +263,18 @@ export function MembershipCoachLanding({
         <section id="etc-pruebas">
           <div className="section-head">
             <div>
-              <h2 className="h2">Pruebas y demanda que ya existe</h2>
-              <div className="sub">Nada de promesas vagas: visibilidad, reseñas y ejemplos concretos de búsqueda.</div>
+              <h2 className="h2">Señales de plataforma y demanda</h2>
+              <div className="sub">Visibilidad, confianza y ejemplos concretos de búsqueda, sin mostrar contadores vacíos.</div>
             </div>
           </div>
           <div className="grid grid2">
             <div className="section-card">
               <article>
-                <h3>Señales reales de plataforma</h3>
+                <h3>Señales de plataforma</h3>
                 <ul>
-                  <li>{proof.publishedCount}+ perfiles activos.</li>
-                  <li>{proof.certifiedCount}+ coaches con verificación visible.</li>
-                  <li>{proof.totalReviews}+ reseñas publicadas.</li>
+                  {platformSignals.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
                 </ul>
               </article>
             </div>
@@ -246,9 +282,9 @@ export function MembershipCoachLanding({
               <article>
                 <h3>Ejemplo de perfil</h3>
                 <ul>
-                  <li>{proof.exampleViews} visitas aproximadas en el perfil de referencia.</li>
-                  <li>{proof.exampleClicks} clics acumulados en canales de contacto.</li>
-                  <li>Con mejor ficha, sube la probabilidad de pasar de visita a conversación.</li>
+                  {exampleSignals.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
                 </ul>
               </article>
             </div>

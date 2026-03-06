@@ -50,6 +50,45 @@ export function HomeV4({ coaches, stats }: HomeV4Props) {
     return [direct, ...filtered].slice(0, 8);
   }, [query]);
 
+  const trustHighlights = useMemo(
+    () => [
+      {
+        icon: "fa-shield-halved",
+        title: stats.certifiedCount > 0 ? `${stats.certifiedCount}+ coaches verificados` : "Perfiles con validación documental",
+        text: "Con distintivo visible cuando hay revisión documental.",
+      },
+      {
+        icon: "fa-star",
+        title: stats.totalReviews > 0 ? `${stats.totalReviews}+ reseñas reales` : "Perfiles pensados para decidir mejor",
+        text: stats.totalReviews > 0 ? "Más contexto para elegir con confianza." : "Precio, especialidad y contexto visibles desde la primera visita.",
+      },
+      {
+        icon: "fa-comments",
+        title: "Contacto directo",
+        text: "Mensajería y canales visibles sin intermediarios.",
+      },
+    ],
+    [stats.certifiedCount, stats.totalReviews],
+  );
+
+  const platformHighlights = useMemo(
+    () => [
+      {
+        title: stats.publishedCount > 0 ? `${stats.publishedCount}+ perfiles activos` : "Nuevos perfiles en publicación",
+        text: "Oferta visible para comparar por especialidad, ciudad y modalidad.",
+      },
+      {
+        title: stats.cityCount > 0 ? `${stats.cityCount} ciudades con presencia` : "Cobertura en expansión",
+        text: "Entrada por ciudad si prefieres cercanía local o perfiles online.",
+      },
+      {
+        title: stats.totalReviews > 0 ? `${stats.totalReviews}+ reseñas visibles` : "Señales de confianza visibles",
+        text: "Más contexto antes de escribir o reservar una primera conversación.",
+      },
+    ],
+    [stats.cityCount, stats.publishedCount, stats.totalReviews],
+  );
+
   useEffect(() => {
     trackAcquisitionEvent("client_landing_view", { landing_name: "home", event_category: "client_growth" });
     const root = document.getElementById("etcHomeV4");
@@ -102,9 +141,15 @@ export function HomeV4({ coaches, stats }: HomeV4Props) {
 
                 <div className="card" style={{ marginTop: 18, padding: 18 }}>
                   <div className="grid3" style={{ gap: 14 }}>
-                    <div className="feat"><i className="fa-solid fa-shield-halved" aria-hidden="true" /><div><b>{stats.certifiedCount}+ coaches verificados</b><span>Con distintivo visible cuando hay revisión documental.</span></div></div>
-                    <div className="feat"><i className="fa-solid fa-star" aria-hidden="true" /><div><b>{stats.totalReviews}+ reseñas reales</b><span>Más contexto para elegir con confianza.</span></div></div>
-                    <div className="feat"><i className="fa-solid fa-comments" aria-hidden="true" /><div><b>Contacto directo</b><span>Mensajería y canales visibles sin intermediarios.</span></div></div>
+                    {trustHighlights.map((item) => (
+                      <div key={item.title} className="feat">
+                        <i className={`fa-solid ${item.icon}`} aria-hidden="true" />
+                        <div>
+                          <b>{item.title}</b>
+                          <span>{item.text}</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
@@ -190,11 +235,14 @@ export function HomeV4({ coaches, stats }: HomeV4Props) {
         </section>
 
         <section className="etc-reveal" aria-label="Prueba social del directorio">
-          <div className="section-head"><div><h2 className="h2">Por qué se decide mejor aquí</h2><div className="sub">Señales reales de oferta, confianza y cobertura.</div></div></div>
+          <div className="section-head"><div><h2 className="h2">Por qué se decide mejor aquí</h2><div className="sub">Señales visibles de oferta, confianza y cobertura.</div></div></div>
           <div className="grid3">
-            <div className="choose-panel"><h3>{stats.publishedCount}+ perfiles activos</h3><p>Oferta visible para comparar por especialidad, ciudad y modalidad.</p></div>
-            <div className="choose-panel"><h3>{stats.cityCount} ciudades con presencia</h3><p>Entra por ciudad si prefieres cercanía local o abre el abanico con perfiles online.</p></div>
-            <div className="choose-panel"><h3>{stats.totalReviews}+ reseñas visibles</h3><p>Más contexto antes de escribir o reservar una primera conversación.</p></div>
+            {platformHighlights.map((item) => (
+              <div key={item.title} className="choose-panel">
+                <h3>{item.title}</h3>
+                <p>{item.text}</p>
+              </div>
+            ))}
           </div>
         </section>
 

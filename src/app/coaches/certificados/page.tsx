@@ -44,6 +44,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: data.seo.title,
     description: data.seo.metaDescription,
     path: "/coaches/certificados",
+    canonicalUrl: `${getSiteBaseUrl()}/coaches/certificados`,
     noindex: data.noindex,
     keywords: data.seo.keywords,
   });

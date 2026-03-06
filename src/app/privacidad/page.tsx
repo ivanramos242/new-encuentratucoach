@@ -48,6 +48,7 @@ export const metadata = buildMetadata({
   description:
     "Información sobre tratamiento de datos personales en EncuentraTuCoach.es conforme al RGPD y la LOPDGDD.",
   path: "/privacidad",
+  noindex: true,
   keywords: ["política de privacidad", "RGPD", "LOPDGDD", "datos personales", "encuentratucoach"],
 });
 

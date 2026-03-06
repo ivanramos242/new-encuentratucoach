@@ -8,7 +8,6 @@ import { FavoriteCoachesProvider } from "@/components/favorites/favorite-coaches
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteJsonLd } from "@/components/seo/site-json-ld";
-import { isSeoIndexingAllowed } from "@/lib/seo";
 import { siteConfig } from "@/lib/site-config";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import "./globals.css";
@@ -33,13 +32,6 @@ export const metadata: Metadata = {
         google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
       }
     : undefined,
-  robots: isSeoIndexingAllowed()
-    ? undefined
-    : {
-        index: false,
-        follow: false,
-        googleBot: { index: false, follow: false, noimageindex: true },
-      },
   openGraph: {
     type: "website",
     locale: siteConfig.locale,
