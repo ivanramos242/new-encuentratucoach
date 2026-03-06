@@ -1,5 +1,6 @@
-import { prisma } from "@/lib/prisma";
+import { getCoachCategoryLabel } from "@/lib/coach-category-catalog";
 import { coaches as mockCoaches } from "@/lib/mock-data";
+import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/utils";
 import type { CoachProfile as PublicCoachProfile, CoachReview } from "@/types/domain";
 
@@ -11,7 +12,7 @@ function splitTextList(text?: string | null) {
   if (!text) return [];
   return text
     .split(/[\n,;]+/)
-    .map((v) => v.trim())
+    .map((value) => value.trim())
     .filter(Boolean);
 }
 
@@ -28,9 +29,92 @@ function pricingDetailsFromHtml(detailsHtml?: string | null) {
     .replace(/<[^>]+>/g, " ")
     .replace(/\r/g, "")
     .split(/\n+/)
-    .map((v) => v.replace(/\s+/g, " ").trim())
+    .map((value) => value.replace(/\s+/g, " ").trim())
     .filter(Boolean);
   return plain.length ? plain : [stripHtml(detailsHtml)];
+}
+
+function pickPrimaryContactTarget(input: PublicCoachProfile["links"]): PublicCoachProfile["primaryContactTarget"] {
+  if (input.whatsapp) return "whatsapp";
+  if (input.email) return "email";
+  if (input.phone) return "phone";
+  if (input.web) return "web";
+  if (input.linkedin) return "linkedin";
+  if (input.instagram) return "instagram";
+  if (input.facebook) return "facebook";
+  return "mensaje";
+}
+
+function buildFirstSessionOffer(pricingDetails: string[], basePriceEur: number) {
+  const explicit = pricingDetails.find((item) => /gratuita|gratis|valoraci[oó]n|inicial|diagn[oó]stico/i.test(item));
+  if (explicit) return explicit;
+  if (basePriceEur > 0) {
+    return `Primera sesión orientativa desde ${basePriceEur} EUR para alinear objetivo, encaje y siguientes pasos.`;
+  }
+  return "Primer contacto para entender tu objetivo, validar encaje y acordar el siguiente paso.";
+}
+
+function buildIdealClient(input: Pick<PublicCoachProfile, "categories" | "specialties">) {
+  const categoryLabel = input.categories
+    .map((slug) => getCoachCategoryLabel(slug) ?? slug)
+    .find(Boolean);
+  const specialty = input.specialties.find(Boolean);
+
+  if (categoryLabel && specialty) {
+    return `Personas que buscan ${categoryLabel.toLowerCase()} con foco en ${specialty.toLowerCase()}.`;
+  }
+  if (categoryLabel) {
+    return `Personas que buscan ${categoryLabel.toLowerCase()} con objetivos claros y seguimiento.`;
+  }
+  if (specialty) {
+    return `Personas con un objetivo concreto relacionado con ${specialty.toLowerCase()}.`;
+  }
+  return "Personas con un objetivo concreto que quieren claridad, seguimiento y un plan accionable.";
+}
+
+function buildResponseTimeLabel(input: {
+  hasDirectContact: boolean;
+  primaryContactTarget?: PublicCoachProfile["primaryContactTarget"];
+}) {
+  if (!input.hasDirectContact) return "Respuesta por mensajería de la plataforma.";
+  if (input.primaryContactTarget === "whatsapp") return "Respuesta rápida por WhatsApp o mensajería.";
+  if (input.primaryContactTarget === "phone") return "Respuesta habitual en el mismo día laborable.";
+  if (input.primaryContactTarget === "email") return "Respuesta habitual en 24 horas laborables.";
+  return "Respuesta habitual en 24 a 48 horas laborables.";
+}
+
+function computeProfileCompleteness(coach: PublicCoachProfile) {
+  const checkpoints = [
+    Boolean(coach.headline?.trim()),
+    Boolean(coach.bio?.trim()),
+    coach.categories.length > 0,
+    coach.sessionModes.length > 0,
+    coach.languages.length > 0,
+    coach.basePriceEur > 0,
+    coach.pricingDetails.length > 0,
+    Boolean(coach.heroImageUrl),
+    coach.reviews.length > 0,
+    Object.values(coach.links).some(Boolean),
+  ];
+  const completed = checkpoints.filter(Boolean).length;
+  return Math.round((completed / checkpoints.length) * 100);
+}
+
+function enrichPublicCoachProfile(coach: PublicCoachProfile): PublicCoachProfile {
+  const primaryContactTarget = pickPrimaryContactTarget(coach.links);
+  return {
+    ...coach,
+    firstSessionOffer: coach.firstSessionOffer || buildFirstSessionOffer(coach.pricingDetails, coach.basePriceEur),
+    idealClient: coach.idealClient || buildIdealClient(coach),
+    profileCompleteness: coach.profileCompleteness ?? computeProfileCompleteness(coach),
+    primaryContactTarget,
+    responseTimeLabel:
+      coach.responseTimeLabel ||
+      buildResponseTimeLabel({
+        hasDirectContact: Object.values(coach.links).some(Boolean),
+        primaryContactTarget,
+      }),
+  };
 }
 
 type DbCoachRecord = Awaited<ReturnType<typeof listDbPublicCoachesRaw>>[number];
@@ -50,7 +134,7 @@ function mapDbCoachToPublic(coach: DbCoachRecord): PublicCoachProfile {
     coachDecision: review.coachDecision,
   }));
 
-  return {
+  return enrichPublicCoachProfile({
     id: coach.id,
     slug: coach.slug,
     name: coach.name,
@@ -59,7 +143,7 @@ function mapDbCoachToPublic(coach: DbCoachRecord): PublicCoachProfile {
       [
         coach.categories.map((item) => item.category.name).join(", "),
         cityLabel,
-        coach.sessionModes.map((m) => m.mode).join(" y "),
+        coach.sessionModes.map((mode) => mode.mode).join(" y "),
       ]
         .filter(Boolean)
         .join(" · "),
@@ -69,7 +153,7 @@ function mapDbCoachToPublic(coach: DbCoachRecord): PublicCoachProfile {
     citySlug,
     cityLabel,
     country,
-    sessionModes: coach.sessionModes.map((m) => m.mode),
+    sessionModes: coach.sessionModes.map((mode) => mode.mode),
     languages: splitTextList(coach.languagesText),
     basePriceEur: coach.pricing?.basePriceEur ?? 0,
     pricingDetails: pricingDetailsFromHtml(coach.pricing?.detailsHtml),
@@ -78,17 +162,17 @@ function mapDbCoachToPublic(coach: DbCoachRecord): PublicCoachProfile {
     visibilityActive: coach.visibilityStatus === "active",
     featured: coach.featured,
     heroImageUrl: coach.heroImageUrl || coach.galleryAssets[0]?.url || fallbackHeroImage(),
-    galleryImageUrls: coach.galleryAssets.map((a) => a.url),
+    galleryImageUrls: coach.galleryAssets.map((asset) => asset.url),
     videoPresentationUrl: coach.videoPresentationUrl || undefined,
     specialties: splitTextList(coach.specialtiesText),
     links: {
-      whatsapp: coach.links.find((l) => l.type === "whatsapp")?.value,
-      phone: coach.links.find((l) => l.type === "phone")?.value,
-      email: coach.links.find((l) => l.type === "email")?.value,
-      web: coach.links.find((l) => l.type === "web")?.value,
-      linkedin: coach.links.find((l) => l.type === "linkedin")?.value,
-      instagram: coach.links.find((l) => l.type === "instagram")?.value,
-      facebook: coach.links.find((l) => l.type === "facebook")?.value,
+      whatsapp: coach.links.find((link) => link.type === "whatsapp")?.value,
+      phone: coach.links.find((link) => link.type === "phone")?.value,
+      email: coach.links.find((link) => link.type === "email")?.value,
+      web: coach.links.find((link) => link.type === "web")?.value,
+      linkedin: coach.links.find((link) => link.type === "linkedin")?.value,
+      instagram: coach.links.find((link) => link.type === "instagram")?.value,
+      facebook: coach.links.find((link) => link.type === "facebook")?.value,
     },
     reviews,
     metrics: {
@@ -98,7 +182,7 @@ function mapDbCoachToPublic(coach: DbCoachRecord): PublicCoachProfile {
     },
     createdAt: coach.createdAt.toISOString(),
     updatedAt: coach.updatedAt.toISOString(),
-  };
+  });
 }
 
 async function listDbPublicCoachesRaw() {
@@ -161,6 +245,7 @@ export async function listHomeLatestCoaches(limit = 6) {
   if (!process.env.DATABASE_URL) {
     return sortByCreatedAtDesc(mockCoaches)
       .filter((coach) => coach.visibilityActive && coach.profileStatus === "published")
+      .map(enrichPublicCoachProfile)
       .slice(0, limit);
   }
 
@@ -188,20 +273,24 @@ export async function listHomeLatestCoaches(limit = 6) {
 
   return sortByCreatedAtDesc(mockCoaches)
     .filter((coach) => coach.visibilityActive && coach.profileStatus === "published")
+    .map(enrichPublicCoachProfile)
     .slice(0, limit);
 }
 
 function mergePublicCoachLists(dbCoaches: PublicCoachProfile[]) {
-  if (dbCoaches.length > 0) return dbCoaches;
+  if (dbCoaches.length > 0) return dbCoaches.map(enrichPublicCoachProfile);
+
   const bySlug = new Map<string, PublicCoachProfile>();
-  for (const coach of mockCoaches) bySlug.set(coach.slug, coach);
-  for (const coach of dbCoaches) bySlug.set(coach.slug, coach);
-  return Array.from(bySlug.values());
+  for (const coach of mockCoaches) bySlug.set(coach.slug, enrichPublicCoachProfile(coach));
+  for (const coach of dbCoaches) bySlug.set(coach.slug, enrichPublicCoachProfile(coach));
+  return Array.from(bySlug.values()).map(enrichPublicCoachProfile);
 }
 
 export async function listPublicCoachesMerged() {
   const dbCoaches = await listDbPublicCoaches();
-  return mergePublicCoachLists(dbCoaches).filter((coach) => coach.visibilityActive && coach.profileStatus === "published");
+  return mergePublicCoachLists(dbCoaches).filter(
+    (coach) => coach.visibilityActive && coach.profileStatus === "published",
+  );
 }
 
 export async function getPublicCoachBySlugMerged(slug: string) {

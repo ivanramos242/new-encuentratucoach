@@ -67,6 +67,11 @@ export interface CoachProfile {
   galleryImageUrls: string[];
   videoPresentationUrl?: string;
   specialties: string[];
+  idealClient?: string;
+  firstSessionOffer?: string;
+  responseTimeLabel?: string;
+  profileCompleteness?: number;
+  primaryContactTarget?: "whatsapp" | "phone" | "email" | "web" | "linkedin" | "instagram" | "facebook" | "mensaje";
   links: {
     whatsapp?: string;
     phone?: string;

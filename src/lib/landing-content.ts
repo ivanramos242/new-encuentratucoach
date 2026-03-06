@@ -38,7 +38,7 @@ export function getCitySeoContent(citySlug: string, cityName: string): LandingSe
     return {
       title: "Contratar coach en Madrid",
       metaDescription:
-        "Compara y contrata coaches en Madrid por especialidad, modalidad, confianza y precio por sesion.",
+        "Compara y contrata coaches en Madrid por especialidad, modalidad, confianza y precio por sesión.",
       keywords: [
         "coach madrid",
         "contratar coach madrid",
@@ -55,12 +55,12 @@ export function getCitySeoContent(citySlug: string, cityName: string): LandingSe
       },
       faq: [
         {
-          q: "Como elegir coach en Madrid sin perder tiempo?",
+          q: "¿Cómo elegir coach en Madrid sin perder tiempo?",
           a: "Define objetivo, presupuesto y modalidad. Compara 2 o 3 perfiles y contacta con un mensaje concreto.",
         },
         {
-          q: "Que rango de precio es habitual en Madrid?",
-          a: "Depende de especialidad y experiencia. Aqui puedes comparar perfiles por precio base por sesion.",
+          q: "¿Qué rango de precio es habitual en Madrid?",
+          a: "Depende de especialidad y experiencia. Aquí puedes comparar perfiles por precio base por sesión.",
         },
       ],
     };
@@ -70,7 +70,7 @@ export function getCitySeoContent(citySlug: string, cityName: string): LandingSe
     return {
       title: "Contratar coach en Barcelona",
       metaDescription:
-        "Compara y contrata coaches en Barcelona por especialidad, formato de sesion y rango de precio.",
+        "Compara y contrata coaches en Barcelona por especialidad, formato de sesión y rango de precio.",
       keywords: [
         "coach barcelona",
         "contratar coach barcelona",
@@ -86,11 +86,11 @@ export function getCitySeoContent(citySlug: string, cityName: string): LandingSe
       },
       faq: [
         {
-          q: "Puedo encontrar coach online si vivo en Barcelona?",
-          a: "Si. Puedes comparar perfiles de Barcelona y tambien coaches que trabajan 100% online.",
+          q: "¿Puedo encontrar coach online si vivo en Barcelona?",
+          a: "Sí. Puedes comparar perfiles de Barcelona y también coaches que trabajan 100% online.",
         },
         {
-          q: "Como comparar perfiles de forma rapida?",
+          q: "¿Cómo comparar perfiles de forma rápida?",
           a: "Empieza por la especialidad, revisa experiencia y usa el rango de precio para acotar opciones.",
         },
       ],
@@ -109,12 +109,12 @@ export function getCitySeoContent(citySlug: string, cityName: string): LandingSe
     },
     faq: [
       {
-        q: `Como empezar a buscar coach en ${cityName}?`,
+        q: `¿Cómo empezar a buscar coach en ${cityName}?`,
         a: "Empieza por tu objetivo principal y compara perfiles con experiencia en ese tipo de proceso.",
       },
       {
-        q: "Es mejor online o presencial?",
-        a: "Depende de agenda y preferencia. Online amplia opciones; presencial aporta cercania local.",
+        q: "¿Es mejor online o presencial?",
+        a: "Depende de agenda y preferencia. Online amplía opciones; presencial aporta cercanía local.",
       },
     ],
   };
@@ -137,12 +137,12 @@ export function getCategorySeoContent(category: CategoryLike): LandingSeoContent
       },
       faq: [
         {
-          q: "Cuando tiene sentido contratar coaching personal?",
-          a: "Cuando buscas acompanamiento estructurado para cambiar habitos, tomar decisiones o ganar foco.",
+          q: "¿Cuándo tiene sentido contratar coaching personal?",
+          a: "Cuando buscas acompañamiento estructurado para cambiar hábitos, tomar decisiones o ganar foco.",
         },
         {
-          q: "Que conviene revisar antes de elegir coach?",
-          a: "Metodologia, experiencia en casos parecidos, formato de sesion y ajuste de precio.",
+          q: "¿Qué conviene revisar antes de elegir coach?",
+          a: "Metodología, experiencia en casos parecidos, formato de sesión y ajuste de precio.",
         },
       ],
     };
@@ -152,22 +152,22 @@ export function getCategorySeoContent(category: CategoryLike): LandingSeoContent
     return {
       title: "Contratar coaching de carrera en España",
       metaDescription:
-        "Encuentra y contrata coaches de carrera en España. Compara experiencia, modalidad y precio por sesion.",
+        "Encuentra y contrata coaches de carrera en España. Compara experiencia, modalidad y precio por sesión.",
       keywords: ["coaching de carrera", "contratar coach de carrera", "coach profesional", "coaching carrera online"],
       hero: {
         badge: "Especialidad",
-        title: "Coaching de carrera para transicion laboral y crecimiento",
+        title: "Coaching de carrera para transición laboral y crecimiento",
         description:
           "Compara coaches para cambio laboral, posicionamiento y decisiones profesionales con impacto.",
       },
       faq: [
         {
-          q: "Para que sirve el coaching de carrera?",
+          q: "¿Para qué sirve el coaching de carrera?",
           a: "Ayuda a definir tu siguiente paso profesional y a ejecutar un plan con mayor claridad.",
         },
         {
-          q: "Como comparar coaches de carrera?",
-          a: "Prioriza experiencia en transicion profesional y una metodologia aplicable a tu contexto.",
+          q: "¿Cómo comparar coaches de carrera?",
+          a: "Prioriza experiencia en transición profesional y una metodología aplicable a tu contexto.",
         },
       ],
     };
@@ -184,11 +184,11 @@ export function getCategorySeoContent(category: CategoryLike): LandingSeoContent
     },
     faq: [
       {
-        q: `Como elegir ${lower}?`,
+        q: `¿Cómo elegir ${lower}?`,
         a: "Define objetivo, compara enfoque de trabajo y filtra por modalidad y rango de precio.",
       },
       {
-        q: "Cuantos perfiles conviene comparar?",
+        q: "¿Cuántos perfiles conviene comparar?",
         a: "Entre dos y tres perfiles suele ser suficiente para detectar el mejor encaje.",
       },
     ],
@@ -211,16 +211,16 @@ export function getCategoryCitySeoContent(
         badge: "Especialidad + ciudad",
         title: "Coaching de liderazgo en Madrid para contratar con confianza",
         description:
-          "Encuentra coaches para comunicacion, gestion de equipos y toma de decisiones en contexto profesional.",
+          "Encuentra coaches para comunicación, gestión de equipos y toma de decisiones en contexto profesional.",
       },
       faq: [
         {
-          q: "En que casos ayuda el coaching de liderazgo?",
-          a: "Suele enfocarse en comunicacion, delegacion, conflictos y decisiones de equipo.",
+          q: "¿En qué casos ayuda el coaching de liderazgo?",
+          a: "Suele enfocarse en comunicación, delegación, conflictos y decisiones de equipo.",
         },
         {
-          q: "Que revisar antes de elegir coach?",
-          a: "Experiencia en liderazgo real, enfoque metodologico y compatibilidad de formato.",
+          q: "¿Qué revisar antes de elegir coach?",
+          a: "Experiencia en liderazgo real, enfoque metodológico y compatibilidad de formato.",
         },
       ],
     };
@@ -241,11 +241,11 @@ export function getCategoryCitySeoContent(
     },
     faq: [
       {
-        q: `Como elegir ${categoryLower} en ${cityName}?`,
-        a: "Revisa experiencia especifica, modalidad de sesion y presupuesto antes de contactar.",
+        q: `¿Cómo elegir ${categoryLower} en ${cityName}?`,
+        a: "Revisa experiencia específica, modalidad de sesión y presupuesto antes de contactar.",
       },
       {
-        q: "Online o presencial para este tipo de proceso?",
+        q: "¿Online o presencial para este tipo de proceso?",
         a: "Ambos funcionan. Elige por disponibilidad, estilo de trabajo y nivel de comodidad.",
       },
     ],
@@ -260,18 +260,18 @@ export function getOnlineSeoContent(): LandingSeoContent {
     keywords: ["coaching online", "contratar coach online", "coaching online espana"],
     hero: {
       badge: "Modalidad",
-      title: "Coaching online para contratar rapido y sin desplazamientos",
+      title: "Coaching online para contratar rápido y sin desplazamientos",
       description:
         "Compara coaches online por especialidad, enfoque y precio para empezar antes.",
     },
     faq: [
       {
-        q: "Que ventajas tiene el coaching online?",
-        a: "Mas flexibilidad horaria, mayor oferta de perfiles y continuidad sin desplazamientos.",
+        q: "¿Qué ventajas tiene el coaching online?",
+        a: "Más flexibilidad horaria, mayor oferta de perfiles y continuidad sin desplazamientos.",
       },
       {
-        q: "Funciona igual que presencial?",
-        a: "Si, cuando hay objetivos claros, seguimiento y una dinamica de sesiones consistente.",
+        q: "¿Funciona igual que presencial?",
+        a: "Sí, cuando hay objetivos claros, seguimiento y una dinámica de sesiones consistente.",
       },
     ],
   };
@@ -287,16 +287,16 @@ export function getCertifiedSeoContent(): LandingSeoContent {
       badge: "Confianza",
       title: "Coaches certificados para contratar con mayor seguridad",
       description:
-        "Perfiles con certificacion verificada para comparar opciones y contactar con mas confianza.",
+        "Perfiles con certificación verificada para comparar opciones y contactar con más confianza.",
     },
     faq: [
       {
-        q: "Que significa que un coach este certificado aqui?",
-        a: "Que ha presentado documentacion y fue validada en el proceso de revision de la plataforma.",
+        q: "¿Qué significa que un coach esté certificado aquí?",
+        a: "Que ha presentado documentación y fue validada en el proceso de revisión de la plataforma.",
       },
       {
-        q: "La certificacion es lo unico que debo revisar?",
-        a: "No. Tambien conviene evaluar enfoque, experiencia, modalidad y resenas.",
+        q: "¿La certificación es lo único que debo revisar?",
+        a: "No. También conviene evaluar enfoque, experiencia, modalidad y reseñas.",
       },
     ],
   };

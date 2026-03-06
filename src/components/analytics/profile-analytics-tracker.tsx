@@ -2,7 +2,11 @@
 
 import { useEffect, useRef } from "react";
 import { getSameOriginReferrerPath } from "@/lib/directory-attribution";
-import { getLastDirectoryPath, trackDirectoryFunnelEvent } from "@/lib/directory-funnel-client";
+import {
+  getLastDirectoryPath,
+  registerViewedCoachProfile,
+  trackDirectoryFunnelEvent,
+} from "@/lib/directory-funnel-client";
 
 export function ProfileAnalyticsTracker({ coachId }: { coachId: string }) {
   const sessionId = useRef<string | null>(null);
@@ -18,6 +22,7 @@ export function ProfileAnalyticsTracker({ coachId }: { coachId: string }) {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ coachId, sessionId: id, startedAt: new Date().toISOString() }),
     }).catch(() => undefined);
+    registerViewedCoachProfile(coachId);
     const sourcePath = getSameOriginReferrerPath() || getLastDirectoryPath() || undefined;
     trackDirectoryFunnelEvent("view_profile", {
       coachProfileId: coachId,

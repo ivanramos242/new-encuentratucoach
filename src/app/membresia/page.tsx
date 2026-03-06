@@ -7,50 +7,21 @@ import { listPublicCoachesMerged } from "@/lib/public-coaches";
 import { buildBreadcrumbJsonLd, buildMetadata } from "@/lib/seo";
 import { getSiteBaseUrl } from "@/lib/site-config";
 import { formatEuro } from "@/lib/utils";
-import "./membership-landing.css";
 
 type SearchParamsInput = Promise<Record<string, string | string[] | undefined>>;
 
 const PENDING_ACTIVATION_WINDOW_MS = 3 * 60 * 1000;
-
 const MEMBERSHIP_KEYWORDS = [
   "plataformas para trabajar como coach",
-  "plataformas especializadas",
+  "plataforma para coaches",
+  "captar clientes como coach",
+  "membresía para coaches",
   "plataforma coaching online",
-  "trabajar como coach online",
-  "plataforma de coaching en linea",
-  "plataforma de coaching",
-  "trabajar como coach",
 ];
 
-const FAQ_ITEMS = [
-  {
-    q: "¿Si trabajo con EncuentraTuCoach, mis clientes siguen siendo míos?",
-    a: "Sí. La plataforma te da visibilidad y herramientas, pero tú gestionas tu relación profesional.",
-  },
-  {
-    q: "¿Puedo seguir desarrollando mi marca propia?",
-    a: "Sí. Puedes usar el directorio como canal adicional mientras construyes tu marca.",
-  },
-  {
-    q: "¿Cobráis comisión por los clientes?",
-    a: "No. El modelo es de membresía fija, sin comisión por contacto.",
-  },
-  {
-    q: "¿Qué hago si no tengo reseñas todavía?",
-    a: "Empieza con 3 a 5 testimonios reales y pide reseña al finalizar cada proceso.",
-  },
-] as const;
-
-export const dynamic = "force-dynamic";
-
-export const metadata = buildMetadata({
-  title: "Plataformas para trabajar como coach | Membresía",
-  description:
-    "Plataforma coaching online para trabajar como coach con SEO, reseñas y contacto directo. Membresía para coaches en una plataforma de coaching en línea.",
-  path: "/membresia",
-  keywords: MEMBERSHIP_KEYWORDS as string[],
-});
+function pick(input: string | string[] | undefined) {
+  return Array.isArray(input) ? input[0] : input;
+}
 
 function isActiveCoachSubscription(status?: string | null) {
   return status === "active" || status === "trialing";
@@ -68,10 +39,6 @@ function isRecentPendingCoachActivation(status?: string | null, updatedAt?: Date
   if (!isPendingCoachActivation(status) || !updatedAt) return false;
   const ageMs = Date.now() - updatedAt.getTime();
   return ageMs >= 0 && ageMs < PENDING_ACTIVATION_WINDOW_MS;
-}
-
-function pick(input: string | string[] | undefined) {
-  return Array.isArray(input) ? input[0] : input;
 }
 
 async function getMembershipCoachSubscriptionSummary(sessionUser: Awaited<ReturnType<typeof getOptionalSessionUser>>) {
@@ -133,6 +100,16 @@ function getPlanAction(
   return { primaryHref: "/registro?intent=coach", primaryLabel: "Crear cuenta de coach" };
 }
 
+export const dynamic = "force-dynamic";
+
+export const metadata = buildMetadata({
+  title: "Membresía para coaches",
+  description:
+    "Activa tu perfil profesional y capta clientes con una plataforma especializada en coaches, reseñas y visibilidad SEO.",
+  path: "/membresia",
+  keywords: MEMBERSHIP_KEYWORDS,
+});
+
 export default async function MembershipPage({ searchParams }: { searchParams: SearchParamsInput }) {
   const sp = await searchParams;
   const checkout = pick(sp.checkout);
@@ -156,11 +133,15 @@ export default async function MembershipPage({ searchParams }: { searchParams: S
   }
 
   const coachHasActivePlan = isActiveCoachSubscription(latestSubscription?.status);
-  const coachHasPendingActivation = isRecentPendingCoachActivation(latestSubscription?.status, latestSubscription?.updatedAt);
-  const coachActivePlanCode = coachHasActivePlan && isPlanCode(latestSubscription?.planCode) ? latestSubscription.planCode : null;
+  const coachHasPendingActivation = isRecentPendingCoachActivation(
+    latestSubscription?.status,
+    latestSubscription?.updatedAt,
+  );
+  const coachActivePlanCode =
+    coachHasActivePlan && isPlanCode(latestSubscription?.planCode) ? latestSubscription.planCode : null;
+
   const plans = await listMembershipPlansForPublic();
   const publicCoaches = await listPublicCoachesMerged();
-
   const monthlyPlan = plans.find((plan) => plan.code === "monthly") ?? plans[0];
   const annualPlan = plans.find((plan) => plan.code === "annual");
   const monthlyPrice = monthlyPlan ? formatEuro(monthlyPlan.checkoutDisplayPriceCents / 100) : "19,99 EUR";
@@ -205,38 +186,39 @@ export default async function MembershipPage({ searchParams }: { searchParams: S
     };
   });
 
-  const exampleCoach = publicCoaches.find((coach) => coach.slug === "carla-gomez-rodriguez") ?? null;
+  const exampleCoach = publicCoaches.find((coach) => coach.slug === "carla-gomez-rodriguez") ?? publicCoaches[0] ?? null;
+  const proof = {
+    certifiedCount: publicCoaches.filter((coach) => coach.certifiedStatus === "approved").length,
+    publishedCount: publicCoaches.length,
+    totalReviews: publicCoaches.reduce((sum, coach) => sum + coach.reviews.length, 0),
+    exampleClicks: exampleCoach ? Object.values(exampleCoach.metrics.clicks).reduce((sum, value) => sum + value, 0) : 0,
+    exampleViews: exampleCoach?.metrics.totalViews ?? 0,
+    searchExamples: [
+      "coach en Madrid",
+      "coach online",
+      "coaching de carrera",
+      "coach de liderazgo en Barcelona",
+    ],
+  };
 
   const baseUrl = getSiteBaseUrl();
   const breadcrumb = buildBreadcrumbJsonLd([
     { name: "Inicio", path: "/" },
     { name: "Membresía", path: "/membresia" },
   ]);
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: FAQ_ITEMS.map((item) => ({
-      "@type": "Question",
-      name: item.q,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: item.a,
-      },
-    })),
-  };
   const webPageSchema = {
     "@context": "https://schema.org",
     "@type": "WebPage",
-    name: "Plataformas para trabajar como coach",
+    name: "Membresía para coaches",
     url: `${baseUrl}/membresia`,
     description:
-      "Plataforma de coaching en línea para trabajar como coach online y captar clientes con SEO, reseñas y contacto directo.",
+      "Activa tu perfil profesional y capta clientes con una plataforma especializada en coaches, reseñas y visibilidad SEO.",
     keywords: MEMBERSHIP_KEYWORDS.join(", "),
   };
 
   return (
     <>
-      <JsonLd data={[breadcrumb, faqSchema, webPageSchema]} />
+      <JsonLd data={[breadcrumb, webPageSchema]} />
 
       {checkout === "cancel" ? (
         <section className="mx-auto mt-6 w-full max-w-6xl rounded-2xl border border-zinc-200 bg-white px-4 py-4 shadow-sm">
@@ -259,8 +241,9 @@ export default async function MembershipPage({ searchParams }: { searchParams: S
         exampleCoach={exampleCoach}
         joinHref={monthlyPlanAction.primaryHref}
         joinLabel={monthlyPlanAction.primaryLabel}
-        plans={landingPlans}
         monthlyPrice={monthlyPrice}
+        plans={landingPlans}
+        proof={proof}
       />
     </>
   );

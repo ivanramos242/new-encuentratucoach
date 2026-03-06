@@ -1,5 +1,6 @@
 "use client";
 
+import { trackAcquisitionEvent } from "@/lib/acquisition-analytics";
 import { COOKIE_CONSENT_STORAGE_KEY, parseCookieConsent } from "@/lib/cookie-consent";
 import { normalizeSourcePath } from "@/lib/directory-attribution";
 
@@ -25,6 +26,7 @@ export type DirectoryFunnelSourceModule =
   | "other";
 
 const LAST_DIRECTORY_PATH_KEY = "etc_last_directory_path";
+const VIEWED_COACH_PROFILE_IDS_KEY = "etc_viewed_coach_profile_ids";
 
 function readCookie(name: string) {
   if (typeof document === "undefined") return null;
@@ -72,6 +74,29 @@ export function getLastDirectoryPath() {
   }
 }
 
+export function registerViewedCoachProfile(coachProfileId: string) {
+  if (typeof window === "undefined" || !coachProfileId) return [];
+  try {
+    const current = window.sessionStorage.getItem(VIEWED_COACH_PROFILE_IDS_KEY);
+    const parsed = current ? (JSON.parse(current) as string[]) : [];
+    const next = [coachProfileId, ...parsed.filter((id) => id !== coachProfileId)].slice(0, 12);
+    window.sessionStorage.setItem(VIEWED_COACH_PROFILE_IDS_KEY, JSON.stringify(next));
+    return next;
+  } catch {
+    return [];
+  }
+}
+
+export function getViewedCoachProfileIds() {
+  if (typeof window === "undefined") return [];
+  try {
+    const current = window.sessionStorage.getItem(VIEWED_COACH_PROFILE_IDS_KEY);
+    return current ? ((JSON.parse(current) as string[]).filter(Boolean)) : [];
+  } catch {
+    return [];
+  }
+}
+
 export function trackDirectoryFunnelEvent(
   eventType: DirectoryFunnelEventType,
   input?: {
@@ -91,6 +116,30 @@ export function trackDirectoryFunnelEvent(
     sourcePath: normalizedSourcePath,
     sourceModule,
   };
+
+  if (eventType === "view_profile") {
+    trackAcquisitionEvent("client_profile_view", {
+      coach_profile_id: input?.coachProfileId,
+      source_module: sourceModule,
+      source_path: normalizedSourcePath,
+    });
+  }
+
+  if (eventType === "click_whatsapp" || eventType === "click_contact" || eventType === "booking_start") {
+    trackAcquisitionEvent("client_primary_contact_click", {
+      coach_profile_id: input?.coachProfileId,
+      source_module: sourceModule,
+      source_path: normalizedSourcePath,
+      contact_target: eventType,
+    });
+  }
+
+  if (eventType === "submit_form") {
+    trackAcquisitionEvent("client_lead_submit", {
+      source_module: sourceModule,
+      source_path: normalizedSourcePath,
+    });
+  }
 
   const payload = JSON.stringify({
     eventType,

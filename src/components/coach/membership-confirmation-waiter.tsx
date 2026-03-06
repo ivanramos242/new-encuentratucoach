@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { trackAcquisitionEvent } from "@/lib/acquisition-analytics";
 
 const DEFAULT_PENDING_WINDOW_MS = 3 * 60 * 1000;
 
@@ -32,6 +33,7 @@ export function MembershipConfirmationWaiter({
   const [ticks, setTicks] = useState(0);
   const [retryKey, setRetryKey] = useState(0);
   const [remainingMs, setRemainingMs] = useState(DEFAULT_PENDING_WINDOW_MS);
+  const [activationTracked, setActivationTracked] = useState(false);
 
   const canShowRetry = useMemo(() => ticks >= 12, [ticks]);
   const deadlineMs = pendingUntilEpochMs;
@@ -86,6 +88,14 @@ export function MembershipConfirmationWaiter({
         }
 
         if (json.user?.role === "coach" || json.user?.role === "admin") {
+          if (!activationTracked) {
+            trackAcquisitionEvent("coach_activation_complete", {
+              source: "membership_confirmation",
+              event_category: "coach_growth",
+            });
+            setActivationTracked(true);
+          }
+
           setState("ready");
           setMessage("Pago confirmado. Redirigiendo a tu área de membresía...");
           if (interval) window.clearInterval(interval);
@@ -112,7 +122,7 @@ export function MembershipConfirmationWaiter({
         if (!cancelled) timeoutToAction();
         return;
       }
-      setTicks((v) => v + 1);
+      setTicks((value) => value + 1);
       void check();
     }, 2500);
 
@@ -120,7 +130,7 @@ export function MembershipConfirmationWaiter({
       cancelled = true;
       if (interval) window.clearInterval(interval);
     };
-  }, [deadlineMs, retryKey, router]);
+  }, [activationTracked, deadlineMs, retryKey, router]);
 
   return (
     <div className="mx-auto max-w-2xl rounded-3xl border border-black/10 bg-white p-6 shadow-sm sm:p-8">
@@ -171,7 +181,7 @@ export function MembershipConfirmationWaiter({
             setState("checking");
             setMessage("Volviendo a comprobar el estado del pago...");
             setTicks(0);
-            setRetryKey((v) => v + 1);
+            setRetryKey((value) => value + 1);
           }}
           className="rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
         >

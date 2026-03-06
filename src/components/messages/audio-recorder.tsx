@@ -12,6 +12,15 @@ export type RecordedAudio = {
   fileName: string;
 };
 
+function detectAudioSupport() {
+  return (
+    typeof window !== "undefined" &&
+    typeof navigator !== "undefined" &&
+    !!navigator.mediaDevices?.getUserMedia &&
+    typeof MediaRecorder !== "undefined"
+  );
+}
+
 function chooseMimeType() {
   if (typeof window === "undefined" || typeof MediaRecorder === "undefined") return "";
   const candidates = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus", "audio/mp4"];
@@ -29,7 +38,7 @@ export function AudioRecorder({
   disabled?: boolean;
   onRecorded: (audio: RecordedAudio) => void;
 }) {
-  const [supported, setSupported] = useState(false);
+  const [supported] = useState(detectAudioSupport);
   const [recording, setRecording] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [elapsedMs, setElapsedMs] = useState(0);
@@ -40,15 +49,9 @@ export function AudioRecorder({
   const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
-    setSupported(
-      typeof window !== "undefined" &&
-        typeof navigator !== "undefined" &&
-        !!navigator.mediaDevices?.getUserMedia &&
-        typeof MediaRecorder !== "undefined",
-    );
     return () => {
       if (timerRef.current != null) window.clearInterval(timerRef.current);
-      streamRef.current?.getTracks().forEach((t) => t.stop());
+      streamRef.current?.getTracks().forEach((track) => track.stop());
     };
   }, []);
 
@@ -79,7 +82,7 @@ export function AudioRecorder({
           fileName: `nota-audio-${new Date().toISOString().replace(/[:.]/g, "-")}.${ext}`,
         });
 
-        stream.getTracks().forEach((t) => t.stop());
+        stream.getTracks().forEach((track) => track.stop());
         streamRef.current = null;
       };
 
@@ -136,4 +139,3 @@ export function AudioRecorder({
     </div>
   );
 }
-

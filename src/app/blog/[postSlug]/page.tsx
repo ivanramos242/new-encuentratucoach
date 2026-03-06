@@ -2,8 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { JsonLd } from "@/components/seo/json-ld";
 import { PageShell } from "@/components/layout/page-shell";
+import { JsonLd } from "@/components/seo/json-ld";
 import { sanitizeRichHtml } from "@/lib/html-sanitize";
 import { getPublishedBlogPostBySlug } from "@/lib/blog-service";
 import { buildBreadcrumbJsonLd, buildMetadata } from "@/lib/seo";
@@ -18,8 +18,8 @@ export async function generateMetadata({ params }: { params: ParamsInput }): Pro
   const post = await getPublishedBlogPostBySlug(postSlug);
   if (!post) {
     return buildMetadata({
-      title: "Articulo no encontrado",
-      description: "Articulo no encontrado",
+      title: "Artículo no encontrado",
+      description: "Artículo no encontrado",
       noindex: true,
     });
   }
@@ -41,6 +41,7 @@ function formatDate(value: string) {
 type RecommendedLink = {
   href: string;
   label: string;
+  helper: string;
 };
 
 function normalize(value: string) {
@@ -50,50 +51,68 @@ function normalize(value: string) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
-function buildRecommendedMoneyLinks(input: { title: string; excerpt: string; category: string; tags: string[] }): RecommendedLink[] {
+function buildPrimaryConversionLink(input: { title: string; excerpt: string; category: string; tags: string[] }): RecommendedLink {
   const haystack = normalize([input.title, input.excerpt, input.category, ...input.tags].join(" "));
-  const links: RecommendedLink[] = [
-    { href: "/coaches", label: "Ver directorio" },
-    { href: "/coaches/modalidad/online", label: "Coaching online" },
-    { href: "/coaches/certificados", label: "Coaches certificados" },
+
+  const specialtyLinks: Array<{ keywords: string[]; href: string; label: string }> = [
+    { keywords: ["carrera", "empleo", "profesional"], href: "/coaches/categoria/carrera", label: "Ver coaches de carrera" },
+    { keywords: ["liderazgo", "directivo", "equipo"], href: "/coaches/categoria/liderazgo", label: "Ver coaches de liderazgo" },
+    { keywords: ["personal", "habitos", "autoestima"], href: "/coaches/categoria/personal", label: "Ver coaches personales" },
+    { keywords: ["pareja", "relacion"], href: "/coaches/categoria/pareja", label: "Ver coaches de pareja" },
+    { keywords: ["ejecutivo"], href: "/coaches/categoria/ejecutivo", label: "Ver coaches ejecutivos" },
+    { keywords: ["bioemocional", "emocional"], href: "/coaches/categoria/bioemocional", label: "Ver coaches bioemocionales" },
   ];
 
-  const keywordToSpecialty: Array<{ keywords: string[]; href: string; label: string }> = [
-    { keywords: ["carrera", "empleo", "profesional"], href: "/coaches/categoria/carrera", label: "Coaches de carrera" },
-    { keywords: ["liderazgo", "directivo", "equipo"], href: "/coaches/categoria/liderazgo", label: "Coaches de liderazgo" },
-    { keywords: ["personal", "habitos", "autoestima"], href: "/coaches/categoria/personal", label: "Coaching personal" },
-    { keywords: ["pareja", "relacion"], href: "/coaches/categoria/pareja", label: "Coaches de pareja" },
-    { keywords: ["deportivo", "rendimiento"], href: "/coaches/categoria/deportivo", label: "Coaches deportivos" },
-    { keywords: ["ejecutivo"], href: "/coaches/categoria/ejecutivo", label: "Coaching ejecutivo" },
-    { keywords: ["bioemocional", "emocional"], href: "/coaches/categoria/bioemocional", label: "Coaching bioemocional" },
+  const cityLinks: Array<{ keywords: string[]; href: string; label: string }> = [
+    { keywords: ["madrid"], href: "/coaches/ciudad/madrid", label: "Ver coaches en Madrid" },
+    { keywords: ["barcelona"], href: "/coaches/ciudad/barcelona", label: "Ver coaches en Barcelona" },
+    { keywords: ["valencia"], href: "/coaches/ciudad/valencia", label: "Ver coaches en Valencia" },
+    { keywords: ["sevilla"], href: "/coaches/ciudad/sevilla", label: "Ver coaches en Sevilla" },
+    { keywords: ["bilbao"], href: "/coaches/ciudad/bilbao", label: "Ver coaches en Bilbao" },
+    { keywords: ["malaga"], href: "/coaches/ciudad/malaga", label: "Ver coaches en Málaga" },
   ];
 
-  const keywordToCity: Array<{ keywords: string[]; href: string; label: string }> = [
-    { keywords: ["madrid"], href: "/coaches/ciudad/madrid", label: "Coaches en Madrid" },
-    { keywords: ["barcelona"], href: "/coaches/ciudad/barcelona", label: "Coaches en Barcelona" },
-    { keywords: ["valencia"], href: "/coaches/ciudad/valencia", label: "Coaches en Valencia" },
-    { keywords: ["sevilla"], href: "/coaches/ciudad/sevilla", label: "Coaches en Sevilla" },
-    { keywords: ["bilbao"], href: "/coaches/ciudad/bilbao", label: "Coaches en Bilbao" },
-    { keywords: ["malaga", "málaga"], href: "/coaches/ciudad/malaga", label: "Coaches en Málaga" },
-  ];
-
-  for (const entry of keywordToSpecialty) {
-    if (entry.keywords.some((keyword) => haystack.includes(normalize(keyword)))) {
-      links.push({ href: entry.href, label: entry.label });
-      break;
+  for (const entry of cityLinks) {
+    if (entry.keywords.some((keyword) => haystack.includes(keyword))) {
+      return {
+        href: entry.href,
+        label: entry.label,
+        helper: "Pasa a una página transaccional de ciudad y compara perfiles con disponibilidad real.",
+      };
     }
   }
 
-  for (const entry of keywordToCity) {
-    if (entry.keywords.some((keyword) => haystack.includes(normalize(keyword)))) {
-      links.push({ href: entry.href, label: entry.label });
-      break;
+  for (const entry of specialtyLinks) {
+    if (entry.keywords.some((keyword) => haystack.includes(keyword))) {
+      return {
+        href: entry.href,
+        label: entry.label,
+        helper: "Si ya tienes claro el tipo de proceso, compara perfiles de esa especialidad y prioriza el encaje.",
+      };
     }
   }
 
-  return links
-    .filter((link, index, arr) => arr.findIndex((item) => item.href === link.href) === index)
-    .slice(0, 5);
+  if (haystack.includes("online")) {
+    return {
+      href: "/coaches/modalidad/online",
+      label: "Ver coaches online",
+      helper: "Filtra por modalidad online y pasa de la lectura a una shortlist con opciones inmediatas.",
+    };
+  }
+
+  if (haystack.includes("precio") || haystack.includes("coste") || haystack.includes("cuanto")) {
+    return {
+      href: "/pregunta-a-un-coach",
+      label: "Preguntar a un coach",
+      helper: "Si tu duda sigue siendo de ajuste o presupuesto, usa una consulta breve antes de contactar perfiles.",
+    };
+  }
+
+  return {
+    href: "/coaches",
+    label: "Ver directorio de coaches",
+    helper: "Pasa del contenido al directorio y compara perfiles por ciudad, objetivo y presupuesto.",
+  };
 }
 
 export default async function BlogPostPage({ params }: { params: ParamsInput }) {
@@ -107,7 +126,7 @@ export default async function BlogPostPage({ params }: { params: ParamsInput }) 
     { name: "Blog", path: "/blog" },
     { name: post.title, path: postPath },
   ]);
-  const recommendedLinks = buildRecommendedMoneyLinks(post);
+  const primaryLink = buildPrimaryConversionLink(post);
 
   return (
     <PageShell className="pt-8">
@@ -156,23 +175,11 @@ export default async function BlogPostPage({ params }: { params: ParamsInput }) 
           <div className="prose-lite mt-6 text-zinc-800" dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(post.contentHtml) }} />
           <section className="mt-8 rounded-2xl border border-black/10 bg-zinc-50 p-5">
             <h2 className="text-xl font-black tracking-tight text-zinc-950">Siguiente paso recomendado</h2>
-            <p className="mt-2 text-sm text-zinc-700">
-              Si ya tienes claro tu objetivo, pasa a una landing transaccional y compara perfiles con intención de contacto.
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {recommendedLinks.map((item, index) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={
-                    index === 0
-                      ? "rounded-xl bg-zinc-950 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800"
-                      : "rounded-xl border border-black/10 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-100"
-                  }
-                >
-                  {item.label}
-                </Link>
-              ))}
+            <p className="mt-2 text-sm text-zinc-700">{primaryLink.helper}</p>
+            <div className="mt-4">
+              <Link href={primaryLink.href} className="inline-flex rounded-xl bg-zinc-950 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800">
+                {primaryLink.label}
+              </Link>
             </div>
           </section>
         </div>
