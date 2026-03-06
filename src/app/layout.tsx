@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
+import { AcquisitionAnalytics } from "@/components/analytics/acquisition-analytics";
 import { CookieConsentManager } from "@/components/cookies/cookie-consent-manager";
 import { DirectoryExitCapture } from "@/components/directory/directory-exit-capture";
 import { FavoriteCoachesProvider } from "@/components/favorites/favorite-coaches-provider";
@@ -26,6 +28,11 @@ export const metadata: Metadata = {
   },
   description: siteConfig.description,
   applicationName: siteConfig.name,
+  verification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+    ? {
+        google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+      }
+    : undefined,
   robots: isSeoIndexingAllowed()
     ? undefined
     : {
@@ -64,6 +71,9 @@ export default function RootLayout({
           <div className="min-h-screen bg-zinc-50">
             <SiteHeader />
             <SiteJsonLd />
+            <Suspense fallback={null}>
+              <AcquisitionAnalytics />
+            </Suspense>
             {children}
             <SiteFooter />
             <CookieConsentManager />

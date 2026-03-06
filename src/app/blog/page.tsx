@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata = buildMetadata({
   title: "Blog",
-  description: "Guias, comparativas y contenido SEO sobre coaching en España.",
+  description: "Guías, comparativas y contenido SEO sobre coaching en España.",
   path: "/blog",
 });
 
@@ -25,11 +25,11 @@ export default async function BlogIndexPage() {
       <PageHero
         badge="Blog SEO de la plataforma"
         title="Blog de coaching en España"
-        description="Guias y contenido evergreen para resolver dudas, comparar opciones y entender mejor el coaching."
+        description="Guías y contenido evergreen para resolver dudas, comparar opciones y entender mejor el coaching."
       />
       <PageShell className="pt-8">
         <section className="mb-6 rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-black tracking-tight text-zinc-950">Atajos por intencion de busqueda</h2>
+          <h2 className="text-xl font-black tracking-tight text-zinc-950">Atajos por intención de búsqueda</h2>
           <div className="mt-4 flex flex-wrap gap-2">
             <Link href="/coaches" className="rounded-xl bg-zinc-950 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800">
               Buscar coaches
@@ -68,7 +68,7 @@ export default async function BlogIndexPage() {
               href="/plataformas-para-trabajar-como-coach"
               className="rounded-xl border border-black/10 bg-zinc-50 px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-white"
             >
-              Guia para coaches
+              Guía para coaches
             </Link>
           </div>
         </section>
@@ -92,7 +92,7 @@ export default async function BlogIndexPage() {
                 <div className="mt-4 flex items-center justify-between gap-2">
                   <span className="text-xs text-zinc-500">{formatDate(post.publishedAt)}</span>
                   <Link href={`/blog/${post.slug}`} className="inline-flex text-sm font-semibold text-cyan-700 hover:text-cyan-800">
-                    Leer articulo
+                    Leer artículo
                   </Link>
                 </div>
               </div>
@@ -101,7 +101,7 @@ export default async function BlogIndexPage() {
         </div>
         {!posts.length ? (
           <section className="mt-6 rounded-3xl border border-black/10 bg-white p-6 text-sm text-zinc-700 shadow-sm">
-            No hay articulos publicados todavia.
+            No hay artículos publicados todavía.
           </section>
         ) : null}
       </PageShell>

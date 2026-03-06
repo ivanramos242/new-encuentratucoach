@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { trackAcquisitionEvent } from "@/lib/acquisition-analytics";
 
 type ApiResponse = {
   ok?: boolean;
@@ -423,13 +424,21 @@ export function RegisterCard({
   const [pending, startTransition] = useTransition();
   const [status, setStatus] = useState<{ type: "idle" | "ok" | "error"; text: string }>({ type: "idle", text: "" });
 
+  useEffect(() => {
+    if (role !== "coach") return;
+    trackAcquisitionEvent("coach_register_start", {
+      source: "register_page",
+      event_category: "coach_growth",
+    });
+  }, [role]);
+
   const content = useMemo(() => {
     if (role === "coach") {
       return {
         title: "Crear cuenta de coach",
-        subtitle: "Crea tu cuenta (empieza como cliente) y activa la membresía para publicar tu perfil como coach.",
+        subtitle: "Crea tu cuenta de coach y activa la membresía para publicar tu perfil, ganar visibilidad y captar clientes.",
         cardTitle: "Alta de coach",
-        cardHint: "Crearás una cuenta única. Tras el pago de la membresía, tu cuenta se activará como coach.",
+        cardHint: "Crearás una cuenta profesional. Tras activar la membresía, tu perfil quedará listo para publicarse.",
         redirect: "/membresia",
       };
     }

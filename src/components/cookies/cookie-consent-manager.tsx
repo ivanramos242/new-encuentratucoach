@@ -6,6 +6,7 @@ import {
   COOKIE_CONSENT_COOKIE_NAME,
   COOKIE_CONSENT_MAX_AGE_SECONDS,
   COOKIE_CONSENT_STORAGE_KEY,
+  COOKIE_CONSENT_UPDATED_EVENT,
   COOKIE_CONSENT_VERSION,
   parseCookieConsent,
   serializeCookieConsent,
@@ -67,6 +68,7 @@ function persistConsent(consent: CookieConsent) {
   const secure = window.location.protocol === "https:" ? "; Secure" : "";
   document.cookie = `${COOKIE_CONSENT_COOKIE_NAME}=${serialized}; Max-Age=${COOKIE_CONSENT_MAX_AGE_SECONDS}; Path=/; SameSite=Lax${secure}`;
   window.localStorage.setItem(COOKIE_CONSENT_STORAGE_KEY, JSON.stringify(consent));
+  window.dispatchEvent(new Event(COOKIE_CONSENT_UPDATED_EVENT));
 }
 
 export function CookieConsentManager() {
@@ -110,6 +112,7 @@ export function CookieConsentManager() {
       setShowSettings(true);
       if (consent) setShowBanner(false);
     }
+
     window.addEventListener(OPEN_COOKIE_SETTINGS_EVENT, onOpenSettings);
     return () => window.removeEventListener(OPEN_COOKIE_SETTINGS_EVENT, onOpenSettings);
   }, [consent]);
@@ -153,8 +156,8 @@ export function CookieConsentManager() {
             <div>
               <p className="text-sm font-black uppercase tracking-wide text-zinc-500">Cookies y privacidad</p>
               <p className="mt-1 text-sm text-zinc-800">
-                Usamos cookies técnicas necesarias y, solo con tu consentimiento, cookies opcionales (analítica,
-                preferencias y marketing). Puedes aceptar, rechazar o configurar.
+                Usamos cookies técnicas necesarias y, solo con tu consentimiento, cookies opcionales de analítica,
+                preferencias y marketing. Puedes aceptar, rechazar o configurar.
               </p>
               <p className="mt-2 text-xs text-zinc-600">
                 Más información en{" "}
@@ -200,19 +203,23 @@ export function CookieConsentManager() {
           <div className="w-full max-w-2xl rounded-2xl border border-black/10 bg-white p-5 shadow-2xl">
             <h2 className="text-xl font-black tracking-tight text-zinc-950">Configurar cookies</h2>
             <p className="mt-1 text-sm text-zinc-700">
-              Puedes cambiar esta configuración en cualquier momento desde el botón “Cookies”.
+              Puedes cambiar esta configuración en cualquier momento desde el botón &quot;Cookies&quot;.
             </p>
 
             <div className="mt-4 grid gap-3">
               <div className="rounded-xl border border-black/10 bg-zinc-50 p-3">
                 <p className="text-sm font-semibold text-zinc-900">Técnicas (siempre activas)</p>
-                <p className="mt-1 text-xs text-zinc-600">Necesarias para seguridad, sesión y funcionamiento básico del sitio.</p>
+                <p className="mt-1 text-xs text-zinc-600">
+                  Necesarias para seguridad, sesión y funcionamiento básico del sitio.
+                </p>
               </div>
 
               <label className="flex items-start justify-between gap-4 rounded-xl border border-black/10 p-3">
                 <div>
                   <p className="text-sm font-semibold text-zinc-900">Preferencias (incluye chat Crisp)</p>
-                  <p className="mt-1 text-xs text-zinc-600">Recuerdan opciones de usuario y habilitan herramientas de soporte.</p>
+                  <p className="mt-1 text-xs text-zinc-600">
+                    Recuerdan opciones de usuario y habilitan herramientas de soporte.
+                  </p>
                 </div>
                 <input
                   type="checkbox"
@@ -225,7 +232,9 @@ export function CookieConsentManager() {
               <label className="flex items-start justify-between gap-4 rounded-xl border border-black/10 p-3">
                 <div>
                   <p className="text-sm font-semibold text-zinc-900">Analítica</p>
-                  <p className="mt-1 text-xs text-zinc-600">Miden uso del sitio para mejorar contenidos y rendimiento.</p>
+                  <p className="mt-1 text-xs text-zinc-600">
+                    Miden uso del sitio para mejorar contenidos, SEO y rendimiento.
+                  </p>
                 </div>
                 <input
                   type="checkbox"
@@ -238,7 +247,9 @@ export function CookieConsentManager() {
               <label className="flex items-start justify-between gap-4 rounded-xl border border-black/10 p-3">
                 <div>
                   <p className="text-sm font-semibold text-zinc-900">Marketing</p>
-                  <p className="mt-1 text-xs text-zinc-600">Personalizan campañas y miden conversión publicitaria.</p>
+                  <p className="mt-1 text-xs text-zinc-600">
+                    Personalizan campañas y miden conversión publicitaria.
+                  </p>
                 </div>
                 <input
                   type="checkbox"

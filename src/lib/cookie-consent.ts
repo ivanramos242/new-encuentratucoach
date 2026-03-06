@@ -2,6 +2,7 @@ export const COOKIE_CONSENT_COOKIE_NAME = "etc_cookie_consent";
 export const COOKIE_CONSENT_STORAGE_KEY = "etc_cookie_consent";
 export const COOKIE_CONSENT_VERSION = 1;
 export const COOKIE_CONSENT_MAX_AGE_SECONDS = 180 * 24 * 60 * 60;
+export const COOKIE_CONSENT_UPDATED_EVENT = "etc-cookie-consent-updated";
 
 export type CookieConsent = {
   analytics: boolean;

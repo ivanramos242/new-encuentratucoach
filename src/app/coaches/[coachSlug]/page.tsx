@@ -158,6 +158,26 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
 
   const baseUrl = getSiteBaseUrl();
   const coachUrl = `${baseUrl}/coaches/${coach.slug}`;
+  const coachPath = `/coaches/${coach.slug}`;
+  const messageBasePath = sessionUser?.role === "coach" ? "/mi-cuenta/coach/mensajes/nuevo" : "/mi-cuenta/cliente/mensajes/nuevo";
+  const primaryMessageHref = sessionUser
+    ? `${messageBasePath}?${new URLSearchParams({ coachSlug: coach.slug, source: coachPath }).toString()}`
+    : `/iniciar-sesion?${new URLSearchParams({ returnTo: coachPath }).toString()}`;
+  const primaryMessageLabel = sessionUser ? `Enviar mensaje a ${coach.name}` : "Iniciar sesión para contactar";
+  const profileFaqItems = [
+    {
+      question: `¿Para quién encaja mejor ${coach.name}?`,
+      answer: coach.idealClient || "Para personas con un objetivo claro que quieren acompañamiento y seguimiento.",
+    },
+    {
+      question: "¿Cómo suele ser la primera sesión?",
+      answer: coach.firstSessionOffer || "Se usa para entender tu objetivo, validar encaje y definir el siguiente paso.",
+    },
+    {
+      question: "¿Cuándo suele responder?",
+      answer: coach.responseTimeLabel || "Responde a través del canal que tenga activo en el perfil.",
+    },
+  ];
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
@@ -268,6 +288,22 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
               </div>
               <p className="mt-4 max-w-3xl text-base leading-7 text-zinc-700 max-[390px]:text-sm max-[390px]:leading-6">{leadBits.join(" · ") || coach.headline}</p>
 
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:max-w-4xl">
+                <InfoCard title="Ideal para" text={coach.idealClient || "Procesos con objetivo claro, seguimiento y necesidad de avanzar con criterio."} />
+                <InfoCard
+                  title="Primera sesión"
+                  text={coach.firstSessionOffer || "Espacio inicial para alinear objetivo, encaje y siguiente paso."}
+                />
+                <InfoCard
+                  title="Tiempo de respuesta"
+                  text={coach.responseTimeLabel || "Respuesta habitual en 24 a 48 horas laborables."}
+                />
+                <InfoCard
+                  title="Perfil completo"
+                  text={`${coach.profileCompleteness ?? 0}% de señales de confianza visibles entre propuesta, precio, modalidad y contacto.`}
+                />
+              </div>
+
               <div className="mt-4 flex flex-wrap gap-2">
                 {coach.categories.map((categorySlug, index) => (
                   <Link
@@ -340,8 +376,20 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
               <div className="rounded-3xl border border-black/10 bg-white p-4">
                 <h2 className="text-lg font-black tracking-tight text-zinc-950">
                   <FontAwesomeIcon icon={faGlobe} className="mr-2 h-4 w-4 text-zinc-500" />
-                  Redes y contacto rápido
+                  Contacto principal y canales
                 </h2>
+                <p className="mt-2 text-sm text-zinc-700">
+                  Acción principal: empezar conversación por mensajería. Canales externos solo si prefieres salir de la plataforma.
+                </p>
+                <Link
+                  href={primaryMessageHref}
+                  className="mt-3 inline-flex w-full items-center justify-center rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800"
+                >
+                  {primaryMessageLabel}
+                </Link>
+                <p className="mt-2 text-xs font-medium text-zinc-500">
+                  {coach.responseTimeLabel || "Respuesta habitual en 24 a 48 horas laborables."}
+                </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {coach.links.whatsapp ? (
                     <ContactLink coachId={coach.id} coachName={coach.name} target="whatsapp" href={coach.links.whatsapp} label="WhatsApp" />
@@ -381,6 +429,7 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
             { id: "galeria", label: "Galería" },
             ...(coach.videoPresentationUrl ? [{ id: "video-presentacion", label: "Vídeo" }] : []),
             { id: "precios", label: "Precios" },
+            { id: "faq-perfil", label: "FAQ" },
             { id: "resenas", label: "Reseñas" },
           ]}
         />
@@ -472,6 +521,21 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
             <div className="grid gap-3 sm:grid-cols-2">
               <MiniCard icon={faGlobe} title="Modalidad" value={coach.sessionModes.join(" · ") || "A consultar"} />
               <MiniCard icon={faLocationDot} title="Ubicación" value={coach.cityLabel} />
+            </div>
+          </section>
+
+          <section id="faq-perfil" className="scroll-mt-[calc(var(--site-header-offset,96px)+5rem)] rounded-3xl border border-black/10 bg-white p-5 shadow-sm sm:p-6">
+            <h2 className="text-2xl font-black tracking-tight text-zinc-950">FAQ del perfil</h2>
+            <p className="mt-2 text-sm text-zinc-700">
+              Respuestas rápidas para decidir si este coach encaja contigo antes de contactar.
+            </p>
+            <div className="mt-4 grid gap-3">
+              {profileFaqItems.map((item) => (
+                <details key={item.question} className="rounded-2xl border border-black/10 bg-zinc-50 p-4">
+                  <summary className="cursor-pointer font-semibold text-zinc-900">{item.question}</summary>
+                  <p className="mt-2 text-sm leading-6 text-zinc-700">{item.answer}</p>
+                </details>
+              ))}
             </div>
           </section>
 

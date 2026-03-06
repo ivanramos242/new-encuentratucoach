@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { trackAcquisitionEvent } from "@/lib/acquisition-analytics";
 
 type FavoriteCoachesContextValue = {
   ready: boolean;
@@ -72,6 +73,11 @@ export function FavoriteCoachesProvider({ children }: { children: React.ReactNod
       if (currentlyFavorite) optimistic.delete(coachProfileId);
       else optimistic.add(coachProfileId);
       setFavoriteCoachIds(optimistic);
+      if (!currentlyFavorite && optimistic.size >= 2) {
+        trackAcquisitionEvent("client_shortlist_ready", {
+          shortlist_size: optimistic.size,
+        });
+      }
 
       try {
         const res = await fetch("/api/favorites/coaches", {
@@ -94,6 +100,11 @@ export function FavoriteCoachesProvider({ children }: { children: React.ReactNod
         const json = (await res.json()) as { favoriteCoachIds?: string[] };
         const nextIds = Array.isArray(json.favoriteCoachIds) ? json.favoriteCoachIds : [];
         setFavoriteCoachIds(new Set(nextIds));
+        if (!currentlyFavorite) {
+          trackAcquisitionEvent("client_shortlist_ready", {
+            shortlist_size: nextIds.length,
+          });
+        }
         return "ok";
       } catch {
         setFavoriteCoachIds(previous);
