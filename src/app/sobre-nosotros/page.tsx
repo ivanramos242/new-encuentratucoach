@@ -24,7 +24,7 @@ const ABOUT_FAQ = [
 ] as const;
 
 export const metadata = buildMetadata({
-  title: "Sobre EncuentraTuCoach",
+  title: "Sobre nosotros",
   description:
     "Conoce el propósito de EncuentraTuCoach: ayudar a encontrar coach en España con filtros útiles, confianza y contacto directo.",
   path: "/sobre-nosotros",

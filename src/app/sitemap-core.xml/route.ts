@@ -18,10 +18,6 @@ const CORE_PATHS = [
   "/blog",
   "/faqs",
   "/pregunta-a-un-coach",
-  "/aviso-legal",
-  "/terminos-y-condiciones",
-  "/privacidad",
-  "/cookies",
 ] as const;
 
 export async function GET() {

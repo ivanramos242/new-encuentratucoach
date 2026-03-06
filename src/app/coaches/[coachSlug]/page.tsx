@@ -38,7 +38,7 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { getOptionalSessionUser } from "@/lib/auth-server";
 import { getCoachPrivateAnalyticsSummary, type CoachPrivateAnalyticsSummary } from "@/lib/coach-profile-analytics";
 import { getCoachCategoryLabel } from "@/lib/coach-category-catalog";
-import { getCoachAverageRating, getRelatedCoachesFrom } from "@/lib/directory";
+import { getCoachAverageRating, getRelatedCoachesFrom, resolveCitySlug } from "@/lib/directory";
 import { sanitizeRichHtml } from "@/lib/html-sanitize";
 import { getPublicCoachBySlugMerged, listPublicCoachesMerged } from "@/lib/public-coaches";
 import { buildMetadata } from "@/lib/seo";
@@ -93,14 +93,19 @@ export async function generateMetadata({
   const categoryLabels = coach.categories.map((slug) => getCoachCategoryLabel(slug) ?? slug).filter(Boolean);
   const primaryCategory = categoryLabels[0]?.trim();
   const cityMain = coach.cityLabel.split(",")[0]?.trim();
-  const seoTitle =
+  const detailedSeoTitle =
     primaryCategory && cityMain
-      ? `Coach de ${primaryCategory.toLowerCase()} en ${cityMain.toLowerCase()} - ${coach.name}`
-      : `${coach.name} - ${coach.cityLabel}`;
+      ? `${coach.name}, coach de ${primaryCategory.toLowerCase()} en ${cityMain}`
+      : cityMain
+        ? `${coach.name}, coach en ${cityMain}`
+        : `${coach.name}, perfil de coach`;
+  const compactSeoTitle = cityMain ? `${coach.name}, coach en ${cityMain}` : `${coach.name}, perfil de coach`;
+  const seoTitle = detailedSeoTitle.length <= 58 ? detailedSeoTitle : compactSeoTitle;
   const seoDescription = [
-    primaryCategory ? `Coach de ${primaryCategory} en ${coach.cityLabel}.` : "",
-    coach.headline || "",
-    coach.sessionModes.length ? `Sesiones ${coach.sessionModes.join(" y ")}.` : "",
+    primaryCategory ? `${coach.name} ofrece ${primaryCategory.toLowerCase()} en ${coach.cityLabel}.` : `${coach.name} esta activo en ${coach.cityLabel}.`,
+    coach.sessionModes.length ? `Trabaja en formato ${coach.sessionModes.join(" y ")}.` : "",
+    coach.basePriceEur > 0 ? `Precio orientativo desde ${formatEuro(coach.basePriceEur)}.` : "",
+    coach.certifiedStatus === "approved" ? "Perfil verificado en la plataforma." : "",
   ]
     .filter(Boolean)
     .join(" ")
@@ -141,20 +146,26 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
     .slice(0, 3);
   const categoryLabels = coach.categories.map((slug) => getCoachCategoryLabel(slug) ?? slug);
   const categoryNames = categoryLabels.join(", ");
+  const cityLandingSlug = resolveCitySlug(coach.citySlug);
   const languageAuditText = [coach.headline, coach.bio, coach.aboutHtml].filter(Boolean).join(" ");
   const mixedLanguageWarning = appearsMixedSpanishEnglish(languageAuditText);
   const exploratoryLinks = [
     { href: "/coaches", label: "Volver al directorio" },
-    { href: `/coaches/ciudad/${coach.citySlug}`, label: `Ver coaches en ${coach.cityLabel.split(",")[0]}` },
+    cityLandingSlug
+      ? { href: `/coaches/ciudad/${cityLandingSlug}`, label: `Ver coaches en ${coach.cityLabel.split(",")[0]}` }
+      : null,
     ...coach.categories.slice(0, 3).map((categorySlug) => ({
       href: `/coaches/categoria/${categorySlug}`,
       label: `Ver ${getCoachCategoryLabel(categorySlug)?.toLowerCase() ?? categorySlug}`,
     })),
-    ...coach.categories.slice(0, 2).map((categorySlug) => ({
-      href: `/coaches/categoria/${categorySlug}/${coach.citySlug}`,
-      label: `${getCoachCategoryLabel(categorySlug) ?? categorySlug} en ${coach.cityLabel.split(",")[0]}`,
-    })),
-  ].filter((item, index, arr) => arr.findIndex((x) => x.href === item.href) === index);
+    ...(cityLandingSlug
+      ? coach.categories.slice(0, 2).map((categorySlug) => ({
+          href: `/coaches/categoria/${categorySlug}/${cityLandingSlug}`,
+          label: `${getCoachCategoryLabel(categorySlug) ?? categorySlug} en ${coach.cityLabel.split(",")[0]}`,
+        }))
+      : []),
+  ].filter((item): item is { href: string; label: string } => Boolean(item))
+    .filter((item, index, arr) => arr.findIndex((x) => x.href === item.href) === index);
 
   const baseUrl = getSiteBaseUrl();
   const coachUrl = `${baseUrl}/coaches/${coach.slug}`;
@@ -321,13 +332,20 @@ export default async function CoachProfilePage({ params }: { params: ParamsInput
                 {coach.sessionModes.map((mode) => (
                   <Chip key={mode} icon={mode === "online" ? faGlobe : faUsers}>{mode === "online" ? "Sesión Online" : "Sesión Presencial"}</Chip>
                 ))}
-                <Link
-                  href={`/coaches/ciudad/${coach.citySlug}`}
-                  className="rounded-full border border-black/10 bg-white px-3 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50"
-                >
-                  <FontAwesomeIcon icon={faLocationDot} className="mr-2 h-3.5 w-3.5" />
-                  {coach.cityLabel}
-                </Link>
+                {cityLandingSlug ? (
+                  <Link
+                    href={`/coaches/ciudad/${cityLandingSlug}`}
+                    className="rounded-full border border-black/10 bg-white px-3 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50"
+                  >
+                    <FontAwesomeIcon icon={faLocationDot} className="mr-2 h-3.5 w-3.5" />
+                    {coach.cityLabel}
+                  </Link>
+                ) : (
+                  <span className="rounded-full border border-black/10 bg-white px-3 py-2 text-sm font-semibold text-zinc-800">
+                    <FontAwesomeIcon icon={faLocationDot} className="mr-2 h-3.5 w-3.5" />
+                    {coach.cityLabel}
+                  </span>
+                )}
                 {coach.languages.length ? <Chip icon={faLanguage}>{coach.languages.join(" y ")}</Chip> : null}
                 <Chip icon={faEuroSign}>{coach.basePriceEur ? `Desde ${formatEuro(coach.basePriceEur)} · sesión` : "Precio a consultar"}</Chip>
               </div>

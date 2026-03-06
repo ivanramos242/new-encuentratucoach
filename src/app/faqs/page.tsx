@@ -11,16 +11,19 @@ const faqGroups = [
     title: "Empezar con coaching",
     href: "/que-es-el-coaching-y-para-que-sirve",
     items: faqItems.slice(0, 2).map((faq) => faq.id),
+    icon: "fa-compass",
   },
   {
     title: "Confianza y certificación",
     href: "/coaches/certificados",
     items: faqItems.slice(2, 3).map((faq) => faq.id),
+    icon: "fa-shield-halved",
   },
   {
     title: "Duración y decisión",
     href: "/como-elegir-coach-2026",
     items: faqItems.slice(3).map((faq) => faq.id),
+    icon: "fa-hourglass-half",
   },
 ] as const;
 
@@ -65,11 +68,17 @@ export default function FaqsPage() {
       />
       <PageShell className="space-y-6 pt-8">
         <section className="rounded-3xl border border-cyan-200 bg-cyan-50 p-6 shadow-sm">
-          <p className="text-sm font-black uppercase tracking-wide text-cyan-900">Atajos útiles</p>
+          <p className="text-sm font-black uppercase tracking-wide text-cyan-900">
+            <i className="fa-solid fa-bolt mr-2" aria-hidden="true" />
+            Atajos útiles
+          </p>
           <div className="mt-4 grid gap-3 md:grid-cols-3">
             {faqGroups.map((group) => (
               <Link key={group.title} href={group.href} className="rounded-2xl border border-cyan-200 bg-white p-4 hover:bg-cyan-100/40">
-                <p className="text-sm font-black text-zinc-950">{group.title}</p>
+                <p className="text-sm font-black text-zinc-950">
+                  <i className={`fa-solid ${group.icon} mr-2 text-cyan-700`} aria-hidden="true" />
+                  {group.title}
+                </p>
                 <p className="mt-2 text-sm text-zinc-700">Ir a la guía relacionada</p>
               </Link>
             ))}
@@ -80,7 +89,10 @@ export default function FaqsPage() {
           {faqGroups.map((group) => (
             <div key={group.title} className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-xl font-black tracking-tight text-zinc-950">{group.title}</h2>
+                <h2 className="text-xl font-black tracking-tight text-zinc-950">
+                  <i className={`fa-solid ${group.icon} mr-2 text-cyan-700`} aria-hidden="true" />
+                  {group.title}
+                </h2>
                 <Link href={group.href} className="text-sm font-semibold text-cyan-700 hover:text-cyan-800">
                   Ver guía relacionada
                 </Link>
@@ -103,13 +115,20 @@ export default function FaqsPage() {
         </section>
 
         <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-          <h2 className="text-2xl font-black tracking-tight text-zinc-950">Siguiente paso recomendado</h2>
-          <p className="mt-2 text-sm leading-6 text-zinc-700">
-            Si ya has resuelto tus dudas principales, compara perfiles reales y decide con señales de confianza visibles.
+          <h2 className="text-2xl font-black tracking-tight text-zinc-950">
+            <i className="fa-solid fa-arrow-right mr-2 text-cyan-700" aria-hidden="true" />
+            Siguiente paso recomendado
+          </h2>
+          <p className="mt-2 text-zinc-700">
+            Si ya tienes resueltas las dudas básicas, pasa al directorio y compara perfiles por ciudad, especialidad y
+            presupuesto.
           </p>
-          <div className="mt-4">
-            <Link href="/coaches" className="inline-flex rounded-xl bg-zinc-950 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800">
-              Ver directorio de coaches
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Link href="/coaches" className="rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800">
+              Ir al directorio
+            </Link>
+            <Link href="/como-elegir-coach-2026" className="rounded-xl border border-black/10 bg-zinc-50 px-4 py-2.5 text-sm font-semibold text-zinc-900 hover:bg-white">
+              Cómo elegir coach
             </Link>
           </div>
         </section>

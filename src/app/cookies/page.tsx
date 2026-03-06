@@ -35,6 +35,7 @@ export const metadata = buildMetadata({
   description:
     "Información sobre el uso de cookies, consentimiento, revocación y gestión de preferencias en EncuentraTuCoach.",
   path: "/cookies",
+  noindex: true,
   keywords: ["política de cookies", "cookies RGPD", "consentimiento cookies", "encuentratucoach cookies"],
 });
 

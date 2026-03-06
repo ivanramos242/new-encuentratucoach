@@ -75,7 +75,7 @@ export function SiteFooter() {
       </Container>
       <div className="border-t border-black/5 py-4">
         <Container className="flex flex-col gap-2 text-sm text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} EncuentraTuCoach. MVP foundation en Next.js.</p>
+          <p>© {new Date().getFullYear()} EncuentraTuCoach. Base MVP en Next.js.</p>
           <div className="flex flex-wrap gap-4">
             <Link href="/aviso-legal" className="hover:text-zinc-700">
               Aviso legal

@@ -22,17 +22,30 @@ export function isSeoIndexingAllowed() {
 }
 
 export function getSeoMinCoachesIndexable() {
-  return readPositiveIntEnv("SEO_MIN_COACHES_INDEXABLE", 3);
+  return readPositiveIntEnv("SEO_MIN_COACHES_INDEXABLE", 2);
 }
 
 export function getQaMinAnswersIndexable() {
   return readPositiveIntEnv("QA_INDEX_MIN_ANSWERS", 2);
 }
 
+export function getQaMinListingQuestionsIndexable() {
+  return readPositiveIntEnv("QA_INDEX_MIN_LISTING_QUESTIONS", 2);
+}
+
 export function shouldNoIndexLanding(input: { coachCount: number; hasEditorialContent?: boolean }) {
-  if (!isSeoIndexingAllowed()) return true;
   if (!(input.hasEditorialContent ?? true)) return true;
   return input.coachCount < getSeoMinCoachesIndexable();
+}
+
+export function shouldNoIndexQaListing(input: {
+  questionCount: number;
+  answerCount: number;
+  hasIntroContent?: boolean;
+}) {
+  if (!(input.hasIntroContent ?? true)) return true;
+  if (input.questionCount < getQaMinListingQuestionsIndexable()) return true;
+  return input.answerCount < getQaMinAnswersIndexable();
 }
 
 export function hasMeaningfulQueryParams(input: Record<string, string | string[] | undefined>) {
@@ -67,9 +80,10 @@ export function buildMetadata(input: {
   image?: string;
   type?: "website" | "article";
 }): Metadata {
-  const title = `${input.title} | ${siteConfig.name}`;
+  const title = input.title;
+  const brandedTitle = input.title.includes(siteConfig.name) ? input.title : `${input.title} | ${siteConfig.name}`;
   const url = input.canonicalUrl || absoluteUrl(input.path ?? "/");
-  const noindex = input.noindex || !isSeoIndexingAllowed();
+  const noindex = Boolean(input.noindex);
 
   return {
     title,
@@ -85,7 +99,7 @@ export function buildMetadata(input: {
         }
       : undefined,
     openGraph: {
-      title,
+      title: brandedTitle,
       description: input.description,
       url,
       locale: siteConfig.locale,
@@ -95,7 +109,7 @@ export function buildMetadata(input: {
     },
     twitter: {
       card: "summary_large_image",
-      title,
+      title: brandedTitle,
       description: input.description,
       images: input.image ? [input.image] : undefined,
     },
@@ -103,8 +117,6 @@ export function buildMetadata(input: {
 }
 
 export function shouldNoIndexDirectoryFilters(filters: DirectoryFilters) {
-  if (!isSeoIndexingAllowed()) return true;
-
   const meaningful = Object.entries(filters).filter(([key, value]) => {
     if (key === "page" || key === "sort") return false;
     if (value == null) return false;

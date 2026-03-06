@@ -10,6 +10,7 @@ export const metadata = buildMetadata({
   description:
     "Condiciones de uso de EncuentraTuCoach.es para Usuarios y Coaches, incluyendo membresía, responsabilidad y jurisdicción.",
   path: "/terminos-y-condiciones",
+  noindex: true,
   keywords: ["términos y condiciones", "condiciones de uso", "membresía coaches", "encuentratucoach"],
 });
 

@@ -68,7 +68,10 @@ export default function PlatformsForCoachesPage() {
       />
       <PageShell className="space-y-6 pt-8">
         <section className="rounded-3xl border border-cyan-200 bg-cyan-50 p-6 shadow-sm">
-          <p className="text-sm font-black uppercase tracking-wide text-cyan-900">Respuesta corta</p>
+          <p className="text-sm font-black uppercase tracking-wide text-cyan-900">
+            <i className="fa-solid fa-bullseye mr-2" aria-hidden="true" />
+            Respuesta corta
+          </p>
           <p className="mt-3 text-base leading-7 text-zinc-800">
             La mejor plataforma para un coach no es la que promete más tráfico, sino la que te coloca delante de
             personas que ya están buscando ayuda por especialidad, ciudad o modalidad y te deja medir visitas,
@@ -77,16 +80,22 @@ export default function PlatformsForCoachesPage() {
         </section>
 
         <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-          <h2 className="text-2xl font-black tracking-tight text-zinc-950">Qué mirar antes de pagar</h2>
+          <h2 className="text-2xl font-black tracking-tight text-zinc-950">
+            <i className="fa-solid fa-list-check mr-2 text-cyan-700" aria-hidden="true" />
+            Qué mirar antes de pagar
+          </h2>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             {[
-              ["Intención del tráfico", "Prioriza búsquedas transaccionales como “coach en Madrid” o “coaching online”, no solo volumen genérico."],
-              ["Modelo de coste", "Diferencia entre cuota fija, comisión por lead y costes ocultos de permanencia o visibilidad extra."],
-              ["Señales de confianza", "Perfil completo, reseñas, certificación visible y claridad de precios mejoran la conversión."],
-              ["Control del contacto", "Necesitas saber si el lead te llega directo, si compites con muchos coaches y cuánto tarda en convertirse."],
-            ].map(([title, text]) => (
+              ["fa-magnifying-glass-chart", "Intención del tráfico", "Prioriza búsquedas transaccionales como “coach en Madrid” o “coaching online”, no solo volumen genérico."],
+              ["fa-euro-sign", "Modelo de coste", "Diferencia entre cuota fija, comisión por lead y costes ocultos de permanencia o visibilidad extra."],
+              ["fa-shield-halved", "Señales de confianza", "Perfil completo, reseñas, certificación visible y claridad de precios mejoran la conversión."],
+              ["fa-comments", "Control del contacto", "Necesitas saber si el lead te llega directo, si compites con muchos coaches y cuánto tarda en convertirse."],
+            ].map(([icon, title, text]) => (
               <article key={title} className="rounded-2xl border border-black/10 bg-zinc-50 p-4">
-                <h3 className="text-base font-black tracking-tight text-zinc-950">{title}</h3>
+                <h3 className="text-base font-black tracking-tight text-zinc-950">
+                  <i className={`fa-solid ${icon} mr-2 text-cyan-700`} aria-hidden="true" />
+                  {title}
+                </h3>
                 <p className="mt-2 text-sm leading-6 text-zinc-700">{text}</p>
               </article>
             ))}
@@ -95,7 +104,10 @@ export default function PlatformsForCoachesPage() {
 
         <section className="grid gap-6 lg:grid-cols-[1.05fr_.95fr]">
           <article className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-black tracking-tight text-zinc-950">Checklist rápido de decisión</h2>
+            <h2 className="text-2xl font-black tracking-tight text-zinc-950">
+              <i className="fa-solid fa-clipboard-check mr-2 text-cyan-700" aria-hidden="true" />
+              Checklist rápido de decisión
+            </h2>
             <ol className="mt-4 grid gap-2 text-sm text-zinc-700">
               <li className="rounded-xl border border-black/10 bg-zinc-50 px-3 py-2">1. Define tu nicho principal y la ciudad o modalidad que quieres atacar.</li>
               <li className="rounded-xl border border-black/10 bg-zinc-50 px-3 py-2">2. Calcula cuánto te puedes permitir pagar durante 90 días antes de exigir retorno.</li>
@@ -105,7 +117,10 @@ export default function PlatformsForCoachesPage() {
           </article>
 
           <article className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-black tracking-tight text-zinc-950">Errores frecuentes</h2>
+            <h2 className="text-2xl font-black tracking-tight text-zinc-950">
+              <i className="fa-solid fa-triangle-exclamation mr-2 text-rose-600" aria-hidden="true" />
+              Errores frecuentes
+            </h2>
             <ul className="mt-4 grid gap-2 text-sm text-zinc-700">
               <li className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2">Elegir por precio sin mirar calidad del tráfico.</li>
               <li className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2">Esperar resultados con un perfil vago o sin especialidad concreta.</li>
@@ -116,25 +131,31 @@ export default function PlatformsForCoachesPage() {
         </section>
 
         <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-          <h2 className="text-2xl font-black tracking-tight text-zinc-950">Compara antes de decidir</h2>
+          <h2 className="text-2xl font-black tracking-tight text-zinc-950">
+            <i className="fa-solid fa-link mr-2 text-cyan-700" aria-hidden="true" />
+            Compara antes de decidir
+          </h2>
           <div className="mt-4 grid gap-3 md:grid-cols-3">
             <Link href="/membresia" className="rounded-2xl border border-black/10 bg-zinc-50 p-4 hover:bg-white">
-              <p className="text-sm font-black text-zinc-950">Ver membresía</p>
+              <p className="text-sm font-black text-zinc-950"><i className="fa-solid fa-layer-group mr-2 text-cyan-700" aria-hidden="true" />Ver membresía</p>
               <p className="mt-2 text-sm text-zinc-700">Entiende el modelo, el precio y cómo funciona la captación en EncuentraTuCoach.</p>
             </Link>
             <Link href="/conseguir-clientes-como-coach" className="rounded-2xl border border-black/10 bg-zinc-50 p-4 hover:bg-white">
-              <p className="text-sm font-black text-zinc-950">Cómo conseguir clientes</p>
+              <p className="text-sm font-black text-zinc-950"><i className="fa-solid fa-user-plus mr-2 text-cyan-700" aria-hidden="true" />Cómo conseguir clientes</p>
               <p className="mt-2 text-sm text-zinc-700">Complementa la membresía con una estrategia más amplia de adquisición.</p>
             </Link>
             <Link href="/blog" className="rounded-2xl border border-black/10 bg-zinc-50 p-4 hover:bg-white">
-              <p className="text-sm font-black text-zinc-950">Blog y recursos</p>
+              <p className="text-sm font-black text-zinc-950"><i className="fa-solid fa-book-open mr-2 text-cyan-700" aria-hidden="true" />Blog y recursos</p>
               <p className="mt-2 text-sm text-zinc-700">Consulta guías para optimizar tu perfil, tu mensaje y tu conversión.</p>
             </Link>
           </div>
         </section>
 
         <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-          <h2 className="text-2xl font-black tracking-tight text-zinc-950">Preguntas frecuentes</h2>
+          <h2 className="text-2xl font-black tracking-tight text-zinc-950">
+            <i className="fa-solid fa-circle-question mr-2 text-cyan-700" aria-hidden="true" />
+            Preguntas frecuentes
+          </h2>
           <div className="mt-4 grid gap-3">
             {FAQ_ITEMS.map((item) => (
               <details key={item.q} className="rounded-2xl border border-black/10 bg-zinc-50 p-4">
@@ -146,7 +167,10 @@ export default function PlatformsForCoachesPage() {
         </section>
 
         <section className="rounded-3xl border border-cyan-200 bg-cyan-50 p-6 shadow-sm">
-          <h2 className="text-2xl font-black tracking-tight text-zinc-950">Siguiente paso recomendado</h2>
+          <h2 className="text-2xl font-black tracking-tight text-zinc-950">
+            <i className="fa-solid fa-arrow-right mr-2 text-cyan-700" aria-hidden="true" />
+            Siguiente paso recomendado
+          </h2>
           <p className="mt-2 text-sm leading-6 text-zinc-700">
             Si quieres evaluar una opción concreta con precio, visibilidad y funcionamiento claros, revisa la membresía.
           </p>

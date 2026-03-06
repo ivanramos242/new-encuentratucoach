@@ -25,7 +25,7 @@ const CONTACT_FAQ = [
 ] as const;
 
 export const metadata = buildMetadata({
-  title: "Contacto EncuentraTuCoach",
+  title: "Contacto",
   description:
     "Contacta con EncuentraTuCoach para soporte, membresía, certificaciones y dudas sobre el directorio de coaches en España.",
   path: "/contacto",

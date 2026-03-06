@@ -31,6 +31,26 @@ export function getCityBySlug(slug: string) {
   return cities.find((city) => city.slug === slug);
 }
 
+const CITY_SLUG_ALIASES: Record<string, string> = {
+  vizcaya: "bilbao",
+};
+
+export function resolveCitySlug(slug: string) {
+  const normalized = slug.trim().toLowerCase();
+  const direct = getCityBySlug(normalized);
+  if (direct) return direct.slug;
+  const alias = CITY_SLUG_ALIASES[normalized];
+  return alias && getCityBySlug(alias) ? alias : null;
+}
+
+export function isIndexableCitySlug(slug: string) {
+  return Boolean(resolveCitySlug(slug));
+}
+
+export function isIndexableCategorySlug(slug: string) {
+  return Boolean(getCategoryBySlug(slug));
+}
+
 export function getCoachAverageRating(coach: CoachProfile) {
   return average(coach.reviews.map((review) => review.rating));
 }

@@ -69,7 +69,10 @@ export default function CoachingWhatIsGuidePage() {
 
       <PageShell className="space-y-6 pt-8">
         <section className="rounded-3xl border border-cyan-200 bg-cyan-50 p-6 shadow-sm">
-          <p className="text-sm font-black uppercase tracking-wide text-cyan-900">Respuesta corta</p>
+          <p className="text-sm font-black uppercase tracking-wide text-cyan-900">
+            <i className="fa-solid fa-compass mr-2" aria-hidden="true" />
+            Respuesta corta
+          </p>
           <p className="mt-3 text-base leading-7 text-zinc-800">
             El coaching es una relación profesional orientada a avanzar en un objetivo específico. Suele servir cuando
             necesitas claridad, plan de acción, seguimiento y conversación enfocada en resultados.
@@ -78,7 +81,10 @@ export default function CoachingWhatIsGuidePage() {
 
         <section className="grid gap-6 lg:grid-cols-[1.05fr_.95fr]">
           <article className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-black tracking-tight text-zinc-950">Qué puedes esperar de un proceso</h2>
+            <h2 className="text-2xl font-black tracking-tight text-zinc-950">
+              <i className="fa-solid fa-route mr-2 text-cyan-700" aria-hidden="true" />
+              Qué puedes esperar de un proceso
+            </h2>
             <ul className="mt-4 grid gap-2 text-sm text-zinc-700">
               <li className="rounded-xl border border-black/10 bg-zinc-50 px-3 py-2">Objetivo definido desde el inicio o afinado en la primera sesión.</li>
               <li className="rounded-xl border border-black/10 bg-zinc-50 px-3 py-2">Preguntas y estructura para pasar de la confusión a la acción.</li>
@@ -88,7 +94,10 @@ export default function CoachingWhatIsGuidePage() {
           </article>
 
           <article className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-black tracking-tight text-zinc-950">Qué no es coaching</h2>
+            <h2 className="text-2xl font-black tracking-tight text-zinc-950">
+              <i className="fa-solid fa-shield-heart mr-2 text-amber-600" aria-hidden="true" />
+              Qué no es coaching
+            </h2>
             <ul className="mt-4 grid gap-2 text-sm text-zinc-700">
               <li className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">No sustituye terapia psicológica ni tratamiento médico.</li>
               <li className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">No debería prometer resultados mágicos o inmediatos.</li>
@@ -99,16 +108,22 @@ export default function CoachingWhatIsGuidePage() {
         </section>
 
         <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-          <h2 className="text-2xl font-black tracking-tight text-zinc-950">Cuándo suele ayudar más</h2>
+          <h2 className="text-2xl font-black tracking-tight text-zinc-950">
+            <i className="fa-solid fa-signal mr-2 text-cyan-700" aria-hidden="true" />
+            Cuándo suele ayudar más
+          </h2>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             {[
-              ["Transición profesional", "Cambio de trabajo, redefinición de perfil o preparación de entrevistas."],
-              ["Hábitos y productividad", "Ordenar prioridades, sostener cambios y mejorar foco personal."],
-              ["Liderazgo", "Gestionar equipos, delegar mejor y tomar decisiones con más claridad."],
-              ["Relaciones o decisiones complejas", "Trabajar conversaciones difíciles, límites y opciones reales."],
-            ].map(([title, text]) => (
+              ["fa-briefcase", "Transición profesional", "Cambio de trabajo, redefinición de perfil o preparación de entrevistas."],
+              ["fa-repeat", "Hábitos y productividad", "Ordenar prioridades, sostener cambios y mejorar foco personal."],
+              ["fa-people-group", "Liderazgo", "Gestionar equipos, delegar mejor y tomar decisiones con más claridad."],
+              ["fa-scale-balanced", "Relaciones o decisiones complejas", "Trabajar conversaciones difíciles, límites y opciones reales."],
+            ].map(([icon, title, text]) => (
               <article key={title} className="rounded-2xl border border-black/10 bg-zinc-50 p-4">
-                <h3 className="text-base font-black tracking-tight text-zinc-950">{title}</h3>
+                <h3 className="text-base font-black tracking-tight text-zinc-950">
+                  <i className={`fa-solid ${icon} mr-2 text-cyan-700`} aria-hidden="true" />
+                  {title}
+                </h3>
                 <p className="mt-2 text-sm leading-6 text-zinc-700">{text}</p>
               </article>
             ))}
@@ -116,25 +131,31 @@ export default function CoachingWhatIsGuidePage() {
         </section>
 
         <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-          <h2 className="text-2xl font-black tracking-tight text-zinc-950">Cómo pasar de la teoría a una decisión útil</h2>
+          <h2 className="text-2xl font-black tracking-tight text-zinc-950">
+            <i className="fa-solid fa-link mr-2 text-cyan-700" aria-hidden="true" />
+            Cómo pasar de la teoría a una decisión útil
+          </h2>
           <div className="mt-4 grid gap-3 md:grid-cols-3">
             <Link href="/como-elegir-coach-2026" className="rounded-2xl border border-black/10 bg-zinc-50 p-4 hover:bg-white">
-              <p className="text-sm font-black text-zinc-950">Cómo elegir coach</p>
+              <p className="text-sm font-black text-zinc-950"><i className="fa-solid fa-list-check mr-2 text-cyan-700" aria-hidden="true" />Cómo elegir coach</p>
               <p className="mt-2 text-sm text-zinc-700">Usa una checklist realista para hacer shortlist con criterio.</p>
             </Link>
             <Link href="/precios-coaching-espana" className="rounded-2xl border border-black/10 bg-zinc-50 p-4 hover:bg-white">
-              <p className="text-sm font-black text-zinc-950">Precios de coaching</p>
+              <p className="text-sm font-black text-zinc-950"><i className="fa-solid fa-euro-sign mr-2 text-cyan-700" aria-hidden="true" />Precios de coaching</p>
               <p className="mt-2 text-sm text-zinc-700">Revisa rangos habituales antes de comparar perfiles.</p>
             </Link>
             <Link href="/faqs" className="rounded-2xl border border-black/10 bg-zinc-50 p-4 hover:bg-white">
-              <p className="text-sm font-black text-zinc-950">Preguntas frecuentes</p>
+              <p className="text-sm font-black text-zinc-950"><i className="fa-solid fa-circle-question mr-2 text-cyan-700" aria-hidden="true" />Preguntas frecuentes</p>
               <p className="mt-2 text-sm text-zinc-700">Aclara dudas de formatos, certificación y duración del proceso.</p>
             </Link>
           </div>
         </section>
 
         <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
-          <h2 className="text-2xl font-black tracking-tight text-zinc-950">Preguntas frecuentes</h2>
+          <h2 className="text-2xl font-black tracking-tight text-zinc-950">
+            <i className="fa-solid fa-circle-question mr-2 text-cyan-700" aria-hidden="true" />
+            Preguntas frecuentes
+          </h2>
           <div className="mt-4 grid gap-3">
             {FAQ_ITEMS.map((item) => (
               <details key={item.q} className="rounded-2xl border border-black/10 bg-zinc-50 p-4">
@@ -146,7 +167,10 @@ export default function CoachingWhatIsGuidePage() {
         </section>
 
         <section className="rounded-3xl border border-cyan-200 bg-cyan-50 p-6 shadow-sm">
-          <h2 className="text-2xl font-black tracking-tight text-zinc-950">Siguiente paso recomendado</h2>
+          <h2 className="text-2xl font-black tracking-tight text-zinc-950">
+            <i className="fa-solid fa-arrow-right mr-2 text-cyan-700" aria-hidden="true" />
+            Siguiente paso recomendado
+          </h2>
           <p className="mt-2 text-sm leading-6 text-zinc-700">
             Si ya tienes una idea bastante clara de tu objetivo, pasa al directorio y compara perfiles por especialidad, ciudad y presupuesto.
           </p>
