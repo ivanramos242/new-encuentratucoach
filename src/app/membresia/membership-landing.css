@@ -114,6 +114,11 @@
   width: 18px;
 }
 
+.etc-coach-landing .btn i {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
 .etc-coach-landing .hero {
   background:
     radial-gradient(900px 420px at 15% -5%, rgba(10, 166, 166, 0.16), transparent 60%),
@@ -220,6 +225,12 @@
   width: 18px;
 }
 
+.etc-coach-landing .micro i {
+  color: var(--brand-1);
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
 .etc-coach-landing .section-head {
   align-items: end;
   display: flex;
@@ -298,6 +309,12 @@
   width: 22px;
 }
 
+.etc-coach-landing .icon i {
+  color: var(--brand-1);
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
 .etc-coach-landing .toc {
   margin-top: 22px;
   padding: 18px 22px;
@@ -312,6 +329,10 @@
   letter-spacing: -0.2px;
 }
 
+.etc-coach-landing .toc strong i {
+  color: var(--brand-1);
+}
+
 .etc-coach-landing .toc ul {
   color: rgba(11, 18, 32, 0.78);
   display: grid;
@@ -321,7 +342,10 @@
 }
 
 .etc-coach-landing .toc a {
+  align-items: center;
   color: rgba(11, 18, 32, 0.85);
+  display: inline-flex;
+  gap: 8px;
 }
 
 .etc-coach-landing .toc a[aria-current="true"] {
@@ -480,6 +504,10 @@
   margin: 0 0 10px;
 }
 
+.etc-coach-landing .adv-title p {
+  font-weight: 900;
+}
+
 .etc-coach-landing .steps {
   counter-reset: step;
   display: grid;
@@ -517,6 +545,19 @@
 .etc-coach-landing .step h3 {
   font-weight: 950;
   margin: 0 0 10px;
+}
+
+.etc-coach-landing .step-head {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.etc-coach-landing .step-head i {
+  color: var(--brand-1);
+  font-size: 1rem;
+  line-height: 1;
+  margin-bottom: 10px;
 }
 
 .etc-coach-landing .step p {
@@ -605,6 +646,36 @@
   width: 18px;
 }
 
+.etc-coach-landing .features i {
+  color: var(--brand-2);
+  flex: 0 0 auto;
+  font-size: 0.95rem;
+  line-height: 1;
+  margin-top: 4px;
+}
+
+.etc-coach-landing .icon-list {
+  display: grid;
+  gap: 12px;
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+.etc-coach-landing .icon-list li {
+  align-items: flex-start;
+  display: flex;
+  gap: 10px;
+}
+
+.etc-coach-landing .icon-list i {
+  color: var(--brand-1);
+  flex: 0 0 auto;
+  font-size: 0.95rem;
+  line-height: 1;
+  margin-top: 4px;
+}
+
 .etc-coach-landing .price-actions {
   display: flex;
   flex-wrap: wrap;
@@ -628,6 +699,11 @@
   font-weight: 950;
   letter-spacing: -0.2px;
   margin: 16px 0 10px;
+}
+
+.etc-coach-landing article h3 i {
+  color: var(--brand-1);
+  margin-right: 8px;
 }
 
 .etc-coach-landing article p {
@@ -686,6 +762,16 @@
   display: flex;
   gap: 10px;
   justify-content: space-between;
+}
+
+.etc-coach-landing .q span {
+  align-items: center;
+  display: inline-flex;
+  gap: 10px;
+}
+
+.etc-coach-landing .q span i {
+  color: var(--brand-1);
 }
 
 .etc-coach-landing summary .chev {
@@ -815,6 +901,16 @@
   font-size: 1.05rem;
   font-weight: 950;
   letter-spacing: -0.2px;
+}
+
+.etc-coach-landing .stat-title {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.etc-coach-landing .stat-title i {
+  color: var(--brand-1);
 }
 
 .etc-coach-landing .stat span {

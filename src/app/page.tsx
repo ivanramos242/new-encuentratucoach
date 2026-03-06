@@ -5,13 +5,15 @@ import "./home-v4.css";
 export const dynamic = "force-dynamic";
 
 export const metadata = buildMetadata({
-  title: "Buscar coach en España",
+  title: "Buscar coach en España y online",
   description:
-    "Directorio para encontrar coach en España, online o presencial. Compara perfiles por ciudad, especialidad, modalidad y presupuesto.",
+    "Busca coach en España por ciudad, especialidad, modalidad y presupuesto. Directorio para comparar perfiles reales y contactar directamente.",
   path: "/",
   keywords: [
     "buscar un coach",
     "buscar coach en españa",
+    "buscar coach madrid",
+    "buscar coach barcelona",
     "directorio de coaches",
     "coach online",
     "coach presencial",

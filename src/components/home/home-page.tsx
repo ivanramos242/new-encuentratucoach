@@ -52,7 +52,7 @@ export async function HomePage() {
     name: "Buscar coach en España",
     url: "https://encuentratucoach.es/",
     description:
-      "Directorio para encontrar coach en España, online o presencial. Compara perfiles por ciudad, especialidad, modalidad y presupuesto.",
+      "Busca coach en España por ciudad, especialidad, modalidad y presupuesto. Directorio para comparar perfiles reales y contactar directamente.",
     keywords:
       "buscar coach en España, directorio de coaches, coach online, coach presencial, coach por ciudad, coach por especialidad, encontrar coach, coaches certificados",
   };

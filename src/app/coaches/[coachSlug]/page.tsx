@@ -77,6 +77,11 @@ function appearsMixedSpanishEnglish(text: string) {
   return spanishHits >= 3 && englishHits >= 3;
 }
 
+function truncateSeoText(value: string, maxLength: number) {
+  if (value.length <= maxLength) return value;
+  return `${value.slice(0, Math.max(0, maxLength - 1)).trimEnd()}…`;
+}
+
 export async function generateMetadata({
   params,
   searchParams,
@@ -93,19 +98,20 @@ export async function generateMetadata({
   const categoryLabels = coach.categories.map((slug) => getCoachCategoryLabel(slug) ?? slug).filter(Boolean);
   const primaryCategory = categoryLabels[0]?.trim();
   const cityMain = coach.cityLabel.split(",")[0]?.trim();
-  const detailedSeoTitle =
-    primaryCategory && cityMain
-      ? `${coach.name}, coach de ${primaryCategory.toLowerCase()} en ${cityMain}`
-      : cityMain
-        ? `${coach.name}, coach en ${cityMain}`
-        : `${coach.name}, perfil de coach`;
-  const compactSeoTitle = cityMain ? `${coach.name}, coach en ${cityMain}` : `${coach.name}, perfil de coach`;
-  const seoTitle = detailedSeoTitle.length <= 58 ? detailedSeoTitle : compactSeoTitle;
+  const titleCandidates = [
+    primaryCategory && cityMain ? `${coach.name} | ${primaryCategory} en ${cityMain}` : "",
+    cityMain ? `${coach.name} | Coach en ${cityMain}` : "",
+    `${coach.name} | Coach profesional`,
+  ].filter(Boolean);
+  const seoTitle = titleCandidates.find((item) => item.length <= 58) ?? truncateSeoText(titleCandidates[0] ?? coach.name, 58);
   const seoDescription = [
-    primaryCategory ? `${coach.name} ofrece ${primaryCategory.toLowerCase()} en ${coach.cityLabel}.` : `${coach.name} esta activo en ${coach.cityLabel}.`,
-    coach.sessionModes.length ? `Trabaja en formato ${coach.sessionModes.join(" y ")}.` : "",
-    coach.basePriceEur > 0 ? `Precio orientativo desde ${formatEuro(coach.basePriceEur)}.` : "",
-    coach.certifiedStatus === "approved" ? "Perfil verificado en la plataforma." : "",
+    primaryCategory
+      ? `${coach.name} ofrece ${primaryCategory.toLowerCase()} en ${cityMain ?? coach.cityLabel}.`
+      : `${coach.name} ofrece acompañamiento profesional en ${cityMain ?? coach.cityLabel}.`,
+    coach.idealClient ? `Ideal para ${coach.idealClient.charAt(0).toLowerCase()}${coach.idealClient.slice(1)}.` : "",
+    coach.sessionModes.length ? `Sesiones ${coach.sessionModes.join(" y ")}.` : "",
+    coach.basePriceEur > 0 ? `Precio desde ${formatEuro(coach.basePriceEur)}.` : "",
+    coach.certifiedStatus === "approved" ? "Perfil verificado." : "",
   ]
     .filter(Boolean)
     .join(" ")
@@ -120,7 +126,7 @@ export async function generateMetadata({
 
   return buildMetadata({
     title: seoTitle,
-    description: seoDescription || coach.headline || `Perfil de coach en ${coach.cityLabel}`,
+    description: truncateSeoText(seoDescription || coach.headline || `Perfil de coach en ${coach.cityLabel}`, 158),
     path: `/coaches/${coach.slug}`,
     noindex: hasPopupVariant,
     keywords,

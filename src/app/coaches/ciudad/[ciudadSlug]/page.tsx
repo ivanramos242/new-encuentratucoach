@@ -114,8 +114,8 @@ export default async function CityLandingPage({ params }: { params: ParamsInput 
         contextTitle={isPrimaryCity ? `Rutas rapidas en ${city.name}` : `Atajos para buscar en ${city.name}`}
         contextDescription={
           isPrimaryCity
-            ? `Filtra por especialidad y presupuesto para llegar antes a perfiles con encaje real en ${city.name}.`
-            : "Empieza por rutas utiles y reduce el tiempo de comparacion."
+            ? `Filtra por especialidad y presupuesto para encontrar antes un coach en ${city.name} con encaje real.`
+            : "Empieza por rutas útiles y reduce el tiempo de comparación."
         }
         contextLinks={contextLinks}
         trustStats={trustStats}
@@ -128,7 +128,7 @@ export default async function CityLandingPage({ params }: { params: ParamsInput 
           }
           description={
             isPrimaryCity
-              ? `Seleccion de perfiles en ${city.name} para comparar enfoque, modalidad y precio sin saturacion visual.`
+              ? `Selección de perfiles en ${city.name} para comparar enfoque, modalidad y precio sin saturación visual.`
               : "Compara perfiles por enfoque, modalidad y precio. Revisa fichas y contacta solo con los que encajen contigo."
           }
         >
@@ -160,6 +160,31 @@ export default async function CityLandingPage({ params }: { params: ParamsInput 
         </LandingSection>
 
         <LandingRealisticContent kind="city" items={items} city={city} priority={priority} />
+
+        {isPrimaryCity ? (
+          <LandingSection
+            title={`Atajos para decidir mejor en ${city.name}`}
+            description={`Si ya estás comparando opciones en ${city.name}, estas rutas te ayudan a resolver precio, modalidad y criterios de elección.`}
+          >
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {[
+                { href: "/coaches/modalidad/online", title: "Coach online", description: "Amplía oferta y compara perfiles sin limitarte a una sola ciudad." },
+                { href: "/precios-coaching-espana", title: "Precios de coaching", description: "Aterriza expectativas de presupuesto antes de contactar." },
+                { href: "/como-elegir-coach-2026", title: "Cómo elegir coach", description: "Usa una checklist clara para filtrar mejor." },
+                { href: "/faqs", title: "FAQs de coaching", description: "Resuelve dudas frecuentes antes de escribir al coach." },
+              ].map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="rounded-2xl border border-black/10 bg-zinc-50 p-4 hover:bg-white"
+                >
+                  <p className="font-semibold text-zinc-900">{item.title}</p>
+                  <p className="mt-1 text-sm text-zinc-600">{item.description}</p>
+                </Link>
+              ))}
+            </div>
+          </LandingSection>
+        ) : null}
 
         {exploreCards.length ? (
           <LandingSection
