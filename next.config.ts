@@ -55,6 +55,7 @@ const cspReportOnly = [
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  skipTrailingSlashRedirect: true,
   async redirects() {
     return [
       { source: "/portal-de-coaches", destination: "/coaches", permanent: true },
@@ -90,31 +91,30 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/que-es-el-coaching-y-para-que-sirve-guia-clara-con-ejemplos-reales",
-        destination: "/que-es-el-coaching-y-para-que-sirve",
+        destination: "/blog/que-es-el-coaching-y-para-que-sirve-guia-clara-con-ejemplos-reales",
         permanent: true,
       },
       {
         source: "/coaching-de-liderazgo-habilidades-clave-y-ejercicios-practicos-para-liderar-mejo",
-        destination: "/coaches/categoria/liderazgo",
+        destination: "/blog/coaching-de-liderazgo-habilidades-clave-y-ejercicios-practicos-para-liderar-mejo",
         permanent: true,
       },
       {
         source: "/el-poder-del-coaching-en-espana",
-        destination: "/que-es-el-coaching-y-para-que-sirve",
+        destination: "/blog/el-poder-del-coaching-en-espana",
         permanent: true,
       },
       {
         source: "/coaching-en-espana-potencia-crecimiento",
-        destination: "/que-es-el-coaching-y-para-que-sirve",
+        destination: "/blog/coaching-en-espana-potencia-crecimiento",
         permanent: true,
       },
       {
         source: "/el-camino-hacia-el-exito-personal-con-coaching-en-espana",
-        destination: "/coaches/categoria/personal",
+        destination: "/blog/el-camino-hacia-el-exito-personal-con-coaching-en-espana",
         permanent: true,
       },
       { source: "/politica-de-privacidad", destination: "/privacidad", permanent: true },
-      { source: "/test1", destination: "/blog", permanent: true },
       { source: "/membresia-para-coaches", destination: "/membresia", permanent: true },
       { source: "/buscar-coach-madrid", destination: "/coaches/ciudad/madrid", permanent: true },
       { source: "/buscar-coach-en-barcelona", destination: "/coaches/ciudad/barcelona", permanent: true },
@@ -130,7 +130,11 @@ const nextConfig: NextConfig = {
       { source: "/coaches/ciudad/espana", destination: "/coaches", permanent: true },
       { source: "/coaches/ciudad/andalucia", destination: "/coaches", permanent: true },
       { source: "/coaches/ciudad/caldes-d-estrac", destination: "/coaches", permanent: true },
-      { source: "/coaches/categoria/:categoriaSlug/espana", destination: "/coaches/categoria/:categoriaSlug", permanent: true },
+      {
+        source: "/coaches/categoria/:categoriaSlug/espana",
+        destination: "/coaches/categoria/:categoriaSlug",
+        permanent: true,
+      },
       {
         source: "/coaches/categoria/:categoriaSlug/andalucia",
         destination: "/coaches/categoria/:categoriaSlug",
@@ -144,6 +148,16 @@ const nextConfig: NextConfig = {
       { source: "/iniciar_sesion", destination: "/iniciar-sesion", permanent: true },
       { source: "/coaching-que-es", destination: "/que-es-el-coaching-y-para-que-sirve", permanent: true },
     ];
+  },
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "encuentratucoach.es" },
+      { protocol: "https", hostname: "images.unsplash.com" },
+      { protocol: "https", hostname: "picsum.photos" },
+      { protocol: "https", hostname: "padel-minio.obdyzx.easypanel.host" },
+      { protocol: "https", hostname: "**.easypanel.host" },
+      ...(s3PublicPattern ? [s3PublicPattern] : []),
+    ],
   },
   async headers() {
     const baseHeaders = [
@@ -169,17 +183,15 @@ const nextConfig: NextConfig = {
       { source: "/api/uploads/:path*", headers: noStoreHeaders },
       { source: "/api/coach-profile/:path*", headers: noStoreHeaders },
       { source: "/api/internal/:path*", headers: noStoreHeaders },
+      {
+        source: "/_next/image",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
+        source: "/api/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
     ];
-  },
-  images: {
-    remotePatterns: [
-      { protocol: "https", hostname: "encuentratucoach.es" },
-      { protocol: "https", hostname: "images.unsplash.com" },
-      { protocol: "https", hostname: "picsum.photos" },
-      { protocol: "https", hostname: "padel-minio.obdyzx.easypanel.host" },
-      { protocol: "https", hostname: "**.easypanel.host" },
-      ...(s3PublicPattern ? [s3PublicPattern] : []),
-    ],
   },
 };
 

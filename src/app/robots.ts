@@ -7,26 +7,27 @@ export const dynamic = "force-dynamic";
 export default function robots(): MetadataRoute.Robots {
   const baseUrl = getSiteBaseUrl();
   const allowIndexing = isSeoIndexingAllowed();
+
   return {
     rules: allowIndexing
       ? {
           userAgent: "*",
-          allow: "/",
-          disallow: ["/admin", "/mi-cuenta", "/api"],
+          allow: ["/", "/coaches", "/blog"],
+          disallow: [
+            "/admin",
+            "/mi-cuenta",
+            "/api",
+            "/iniciar-sesion",
+            "/registro",
+            "/recuperar-contrasena",
+            "/_next/",
+          ],
         }
       : {
           userAgent: "*",
           disallow: "/",
         },
-    sitemap: [
-      `${baseUrl}/sitemap.xml`,
-      `${baseUrl}/sitemap-core.xml`,
-      `${baseUrl}/sitemap-coaches.xml`,
-      `${baseUrl}/sitemap-landings.xml`,
-      `${baseUrl}/sitemap-blog.xml`,
-      `${baseUrl}/sitemap-qa-questions.xml`,
-      `${baseUrl}/sitemap-qa-topics.xml`,
-    ],
+    sitemap: `${baseUrl}/sitemap.xml`,
     host: baseUrl,
   };
 }

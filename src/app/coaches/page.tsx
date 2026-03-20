@@ -1,25 +1,23 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import type { Metadata } from "next";
 import { CoachCard } from "@/components/directory/coach-card";
-import { DirectoryFiltersForm } from "@/components/directory/directory-filters-form";
-import { DirectoryShortlistCta } from "@/components/directory/directory-shortlist-cta";
-import { TrustStrip } from "@/components/directory/trust-strip";
 import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
 import { JsonLd } from "@/components/seo/json-ld";
-import { getOptionalSessionUser } from "@/lib/auth-server";
 import {
   PAGE_SIZE,
-  filterAndSortCoachesFrom,
-  getCategoryBySlug,
+  filterAndSortCoaches,
   paginateCoaches,
   parseDirectoryFilters,
 } from "@/lib/directory";
-import { cities } from "@/lib/mock-data";
-import { listPublicCoachesMerged } from "@/lib/public-coaches";
-import { getTrustMetricsForCoachSet } from "@/lib/directory-trust-metrics";
-import { buildMetadata, hasMeaningfulQueryParams } from "@/lib/seo";
-import { getSiteBaseUrl } from "@/lib/site-config";
+import { coachCategories, cities, faqItems } from "@/lib/mock-data";
+import {
+  buildBreadcrumbList,
+  buildDirectoryCanonicalPath,
+  buildItemListSchema,
+  buildMetadata,
+  directoryHasSearchState,
+} from "@/lib/seo";
 import { formatEuro } from "@/lib/utils";
 
 type SearchParamsInput = Promise<Record<string, string | string[] | undefined>>;
@@ -40,73 +38,6 @@ function buildPaginationHref(page: number, raw: Record<string, string | string[]
   return query ? `/coaches?${query}` : "/coaches";
 }
 
-function getMeaningfulFilterKeys(filters: ReturnType<typeof parseDirectoryFilters>) {
-  const keys: string[] = [];
-  if (filters.q) keys.push("q");
-  if (filters.cat) keys.push("cat");
-  if (filters.location) keys.push("location");
-  if (filters.session?.length) keys.push("session");
-  if (filters.certified) keys.push("certified");
-  if (filters.idioma) keys.push("idioma");
-  if (typeof filters.priceMin === "number") keys.push("priceMin");
-  if (typeof filters.priceMax === "number") keys.push("priceMax");
-  return keys;
-}
-
-function resolveCanonicalForDirectory(input: {
-  filters: ReturnType<typeof parseDirectoryFilters>;
-  citySlug?: string | null;
-  categorySlug?: string | null;
-}) {
-  const keys = new Set(getMeaningfulFilterKeys(input.filters));
-  if (keys.size === 0) return "/coaches";
-
-  const onlyCatOrLocation = Array.from(keys).every((key) => key === "cat" || key === "location");
-  if (!onlyCatOrLocation) return "/coaches";
-
-  if (input.categorySlug && input.citySlug) return `/coaches/categoria/${input.categorySlug}/${input.citySlug}`;
-  if (input.categorySlug) return `/coaches/categoria/${input.categorySlug}`;
-  if (input.citySlug) return `/coaches/ciudad/${input.citySlug}`;
-  return "/coaches";
-}
-
-function DirectorySortForm({ filters }: { filters: ReturnType<typeof parseDirectoryFilters> }) {
-  return (
-    <form action="/coaches" className="mt-2 flex flex-col gap-2">
-      {filters.q ? <input type="hidden" name="q" value={filters.q} /> : null}
-      {filters.cat ? <input type="hidden" name="cat" value={filters.cat} /> : null}
-      {filters.location ? <input type="hidden" name="location" value={filters.location} /> : null}
-      {filters.session?.map((mode) => <input key={mode} type="hidden" name="session" value={mode} />)}
-      {filters.certified ? <input type="hidden" name="certified" value="certified" /> : null}
-      {filters.idioma ? <input type="hidden" name="idioma" value={filters.idioma} /> : null}
-      {typeof filters.priceMin === "number" ? <input type="hidden" name="price_min" value={filters.priceMin} /> : null}
-      {typeof filters.priceMax === "number" ? <input type="hidden" name="price_max" value={filters.priceMax} /> : null}
-
-      <label className="grid gap-1 text-left text-sm font-semibold text-zinc-800 sm:text-right">
-        <span className="inline-flex items-center gap-2 sm:justify-end">
-          <i className="fa-solid fa-arrow-down-wide-short text-zinc-500" aria-hidden="true" />
-          Ordenar
-        </span>
-        <div className="flex gap-2 sm:justify-end">
-          <select
-            name="sort"
-            defaultValue={filters.sort ?? "recent"}
-            className="min-w-[190px] rounded-xl border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-400"
-          >
-            <option value="recent">Más recientes</option>
-            <option value="price_asc">Precio ascendente</option>
-            <option value="price_desc">Precio descendente</option>
-            <option value="rating_desc">Mejor valoración</option>
-          </select>
-          <button className="rounded-xl bg-zinc-950 px-3 py-2 text-sm font-semibold text-white hover:bg-zinc-800">
-            Aplicar
-          </button>
-        </div>
-      </label>
-    </form>
-  );
-}
-
 export async function generateMetadata({
   searchParams,
 }: {
@@ -114,43 +45,20 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const raw = await searchParams;
   const filters = parseDirectoryFilters(raw);
-  const category = filters.cat ? getCategoryBySlug(filters.cat) : null;
-  const locationSlug = filters.location?.toLowerCase();
-  const city = locationSlug ? cities.find((item) => item.slug === locationSlug) : null;
-  const title =
-    category && city
-      ? `Buscar ${category.name.toLowerCase()} en ${city.name}`
-      : category
-        ? `Buscar ${category.name.toLowerCase()}`
-        : city
-          ? `Buscar coach en ${city.name}`
-          : "Buscar coach en España";
-
-  const noindex = hasMeaningfulQueryParams(raw);
-  const canonicalPath = resolveCanonicalForDirectory({
+  const canonicalPath = buildDirectoryCanonicalPath(
     filters,
-    citySlug: city?.slug ?? null,
-    categorySlug: category?.slug ?? null,
-  });
+    new Set(coachCategories.map((item) => item.slug)),
+    new Set(cities.map((item) => item.slug)),
+  );
+  const hasSearchState = directoryHasSearchState(filters);
 
   return buildMetadata({
-    title,
+    title: "Buscar coach en Espana | Directorio por especialidad, ciudad y modalidad",
     description:
-      "Busca coach en España por ciudad, especialidad, modalidad y presupuesto. Compara perfiles reales y contacta directamente.",
+      "Filtra por especialidad, ciudad, modalidad online o presencial y presupuesto. Compara perfiles reales y contacta.",
     path: "/coaches",
-    canonicalUrl: `${getSiteBaseUrl()}${canonicalPath}`,
-    noindex,
-    keywords: [
-      "directorio de coaches",
-      "buscar coach",
-      "buscar un coach",
-      "coach madrid",
-      "coach barcelona",
-      "coach online",
-      "coaching personal",
-      "coaching carrera",
-      "coaching liderazgo",
-    ],
+    canonicalPath,
+    noindex: hasSearchState,
   });
 }
 
@@ -160,98 +68,214 @@ export default async function CoachesDirectoryPage({
   searchParams: SearchParamsInput;
 }) {
   const raw = await searchParams;
-  const sessionUser = await getOptionalSessionUser();
-  const isAdmin = sessionUser?.role === "admin";
   const filters = parseDirectoryFilters(raw);
-  const sourceCoaches = await listPublicCoachesMerged();
-  const availableCategorySlugs = [...new Set(sourceCoaches.flatMap((coach) => coach.categories))].sort((a, b) =>
-    a.localeCompare(b, "es"),
-  );
-  const availableCategories = availableCategorySlugs.map((categorySlug) => ({
-    slug: categorySlug,
-    label: getCategoryBySlug(categorySlug)?.name ?? categorySlug,
-  }));
-  const allResults = filterAndSortCoachesFrom(sourceCoaches, filters);
+  const allResults = filterAndSortCoaches(filters);
   const paginated = paginateCoaches(allResults, filters.page ?? 1, PAGE_SIZE);
-  const trustStats = await getTrustMetricsForCoachSet({
-    coachIds: allResults.map((coach) => coach.id),
-    fallbackCoaches: allResults,
-  });
-  const hasFilters = hasMeaningfulQueryParams(raw);
-  const schema = {
-    "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    name: "Directorio de coaches",
-    description: "Listado de coaches en España con filtros avanzados y enlaces a landings canónicas.",
-  };
+  const hasSearchState = directoryHasSearchState(filters);
+
+  const jsonLd = [
+    buildBreadcrumbList([
+      { name: "Inicio", path: "/" },
+      { name: "Coaches", path: "/coaches" },
+    ]),
+    buildItemListSchema({
+      name: "Directorio de coaches en España",
+      path: "/coaches",
+      items: paginated.items.map((coach) => ({
+        name: coach.name,
+        path: `/coaches/${coach.slug}`,
+      })),
+    }),
+  ];
 
   return (
     <>
-      <JsonLd data={schema} />
+      <JsonLd data={jsonLd} />
       <PageHero
-        badge="Directorio de coaches"
+        badge="Directorio principal"
         title="Buscar coach en España"
-        description="Filtra por especialidad, ciudad, modalidad, presupuesto e idiomas. Compara perfiles reales y contacta directamente antes de elegir."
+        description="Filtra por especialidad, ciudad, modalidad y presupuesto. Compara perfiles reales y contacta."
       />
 
-      <PageShell className="pt-8" containerClassName="max-w-[1760px] lg:px-10">
-        <DirectoryShortlistCta />
-        {isAdmin ? <TrustStrip stats={trustStats} /> : null}
-        <div className="rounded-3xl border border-black/10 bg-white p-4 shadow-sm sm:p-5">
-          <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-zinc-700">
-            <span className="text-zinc-500">Rutas rápidas:</span>
-            <Link href="/coaches/ciudad/madrid" className="rounded-full border border-black/10 bg-zinc-50 px-3 py-1.5 hover:bg-white">
-              Coach en Madrid
-            </Link>
-            <Link href="/coaches/ciudad/barcelona" className="rounded-full border border-black/10 bg-zinc-50 px-3 py-1.5 hover:bg-white">
-              Coach en Barcelona
-            </Link>
-            <Link href="/coaches/modalidad/online" className="rounded-full border border-black/10 bg-zinc-50 px-3 py-1.5 hover:bg-white">
-              Coach online
-            </Link>
-            <Link href="/como-elegir-coach-2026" className="rounded-full border border-black/10 bg-zinc-50 px-3 py-1.5 hover:bg-white">
-              Cómo elegir coach
-            </Link>
-          </div>
-        </div>
-        <div className="mt-6 grid gap-8 max-[390px]:gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
-          <aside className="h-fit rounded-3xl border border-black/10 bg-white p-4 shadow-sm sm:p-6 xl:sticky xl:top-24">
-            <div className="xl:hidden">
-              <details className="group rounded-2xl border border-black/10 bg-zinc-50/40 p-3">
-                <summary className="flex cursor-pointer list-none items-center justify-between rounded-xl bg-white px-4 py-3 text-sm font-semibold text-zinc-900">
-                  <span className="inline-flex items-center gap-2">
-                    <i className="fa-solid fa-filter text-zinc-500" aria-hidden="true" />
-                    Ver filtros
-                  </span>
-                  <i
-                    className="fa-solid fa-chevron-down text-xs text-zinc-500 transition group-open:rotate-180"
-                    aria-hidden="true"
-                  />
-                </summary>
-                <DirectoryFiltersForm filters={filters} categories={availableCategories} />
-              </details>
-            </div>
+      <PageShell className="pt-8">
+        <nav aria-label="Breadcrumb" className="mb-6 text-sm text-zinc-600">
+          <ol className="flex flex-wrap items-center gap-2">
+            <li>
+              <Link href="/" className="hover:text-cyan-700">
+                Inicio
+              </Link>
+            </li>
+            <li>/</li>
+            <li className="font-semibold text-zinc-900">Coaches</li>
+          </ol>
+        </nav>
 
-            <div className="hidden xl:block">
-              <h2 className="text-xl font-black tracking-tight text-zinc-950">Filtros</h2>
-              <p className="mt-1 text-sm text-zinc-600">Diseñados para encontrar encaje rápido.</p>
-              <DirectoryFiltersForm filters={filters} categories={availableCategories} />
-            </div>
+        <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
+          <aside className="h-fit rounded-3xl border border-black/10 bg-white p-5 shadow-sm">
+            <h2 className="text-lg font-black tracking-tight text-zinc-950">Filtros</h2>
+            <form action="/coaches" className="mt-4 grid gap-4">
+              <label className="grid gap-1 text-sm font-medium text-zinc-800">
+                Buscar
+                <input
+                  name="q"
+                  defaultValue={filters.q}
+                  placeholder="Ciudad, especialidad, nombre..."
+                  className="rounded-xl border border-black/10 px-3 py-2 outline-none focus:border-cyan-400"
+                />
+              </label>
+
+              <label className="grid gap-1 text-sm font-medium text-zinc-800">
+                Categoría
+                <select
+                  name="cat"
+                  defaultValue={filters.cat ?? ""}
+                  className="rounded-xl border border-black/10 px-3 py-2 outline-none focus:border-cyan-400"
+                >
+                  <option value="">Todas</option>
+                  {coachCategories.map((category) => (
+                    <option key={category.slug} value={category.slug}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="grid gap-1 text-sm font-medium text-zinc-800">
+                Ciudad
+                <select
+                  name="location"
+                  defaultValue={filters.location ?? ""}
+                  className="rounded-xl border border-black/10 px-3 py-2 outline-none focus:border-cyan-400"
+                >
+                  <option value="">Toda España</option>
+                  {cities.map((city) => (
+                    <option key={city.slug} value={city.slug}>
+                      {city.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <fieldset className="grid gap-2">
+                <legend className="text-sm font-medium text-zinc-800">Modalidad</legend>
+                <label className="flex items-center gap-2 text-sm text-zinc-700">
+                  <input type="checkbox" name="session" value="online" defaultChecked={filters.session?.includes("online")} />
+                  Online
+                </label>
+                <label className="flex items-center gap-2 text-sm text-zinc-700">
+                  <input
+                    type="checkbox"
+                    name="session"
+                    value="presencial"
+                    defaultChecked={filters.session?.includes("presencial")}
+                  />
+                  Presencial
+                </label>
+              </fieldset>
+
+              <label className="flex items-center gap-2 text-sm text-zinc-700">
+                <input type="checkbox" name="certified" value="certified" defaultChecked={filters.certified} />
+                Solo coaches verificados
+              </label>
+
+              <label className="grid gap-1 text-sm font-medium text-zinc-800">
+                Idioma
+                <input
+                  name="idioma"
+                  defaultValue={filters.idioma}
+                  placeholder="Ej: inglés"
+                  className="rounded-xl border border-black/10 px-3 py-2 outline-none focus:border-cyan-400"
+                />
+              </label>
+
+              <div className="grid grid-cols-2 gap-3">
+                <label className="grid gap-1 text-sm font-medium text-zinc-800">
+                  Precio min
+                  <input
+                    type="number"
+                    name="price_min"
+                    min={0}
+                    defaultValue={filters.priceMin ?? 0}
+                    className="rounded-xl border border-black/10 px-3 py-2 outline-none focus:border-cyan-400"
+                  />
+                </label>
+                <label className="grid gap-1 text-sm font-medium text-zinc-800">
+                  Precio max
+                  <input
+                    type="number"
+                    name="price_max"
+                    min={0}
+                    defaultValue={filters.priceMax ?? 500}
+                    className="rounded-xl border border-black/10 px-3 py-2 outline-none focus:border-cyan-400"
+                  />
+                </label>
+              </div>
+
+              <label className="grid gap-1 text-sm font-medium text-zinc-800">
+                Ordenar
+                <select
+                  name="sort"
+                  defaultValue={filters.sort ?? "recent"}
+                  className="rounded-xl border border-black/10 px-3 py-2 outline-none focus:border-cyan-400"
+                >
+                  <option value="recent">Más recientes</option>
+                  <option value="price_asc">Precio ascendente</option>
+                  <option value="price_desc">Precio descendente</option>
+                  <option value="rating_desc">Mejor valoración</option>
+                </select>
+              </label>
+
+              <div className="flex gap-2">
+                <button className="flex-1 rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800">
+                  Aplicar filtros
+                </button>
+                <Link
+                  href="/coaches"
+                  className="rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
+                >
+                  Limpiar
+                </Link>
+              </div>
+            </form>
           </aside>
 
-          <section className="space-y-6">
-            <div className="rounded-3xl border border-black/10 bg-white p-4 shadow-sm sm:p-6">
+          <section>
+            <div className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
+                  <h2 className="text-xl font-black tracking-tight text-zinc-950">
+                    {allResults.length} {allResults.length === 1 ? "resultado" : "resultados"}
+                  </h2>
                   <p className="mt-1 text-sm text-zinc-600">
-                    {hasFilters
-                      ? "Resultados según los filtros seleccionados."
-                      : "Explora el listado y entra a las especialidades o ciudades que mejor encajen contigo."}
+                    {hasSearchState
+                      ? "Las combinaciones con parámetros se marcan como noindex y apuntan a su landing canónica."
+                      : "Página canónica principal del directorio."}
                   </p>
                 </div>
-                <div className="w-full text-left text-sm text-zinc-600 sm:w-auto sm:text-right">
-                  <DirectorySortForm filters={filters} />
+                <div className="text-right text-sm text-zinc-600">
+                  <p>
+                    Página {paginated.currentPage} de {paginated.totalPages}
+                  </p>
+                  <p>{PAGE_SIZE} por página</p>
                 </div>
+              </div>
+
+              <div className="mt-4 grid gap-3 border-t border-black/5 pt-4 sm:grid-cols-2 xl:grid-cols-3">
+                <QuickLinkCard
+                  href="/coaches/ciudad/madrid"
+                  title="Coach en Madrid"
+                  text="La landing con más intención local."
+                />
+                <QuickLinkCard
+                  href="/coaches/ciudad/barcelona"
+                  title="Coach en Barcelona"
+                  text="Compara perfiles online y presenciales."
+                />
+                <QuickLinkCard
+                  href="/coaches/categoria/personal"
+                  title="Coaching personal"
+                  text="Especialidad clave para captar demanda genérica."
+                />
               </div>
 
               {(filters.q ||
@@ -260,13 +284,13 @@ export default async function CoachesDirectoryPage({
                 filters.certified ||
                 filters.idioma ||
                 filters.session?.length ||
-                filters.priceMin ||
-                filters.priceMax) && (
-                <div className="mt-4 flex flex-wrap gap-2 border-t border-black/5 pt-4">
+                typeof filters.priceMin === "number" ||
+                typeof filters.priceMax === "number") && (
+                <div className="mt-4 flex flex-wrap gap-2">
                   {filters.q ? <span className="rounded-full bg-zinc-100 px-3 py-1 text-sm">q: {filters.q}</span> : null}
                   {filters.cat ? (
                     <span className="rounded-full bg-zinc-100 px-3 py-1 text-sm">
-                      categoría: {getCategoryBySlug(filters.cat)?.name ?? filters.cat}
+                      categoría: {coachCategories.find((c) => c.slug === filters.cat)?.name ?? filters.cat}
                     </span>
                   ) : null}
                   {filters.location ? (
@@ -280,51 +304,40 @@ export default async function CoachesDirectoryPage({
                     </span>
                   ))}
                   {filters.certified ? (
-                    <span className="rounded-full bg-zinc-100 px-3 py-1 text-sm">certificados</span>
+                    <span className="rounded-full bg-zinc-100 px-3 py-1 text-sm">verificados</span>
                   ) : null}
                   {typeof filters.priceMin === "number" || typeof filters.priceMax === "number" ? (
                     <span className="rounded-full bg-zinc-100 px-3 py-1 text-sm">
                       precio: {formatEuro(filters.priceMin ?? 0)} - {formatEuro(filters.priceMax ?? 500)}
                     </span>
                   ) : null}
-                  <Link href="/coaches" className="rounded-full border border-black/10 bg-white px-3 py-1 text-sm font-semibold text-zinc-800 hover:bg-zinc-50">
-                    Limpiar todo
-                  </Link>
                 </div>
               )}
             </div>
 
             {paginated.items.length ? (
-              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                 {paginated.items.map((coach) => (
                   <CoachCard key={coach.id} coach={coach} />
                 ))}
               </div>
             ) : (
-              <div className="rounded-3xl border border-black/10 bg-white p-8 text-center shadow-sm">
+              <div className="mt-6 rounded-3xl border border-black/10 bg-white p-8 text-center shadow-sm">
                 <h3 className="text-lg font-black tracking-tight text-zinc-950">No hay resultados con esos filtros</h3>
                 <p className="mt-2 text-zinc-700">
-                  Prueba a ampliar el presupuesto, quitar filtros o ir a una landing por categoría/ciudad.
+                  Prueba a ampliar el presupuesto, quitar filtros o visitar una landing por categoría o ciudad.
                 </p>
-                <div className="mt-4 flex flex-wrap justify-center gap-2">
-                  <Link
-                    href="/coaches"
-                    className="inline-flex rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800"
-                  >
-                    Ver todos los coaches
-                  </Link>
-                  <Link
-                    href="/coaches/ciudad/madrid"
-                    className="inline-flex rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
-                  >
-                    Coaches en Madrid
-                  </Link>
-                </div>
+                <Link
+                  href="/coaches"
+                  className="mt-4 inline-flex rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800"
+                >
+                  Ver todos los coaches
+                </Link>
               </div>
             )}
 
             {paginated.totalPages > 1 ? (
-              <nav aria-label="Paginación" className="flex flex-wrap items-center justify-center gap-2">
+              <nav aria-label="Paginación" className="mt-8 flex flex-wrap items-center justify-center gap-2">
                 {Array.from({ length: paginated.totalPages }, (_, index) => index + 1).map((page) => (
                   <Link
                     key={page}
@@ -343,7 +356,51 @@ export default async function CoachesDirectoryPage({
             ) : null}
           </section>
         </div>
+
+        <section className="mt-10 grid gap-6 lg:grid-cols-[1.1fr_.9fr]">
+          <div className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
+            <h2 className="text-2xl font-black tracking-tight text-zinc-950">Cómo usar el directorio</h2>
+            <ul className="mt-4 grid gap-3 text-sm leading-6 text-zinc-700">
+              <li className="rounded-2xl border border-black/10 bg-zinc-50 px-4 py-3">
+                1. Elige especialidad o ciudad para llegar a una landing limpia e indexable.
+              </li>
+              <li className="rounded-2xl border border-black/10 bg-zinc-50 px-4 py-3">
+                2. Compara precio, modalidad y señales de confianza antes de contactar.
+              </li>
+              <li className="rounded-2xl border border-black/10 bg-zinc-50 px-4 py-3">
+                3. Contacta 2–3 coaches para encontrar mejor encaje desde el principio.
+              </li>
+            </ul>
+          </div>
+
+          <div className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
+            <h2 className="text-2xl font-black tracking-tight text-zinc-950">Preguntas frecuentes</h2>
+            <div className="mt-4 space-y-4">
+              {faqItems.slice(0, 3).map((faq) => (
+                <article key={faq.id} className="rounded-2xl border border-black/10 bg-zinc-50 p-4">
+                  <h3 className="text-sm font-black tracking-tight text-zinc-950">{faq.question}</h3>
+                  <div
+                    className="mt-2 text-sm leading-6 text-zinc-700"
+                    dangerouslySetInnerHTML={{ __html: faq.answerHtml }}
+                  />
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
       </PageShell>
     </>
+  );
+}
+
+function QuickLinkCard({ href, title, text }: { href: string; title: string; text: string }) {
+  return (
+    <Link
+      href={href}
+      className="rounded-2xl border border-black/10 bg-zinc-50 px-4 py-3 transition hover:-translate-y-0.5 hover:bg-white"
+    >
+      <p className="text-sm font-black tracking-tight text-zinc-950">{title}</p>
+      <p className="mt-1 text-sm text-zinc-600">{text}</p>
+    </Link>
   );
 }
