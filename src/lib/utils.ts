@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { siteConfig } from "@/lib/site-config";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -29,5 +30,7 @@ export function average(values: number[]) {
 
 export function absoluteUrl(path: string) {
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
-  return `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}${path}`;
+  const origin = process.env.NEXT_PUBLIC_SITE_URL ?? siteConfig.url;
+  const normalizedPath = path === "/" ? "/" : path.replace(/\/+$/, "");
+  return `${origin}${normalizedPath.startsWith("/") ? normalizedPath : `/${normalizedPath}`}`;
 }

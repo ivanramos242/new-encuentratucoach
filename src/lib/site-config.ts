@@ -1,7 +1,7 @@
 export const siteConfig = {
   name: "EncuentraTuCoach",
-  domain: "encuentratucoach.local",
-  url: "http://localhost:3000",
+  domain: "encuentratucoach.es",
+  url: "https://encuentratucoach.es",
   description:
     "Directorio de coaches en España para encontrar coaching personal, de carrera, liderazgo y más, online o presencial.",
   locale: "es-ES",

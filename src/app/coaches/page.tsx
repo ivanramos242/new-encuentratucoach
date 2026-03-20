@@ -1,12 +1,23 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { CoachCard } from "@/components/directory/coach-card";
-import { JsonLd } from "@/components/seo/json-ld";
 import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
-import { PAGE_SIZE, filterAndSortCoaches, paginateCoaches, parseDirectoryFilters } from "@/lib/directory";
-import { coachCategories, cities } from "@/lib/mock-data";
-import { buildMetadata, shouldNoIndexDirectoryFilters } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/json-ld";
+import {
+  PAGE_SIZE,
+  filterAndSortCoaches,
+  paginateCoaches,
+  parseDirectoryFilters,
+} from "@/lib/directory";
+import { coachCategories, cities, faqItems } from "@/lib/mock-data";
+import {
+  buildBreadcrumbList,
+  buildDirectoryCanonicalPath,
+  buildItemListSchema,
+  buildMetadata,
+  directoryHasSearchState,
+} from "@/lib/seo";
 import { formatEuro } from "@/lib/utils";
 
 type SearchParamsInput = Promise<Record<string, string | string[] | undefined>>;
@@ -34,25 +45,20 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const raw = await searchParams;
   const filters = parseDirectoryFilters(raw);
-  const category = filters.cat ? coachCategories.find((item) => item.slug === filters.cat) : null;
-  const locationSlug = filters.location?.toLowerCase();
-  const city = locationSlug ? cities.find((item) => item.slug === locationSlug) : null;
-  const title =
-    category && city
-      ? `${category.name} en ${city.name}`
-      : category
-        ? category.name
-        : city
-          ? `Coaches en ${city.name}`
-          : "Nuestros Coaches";
-  const noindex = shouldNoIndexDirectoryFilters(filters);
+  const canonicalPath = buildDirectoryCanonicalPath(
+    filters,
+    new Set(coachCategories.map((item) => item.slug)),
+    new Set(cities.map((item) => item.slug)),
+  );
+  const hasSearchState = directoryHasSearchState(filters);
 
   return buildMetadata({
-    title,
+    title: "Buscar coach en Espana | Directorio por especialidad, ciudad y modalidad",
     description:
-      "Explora coaches por especialidad, ciudad, modalidad, certificación, idioma y presupuesto. Directorio SEO para España.",
+      "Filtra por especialidad, ciudad, modalidad online o presencial y presupuesto. Compara perfiles reales y contacta.",
     path: "/coaches",
-    noindex,
+    canonicalPath,
+    noindex: hasSearchState,
   });
 }
 
@@ -65,25 +71,45 @@ export default async function CoachesDirectoryPage({
   const filters = parseDirectoryFilters(raw);
   const allResults = filterAndSortCoaches(filters);
   const paginated = paginateCoaches(allResults, filters.page ?? 1, PAGE_SIZE);
-  const indexableFacet = !shouldNoIndexDirectoryFilters(filters);
+  const hasSearchState = directoryHasSearchState(filters);
 
-  const schema = {
-    "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    name: "Directorio de coaches",
-    description: "Listado de coaches en España con filtros avanzados.",
-  };
+  const jsonLd = [
+    buildBreadcrumbList([
+      { name: "Inicio", path: "/" },
+      { name: "Coaches", path: "/coaches" },
+    ]),
+    buildItemListSchema({
+      name: "Directorio de coaches en España",
+      path: "/coaches",
+      items: paginated.items.map((coach) => ({
+        name: coach.name,
+        path: `/coaches/${coach.slug}`,
+      })),
+    }),
+  ];
 
   return (
     <>
-      <JsonLd data={schema} />
+      <JsonLd data={jsonLd} />
       <PageHero
-        badge="Directorio SEO • filtros avanzados"
-        title="Encuentra coaches en España"
-        description="Filtra por especialidad, ciudad, modalidad, presupuesto e idiomas. Contacta directamente y compara perfiles antes de elegir."
+        badge="Directorio principal"
+        title="Buscar coach en España"
+        description="Filtra por especialidad, ciudad, modalidad y presupuesto. Compara perfiles reales y contacta."
       />
 
       <PageShell className="pt-8">
+        <nav aria-label="Breadcrumb" className="mb-6 text-sm text-zinc-600">
+          <ol className="flex flex-wrap items-center gap-2">
+            <li>
+              <Link href="/" className="hover:text-cyan-700">
+                Inicio
+              </Link>
+            </li>
+            <li>/</li>
+            <li className="font-semibold text-zinc-900">Coaches</li>
+          </ol>
+        </nav>
+
         <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
           <aside className="h-fit rounded-3xl border border-black/10 bg-white p-5 shadow-sm">
             <h2 className="text-lg font-black tracking-tight text-zinc-950">Filtros</h2>
@@ -149,7 +175,7 @@ export default async function CoachesDirectoryPage({
 
               <label className="flex items-center gap-2 text-sm text-zinc-700">
                 <input type="checkbox" name="certified" value="certified" defaultChecked={filters.certified} />
-                Solo coaches certificados
+                Solo coaches verificados
               </label>
 
               <label className="grid gap-1 text-sm font-medium text-zinc-800">
@@ -221,9 +247,9 @@ export default async function CoachesDirectoryPage({
                     {allResults.length} {allResults.length === 1 ? "resultado" : "resultados"}
                   </h2>
                   <p className="mt-1 text-sm text-zinc-600">
-                    {indexableFacet
-                      ? "Landing indexable (categoría/ciudad) o listado principal."
-                      : "Combinación avanzada de filtros marcada para noindex en producción."}
+                    {hasSearchState
+                      ? "Las combinaciones con parámetros se marcan como noindex y apuntan a su landing canónica."
+                      : "Página canónica principal del directorio."}
                   </p>
                 </div>
                 <div className="text-right text-sm text-zinc-600">
@@ -234,15 +260,33 @@ export default async function CoachesDirectoryPage({
                 </div>
               </div>
 
+              <div className="mt-4 grid gap-3 border-t border-black/5 pt-4 sm:grid-cols-2 xl:grid-cols-3">
+                <QuickLinkCard
+                  href="/coaches/ciudad/madrid"
+                  title="Coach en Madrid"
+                  text="La landing con más intención local."
+                />
+                <QuickLinkCard
+                  href="/coaches/ciudad/barcelona"
+                  title="Coach en Barcelona"
+                  text="Compara perfiles online y presenciales."
+                />
+                <QuickLinkCard
+                  href="/coaches/categoria/personal"
+                  title="Coaching personal"
+                  text="Especialidad clave para captar demanda genérica."
+                />
+              </div>
+
               {(filters.q ||
                 filters.cat ||
                 filters.location ||
                 filters.certified ||
                 filters.idioma ||
                 filters.session?.length ||
-                filters.priceMin ||
-                filters.priceMax) && (
-                <div className="mt-4 flex flex-wrap gap-2 border-t border-black/5 pt-4">
+                typeof filters.priceMin === "number" ||
+                typeof filters.priceMax === "number") && (
+                <div className="mt-4 flex flex-wrap gap-2">
                   {filters.q ? <span className="rounded-full bg-zinc-100 px-3 py-1 text-sm">q: {filters.q}</span> : null}
                   {filters.cat ? (
                     <span className="rounded-full bg-zinc-100 px-3 py-1 text-sm">
@@ -260,7 +304,7 @@ export default async function CoachesDirectoryPage({
                     </span>
                   ))}
                   {filters.certified ? (
-                    <span className="rounded-full bg-zinc-100 px-3 py-1 text-sm">certificados</span>
+                    <span className="rounded-full bg-zinc-100 px-3 py-1 text-sm">verificados</span>
                   ) : null}
                   {typeof filters.priceMin === "number" || typeof filters.priceMax === "number" ? (
                     <span className="rounded-full bg-zinc-100 px-3 py-1 text-sm">
@@ -281,7 +325,7 @@ export default async function CoachesDirectoryPage({
               <div className="mt-6 rounded-3xl border border-black/10 bg-white p-8 text-center shadow-sm">
                 <h3 className="text-lg font-black tracking-tight text-zinc-950">No hay resultados con esos filtros</h3>
                 <p className="mt-2 text-zinc-700">
-                  Prueba a ampliar el presupuesto, quitar filtros o buscar por una categoría distinta.
+                  Prueba a ampliar el presupuesto, quitar filtros o visitar una landing por categoría o ciudad.
                 </p>
                 <Link
                   href="/coaches"
@@ -312,7 +356,51 @@ export default async function CoachesDirectoryPage({
             ) : null}
           </section>
         </div>
+
+        <section className="mt-10 grid gap-6 lg:grid-cols-[1.1fr_.9fr]">
+          <div className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
+            <h2 className="text-2xl font-black tracking-tight text-zinc-950">Cómo usar el directorio</h2>
+            <ul className="mt-4 grid gap-3 text-sm leading-6 text-zinc-700">
+              <li className="rounded-2xl border border-black/10 bg-zinc-50 px-4 py-3">
+                1. Elige especialidad o ciudad para llegar a una landing limpia e indexable.
+              </li>
+              <li className="rounded-2xl border border-black/10 bg-zinc-50 px-4 py-3">
+                2. Compara precio, modalidad y señales de confianza antes de contactar.
+              </li>
+              <li className="rounded-2xl border border-black/10 bg-zinc-50 px-4 py-3">
+                3. Contacta 2–3 coaches para encontrar mejor encaje desde el principio.
+              </li>
+            </ul>
+          </div>
+
+          <div className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm">
+            <h2 className="text-2xl font-black tracking-tight text-zinc-950">Preguntas frecuentes</h2>
+            <div className="mt-4 space-y-4">
+              {faqItems.slice(0, 3).map((faq) => (
+                <article key={faq.id} className="rounded-2xl border border-black/10 bg-zinc-50 p-4">
+                  <h3 className="text-sm font-black tracking-tight text-zinc-950">{faq.question}</h3>
+                  <div
+                    className="mt-2 text-sm leading-6 text-zinc-700"
+                    dangerouslySetInnerHTML={{ __html: faq.answerHtml }}
+                  />
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
       </PageShell>
     </>
+  );
+}
+
+function QuickLinkCard({ href, title, text }: { href: string; title: string; text: string }) {
+  return (
+    <Link
+      href={href}
+      className="rounded-2xl border border-black/10 bg-zinc-50 px-4 py-3 transition hover:-translate-y-0.5 hover:bg-white"
+    >
+      <p className="text-sm font-black tracking-tight text-zinc-950">{title}</p>
+      <p className="mt-1 text-sm text-zinc-600">{text}</p>
+    </Link>
   );
 }

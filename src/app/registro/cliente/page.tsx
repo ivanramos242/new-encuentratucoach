@@ -5,6 +5,7 @@ export const metadata = buildMetadata({
   title: "Registro de cliente",
   description: "Crea una cuenta de cliente para reseñar coaches y usar futuras funciones de cuenta.",
   path: "/registro/cliente",
+  noindex: true,
 });
 
 export default function ClientRegisterPage() {

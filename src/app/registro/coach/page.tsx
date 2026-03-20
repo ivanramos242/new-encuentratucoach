@@ -5,6 +5,7 @@ export const metadata = buildMetadata({
   title: "Registro de coach",
   description: "Crea una cuenta de coach para activar tu membresía y gestionar tu perfil.",
   path: "/registro/coach",
+  noindex: true,
 });
 
 export default function CoachRegisterPage() {
@@ -12,7 +13,7 @@ export default function CoachRegisterPage() {
     <PlaceholderPage
       badge="Auth V1"
       title="Crear cuenta de coach"
-      description="Flujo de registro de coach con onboarding, membresía Stripe y perfil editable."
+      description="Flujo de registro de coach con onboarding, membresía y perfil editable."
       routeType="Autenticación"
     />
   );

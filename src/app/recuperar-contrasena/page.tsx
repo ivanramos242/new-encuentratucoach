@@ -5,6 +5,7 @@ export const metadata = buildMetadata({
   title: "Recuperar contraseña",
   description: "Recupera el acceso a tu cuenta por email.",
   path: "/recuperar-contrasena",
+  noindex: true,
 });
 
 export default function ForgotPasswordPage() {

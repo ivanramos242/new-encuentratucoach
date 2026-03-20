@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { PageHero } from "@/components/layout/page-hero";
 import { PageShell } from "@/components/layout/page-shell";
-import { buildMetadata } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/json-ld";
+import { buildBreadcrumbList, buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
-  title: "Membresía para coaches",
-  description: "Planes mensual y anual para coaches que quieren tener un perfil activo en el directorio.",
+  title: "Membresía para coaches: visibilidad, clientes y métricas",
+  description:
+    "Activa tu perfil, aparece en búsquedas con intención real y mejora conversión con métricas.",
   path: "/membresia",
 });
 
@@ -30,10 +32,16 @@ const plans = [
 export default function MembershipPage() {
   return (
     <>
+      <JsonLd
+        data={buildBreadcrumbList([
+          { name: "Inicio", path: "/" },
+          { name: "Membresía", path: "/membresia" },
+        ])}
+      />
       <PageHero
-        badge="Stripe Billing • mensual y anual"
+        badge="Visibilidad + captación"
         title="Membresía para coaches"
-        description="Solo los coaches pagan para tener su perfil activo en la plataforma. Sin comisiones por contacto."
+        description="Activa tu perfil, aparece en búsquedas con intención real y entiende mejor tu conversión con métricas básicas."
       />
       <PageShell className="pt-8">
         <div className="grid gap-6 lg:grid-cols-2">
@@ -64,10 +72,10 @@ export default function MembershipPage() {
                   Crear cuenta de coach
                 </Link>
                 <Link
-                  href="/iniciar-sesion"
+                  href="/plataformas-para-trabajar-como-coach"
                   className="rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
                 >
-                  Ya tengo cuenta
+                  Ver la guía
                 </Link>
               </div>
             </section>

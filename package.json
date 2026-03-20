@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "audit:seo": "python seo/scripts/build_integrated_audit.py",
+    "test:seo": "npm run build && tsx tests/seo-smoke.ts && tsx --test tests/seo-schema.test.ts",
     "typecheck": "tsc --noEmit",
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",

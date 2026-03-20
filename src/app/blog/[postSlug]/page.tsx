@@ -4,14 +4,26 @@ import { notFound } from "next/navigation";
 import { JsonLd } from "@/components/seo/json-ld";
 import { PageShell } from "@/components/layout/page-shell";
 import { blogPosts } from "@/lib/mock-data";
-import { buildMetadata } from "@/lib/seo";
+import {
+  buildArticleSchema,
+  buildBreadcrumbList,
+  buildMetadata,
+} from "@/lib/seo";
 
 type ParamsInput = Promise<{ postSlug: string }>;
 
 export async function generateMetadata({ params }: { params: ParamsInput }): Promise<Metadata> {
   const { postSlug } = await params;
   const post = blogPosts.find((item) => item.slug === postSlug);
-  if (!post) return buildMetadata({ title: "Artículo no encontrado", description: "Artículo no encontrado", noindex: true });
+  if (!post) {
+    return buildMetadata({
+      title: "Artículo no encontrado",
+      description: "Artículo no encontrado",
+      path: `/blog/${postSlug}`,
+      noindex: true,
+    });
+  }
+
   return buildMetadata({
     title: post.seoTitle ?? post.title,
     description: post.seoDescription ?? post.excerpt,
@@ -27,14 +39,21 @@ export default async function BlogPostPage({ params }: { params: ParamsInput }) 
   return (
     <PageShell className="pt-8">
       <JsonLd
-        data={{
-          "@context": "https://schema.org",
-          "@type": "Article",
-          headline: post.title,
-          description: post.excerpt,
-          datePublished: post.publishedAt,
-          articleSection: post.category,
-        }}
+        data={[
+          buildBreadcrumbList([
+            { name: "Inicio", path: "/" },
+            { name: "Blog", path: "/blog" },
+            { name: post.title, path: `/blog/${post.slug}` },
+          ]),
+          buildArticleSchema({
+            headline: post.title,
+            description: post.excerpt,
+            path: `/blog/${post.slug}`,
+            datePublished: post.publishedAt,
+            authorName: "EncuentraTuCoach",
+            image: post.coverImageUrl,
+          }),
+        ]}
       />
       <article className="mx-auto max-w-4xl overflow-hidden rounded-3xl border border-black/10 bg-white shadow-sm">
         <div className="relative aspect-[16/8] bg-zinc-100">

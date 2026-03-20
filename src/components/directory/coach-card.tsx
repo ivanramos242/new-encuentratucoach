@@ -1,20 +1,15 @@
-﻿import Image from "next/image";
+import Image from "next/image";
 import Link from "next/link";
-<<<<<<< HEAD
 import { FavoriteCoachButton } from "@/components/favorites/favorite-coach-button";
-=======
-import { faCircleCheck } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { getCoachCategoryLabel } from "@/lib/coach-category-catalog";
->>>>>>> 4647dc74b728c8703bf70842cb6a2588bce2ccac
 import { getCoachAverageRating } from "@/lib/directory";
+import { coachCategories } from "@/lib/mock-data";
 import { formatEuro } from "@/lib/utils";
 import type { CoachProfile } from "@/types/domain";
 
 export function CoachCard({ coach }: { coach: CoachProfile }) {
   const rating = getCoachAverageRating(coach);
   const categoryLabels = coach.categories
-    .map((slug) => getCoachCategoryLabel(slug) ?? slug)
+    .map((slug) => coachCategories.find((item) => item.slug === slug)?.name ?? slug)
     .slice(0, 2);
 
   return (
@@ -29,12 +24,8 @@ export function CoachCard({ coach }: { coach: CoachProfile }) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/0 to-transparent" />
         {coach.certifiedStatus === "approved" ? (
-          <div
-            className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-sky-500 text-white shadow-lg shadow-sky-500/35"
-            title="Coach verificado"
-            aria-label="Coach verificado"
-          >
-            <FontAwesomeIcon icon={faCircleCheck} className="h-5 w-5" />
+          <div className="absolute right-3 top-3 rounded-full bg-emerald-500 px-2.5 py-1 text-xs font-semibold text-white shadow-sm">
+            Verificado
           </div>
         ) : null}
         <div className="absolute bottom-3 left-3 right-3 flex flex-wrap gap-2">
