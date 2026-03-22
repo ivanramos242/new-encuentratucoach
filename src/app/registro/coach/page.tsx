@@ -1,7 +1,20 @@
-import { redirect } from "next/navigation";
+import { PlaceholderPage } from "@/components/layout/placeholder-page";
+import { buildMetadata } from "@/lib/seo";
 
-export const dynamic = "force-dynamic";
+export const metadata = buildMetadata({
+  title: "Registro de coach",
+  description: "Crea una cuenta de coach para activar tu membresía y gestionar tu perfil.",
+  path: "/registro/coach",
+  noindex: true,
+});
 
 export default function CoachRegisterPage() {
-  redirect("/registro?intent=coach");
+  return (
+    <PlaceholderPage
+      badge="Auth V1"
+      title="Crear cuenta de coach"
+      description="Flujo de registro de coach con onboarding, membresía y perfil editable."
+      routeType="Autenticación"
+    />
+  );
 }
